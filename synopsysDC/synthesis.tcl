@@ -38,6 +38,9 @@ file mkdir $run_dir/report/original
 
 define_design_lib WORK -path ./WORK; # 中間ファイル保存場所の指定
 
+#----------------------------------------------------------------------------------------------#
+#------------------------------------------ Synthesis -----------------------------------------#
+#----------------------------------------------------------------------------------------------#
 
 analyze -library WORK -format vhdl {../rtl/src/FPAdd_frequency=1_target=Kintex7_wE=8_wF=23_FPAdd.vhdl}
 elaborate FPAdd_8_23_Freq1_uid2 -architecture arch -library WORK
@@ -49,7 +52,10 @@ check_design
 
 
 
-## ------------- environment constraint -----------
+#----------------------------------------------------------------------------------------------#
+#---------------------------------------- Constraints -----------------------------------------#
+#----------------------------------------------------------------------------------------------#
+
 
 set_max_area 0
 set main_clock_period 1000
@@ -61,17 +67,20 @@ create_clock -name clock -period $main_clock_period clk
 
 set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
 puts $input_ports
-set_input_delay [expr $percentage_delay * $main_clock_period]  -clock clock [get_ports $input_ports]
+set_input_delay [expr $percentage_delay * $main_clock_period]  -clock clock $input_ports
 
 set output_ports [all_outputs]
 puts $output_ports
 
 set_output_delay [expr $percentage_delay * $main_clock_period] -clock clock $output_ports
 
-set_input_transition [expr $percentage_delay * $main_clock_period] [remove_from_collection [all_inputs] [get_ports clock]]
+set_input_transition [expr $percentage_delay * $main_clock_period] [remove_from_collection [all_inputs] [get_ports clk]]
 
 
-
+################################################################################
+# Enviornement attribute constraint
+################################################################################
+# Load on the output ports
 set_max_transition 1.0000 [current_design]
 set_max_capacitance 0.2000 [current_design]
 set_max_fanout 10.0000 [current_design]
@@ -84,8 +93,10 @@ set_max_delay 1000 -from [all_inputs] -to [all_outputs]
 
 compile_ultra -no_autoungroup -no_boundary_optimization
 
-
-report_qor
+#--------------------
+# Report QoR:
+#--------------------
+report_qor > $run_dir/report/original/qor_f1_add.rpt
 
 
 
@@ -115,7 +126,7 @@ write_sdf $run_dir/output/original/post-synth.sdf
 report_area -hierarchy > $run_dir/report/original/area_f1_add.rpt
 report_power > $run_dir/report/original/power_f1_add.rpt
 report_timing > $run_dir/report/original/timing_f1_add.rpt
-report_qor > $run_dir/report/original/qor_f1_add.rpt
+
 
 
 exit

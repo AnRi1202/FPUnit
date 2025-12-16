@@ -50,22 +50,27 @@ close $f
 proc run_synth_common {entity_name label} {
     global rpt_file, run_dir
     
-    elaborate $entity_name -library WORK
+    elaborate $entity_name -architecture arch -library WORK
     
+    link
+
+    check_design
+
     # Constraints 
     set_max_area 0
     # 1000 ns = 1 us 1MHz
     set main_clock_period 1000 
     set percentage_delay 0.10
-    create_clock -name clock -period $main_clock_period [get_ports clk]
+    create_clock -name clock -period $main_clock_period clk
     
     set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
     set_input_delay [expr $percentage_delay * $main_clock_period] -clock clock $input_ports
-    set_input_transition [expr $percentage_delay * $main_clock_period] $input_ports
     
     set output_ports [all_outputs]
     set_output_delay [expr $percentage_delay * $main_clock_period] -clock clock $output_ports
     
+    set_input_transition [expr $percentage_delay * $main_clock_period] [remove_from_collection [all_inputs] [get_ports clk]]
+
     set_max_transition 1.0000 [current_design]
     set_max_capacitance 0.2000 [current_design]
     set_max_fanout 10.0000 [current_design]
@@ -75,10 +80,7 @@ proc run_synth_common {entity_name label} {
     # Compile
     compile_ultra -no_autoungroup -no_boundary_optimization
     
-    set area 0.0
-    set leak_power 0.0
-    set dyn_power 0.0
-    set slack "N/A"
+
 
     set rpt_dir  "$run_dir/report/new" 
     set out_dir  "$run_dir/output/new"
@@ -87,14 +89,52 @@ proc run_synth_common {entity_name label} {
     set rpt_area "$rpt_dir/${label}_area.rpt"
     set rpt_pwr "$rpt_dir/${label}_power.rpt"
     set rpt_time "$rpt_dir/${label}_timing.rpt"
-    
+
+    #--------------------
+    # Report QoR:
+    #--------------------
+    report_qor
+    #--------------------
+    #  Change Naming Rule　なぜかこれの有無でPPAが変わる
+    #--------------------
+
+    set bus_inference_style "%s\[%d\]"
+    set bus_naming_style "%s\[%d\]"
+    set hdlout_internal_busses true
+
+    change_names -hierarchy -rule verilog
+    define_name_rules name_rule -allowed "a-z A-Z 0-9 _" -max_length 255 -type cell
+    define_name_rules name_rule -allowed "a-z A-Z 0-9 _[]" -max_length 255 -type net
+    define_name_rules name_rule -map {{"\*cell\*" "cell"}}
+    define_name_rules name_rule -case_insensitive
+    change_names -hierarchy -rules name_rule
+    set verilogout_higher_designs_first true
+    #--------------------
+    # Writing output: 
+    #--------------------
+    write -format verilog -hierarchy -output $out_dir/post-synth.v
+    write -format ddc     -hierarchy -output $out_dir/post-synth.ddc
+    write_sdc -nosplit $out_dir/post-synth.sdc
+    write_sdf $out_dir/post-synth.sdf
+    #--------------------
+    # Reporting PPA:
+    #--------------------
     report_area -hierarchy > $rpt_area
     report_power > $rpt_pwr
     report_timing > $rpt_time
 
+
    # ==============================
    # summarize csv
    # =============================== 
+
+
+    set area 0.0
+    set leak_power 0.0
+    set dyn_power 0.0
+    set slack "N/A"
+
+    
     if {[file exists $rpt_area]} {
         set fp [open $rpt_area r]
         while {[gets $fp line] >= 0} {
