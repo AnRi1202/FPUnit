@@ -1,0 +1,55 @@
+# General EDA Tool Artifacts
+*.log
+*.log.*
+*.cmd
+*.cmd.*
+*.svf
+*.jou
+*.pb
+*.wdb
+*.str
+*.db
+*.pvl
+*.syn
+*.mr
+*.rpx
+*.lck
+
+# Synopsys Design Compiler
+synopsysDC/WORK/
+synopsysDC/alib-*/
+synopsysDC/output/
+synopsysDC/output_ppa/
+synopsysDC/report/
+synopsysDC/filenames.log
+synopsysDC/command.log
+synopsysDC/default.svf
+
+# Cadence Innovus
+cadenceInnovus/enc/output/
+cadenceInnovus/*.log
+cadenceInnovus/*.cmd
+innovus.log
+innovus.cmd
+
+# PrimeTime
+primetime/output/
+
+# Simulation
+simulation/INCA_libs/
+simulation/xcelium.d/
+simulation/*.shm/
+simulation/*.dsn
+simulation/*.trn
+simulation/*.vcd
+simulation/work/
+simulation/transcript
+
+# System/Editor
+.DS_Store
+*~
+*.swp
+.nfs*
+
+# Root level specific
+run.log
