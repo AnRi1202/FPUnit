@@ -1,5 +1,8 @@
+SCRIPT ?= synthesis.tcl
+LOG ?= $(basename $(SCRIPT)).log
+
 run:
-	dc_shell-xg-t -f synthesis.tcl -o run.log
+	dc_shell-xg-t -f $(SCRIPT) -o $(LOG)
 
 clean:
 	rm -rf output/* *.pvl *.log *.svf *.syn *.sdc alib-52 command.log default.svf *.mr

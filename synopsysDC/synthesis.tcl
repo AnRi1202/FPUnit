@@ -27,15 +27,16 @@ $cell_lib/Front_End/Liberty/NangateOpenCellLibrary_typical_CCS.db \
 # Set symbol library (if required)
 set symbol_library ""
 
-# =========================
-# define folder structure
-# ==========================
-set tag [clock format [clock seconds] -format "%Y%m%d-%H%M%S"]  ;# 例: 20251216-141905
+#----------------------------------------------------------------------------------------------#
+#--------------------------------- Set up result folders --------------------------------------#
+#----------------------------------------------------------------------------------------------#
+set tag [clock format [clock seconds] -format "%Y%m%d-%H%M%S"]  ;# ex: 20251216-141905
 set run_dir "run-$tag"
+
 file mkdir $run_dir/output/original
 file mkdir $run_dir/report/original
 
-define_design_lib WORK -path ./WORK
+define_design_lib WORK -path ./WORK; # 中間ファイル保存場所の指定
 
 
 analyze -library WORK -format vhdl {../rtl/src/FPAdd_frequency=1_target=Kintex7_wE=8_wF=23_FPAdd.vhdl}
@@ -114,5 +115,7 @@ write_sdf $run_dir/output/original/post-synth.sdf
 report_area -hierarchy > $run_dir/report/original/area_f1_add.rpt
 report_power > $run_dir/report/original/power_f1_add.rpt
 report_timing > $run_dir/report/original/timing_f1_add.rpt
+report_qor > $run_dir/report/original/qor_f1_add.rpt
 
 
+exit

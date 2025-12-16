@@ -19,8 +19,8 @@
 synopsysDC/WORK/
 synopsysDC/alib-*/
 synopsysDC/output/
-synopsysDC/output_ppa/
 synopsysDC/report/
+synopsysDC/run-*/
 synopsysDC/filenames.log
 synopsysDC/command.log
 synopsysDC/default.svf

@@ -3,3 +3,7 @@ srcに入ったvhdlをsynthする仕組み
 
 
 今は、src_divsqrtなどを作っているので、divsqrtを改めてsynthしたい場合は、フォルダ名を変えれば良い
+
+
+
+ diff -u run-20251216-145000/report/original/power_f1_add.rpt run-20251216-150839/report/new/FPAdd_power.rpt

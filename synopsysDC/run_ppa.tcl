@@ -1,12 +1,9 @@
-proc pause {{msg "Press Enter to continue..."}} {
-  puts -nonewline $msg
-  flush stdout
-  gets stdin
-}
-# Environment Setup
+#----------------------------------------------------------------------------------------------#
+#--------------------------------- Set up environment -----------------------------------------#
+#----------------------------------------------------------------------------------------------#
 set_host_options -max_cores 8 
 
-# Libraries
+# Libraries in search_path will be prioritized
 set cell_lib "/autofs/fs1.ece/fs1.eecg.janders/bhilareo/form_files/NanGate_45nm_OCL_v2010_12/pdk_v1.3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12"
 
 set search_path "$cell_lib/Front_End/Liberty /autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files"
@@ -27,22 +24,31 @@ $cell_lib/Front_End/Liberty/NangateOpenCellLibrary_typical_CCS.db \
 /autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_8baddress_lib.db \
 /autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_9baddress_lib.db ]"
 
+# Set symbol library (if required)
 set symbol_library ""
 
-# =========================
-# define folder structure
-# ==========================
-define_design_lib WORK -path ./WORK
-# file mkdir output/new
-# file mkdir report/new
+#----------------------------------------------------------------------------------------------#
+#--------------------------------- Set up result folders --------------------------------------#
+#----------------------------------------------------------------------------------------------#
+set tag [clock format [clock seconds] -format "%Y%m%d-%H%M%S"]  ;# 例: 20251216-141905
+set run_dir "run-$tag"
 
-set rpt_file "output_ppa/results_summary.csv"
+file mkdir $run_dir/output/new
+file mkdir $run_dir/report/new
+
+define_design_lib WORK -path ./WORK
+
+
+# for CSV
+set rpt_file "$run_dir/report/results_summary.csv"
 set f [open $rpt_file w]
 puts $f "Entity,TotalArea,LeakagePower,DynamicPower,Slack"
 close $f
 
+
+
 proc run_synth_common {entity_name label} {
-    global rpt_file
+    global rpt_file, run_dir
     
     elaborate $entity_name -library WORK
     
@@ -65,7 +71,7 @@ proc run_synth_common {entity_name label} {
     set_max_fanout 10.0000 [current_design]
     set_load 0.1 [all_outputs]
 
-
+    set_max_delay 1000 -from [all_inputs] -to [all_outputs]
     # Compile
     compile_ultra -no_autoungroup -no_boundary_optimization
     
@@ -73,15 +79,22 @@ proc run_synth_common {entity_name label} {
     set leak_power 0.0
     set dyn_power 0.0
     set slack "N/A"
-    
-    set rpt_area "output_ppa/${label}_area.rpt"
-    set rpt_pwr "output_ppa/${label}_power.rpt"
-    set rpt_time "output_ppa/${label}_timing.rpt"
+
+    set rpt_dir  "$run_dir/report/new" 
+    set out_dir  "$run_dir/output/new"
+
+
+    set rpt_area "$rpt_dir/${label}_area.rpt"
+    set rpt_pwr "$rpt_dir/${label}_power.rpt"
+    set rpt_time "$rpt_dir/${label}_timing.rpt"
     
     report_area -hierarchy > $rpt_area
     report_power > $rpt_pwr
     report_timing > $rpt_time
-    
+
+   # ==============================
+   # summarize csv
+   # =============================== 
     if {[file exists $rpt_area]} {
         set fp [open $rpt_area r]
         while {[gets $fp line] >= 0} {
@@ -119,19 +132,22 @@ proc run_synth_common {entity_name label} {
     puts $f "$label,$area,$leak_power,$dyn_power,$slack"
     close $f
     puts "Done $label: Area=$area, Slack=$slack"
+   # ==============================
+   # summarize csv
+   # =============================== 
 }
 
 # Task 1: Baseline FPAdd
 puts "--- Task 1: FPAdd ---"
 remove_design -all
-analyze -library WORK -format "./src/FPAdd_frequency=1_target=Kintex7_wE=8_wF=23_FPAdd"
+analyze -library WORK -format vhdl {../rtl/src/FPAdd_frequency=1_target=Kintex7_wE=8_wF=23_FPAdd.vhdl}
 run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd"
 
 # # Task 2: Baseline FPMult
-# puts "--- Task 2: FPMult ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "src/FPMult_frequency=1_target=Kintex7_wE=8_wF=23_FPMult.vhdl"
-# run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
+puts "--- Task 2: FPMult ---"
+remove_design -all
+analyze -library WORK -format vhdl {../rtl/src/FPMult_frequency=1_target=Kintex7_wE=8_wF=23_FPMult.vhdl}
+run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
 
 # # Task 3: Shared FPAddMul
 # puts "--- Task 3: Shared ---"
@@ -150,4 +166,4 @@ run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd"
 # analyze -library WORK -format vhdl "/fs1/eecg/janders/iderikut/dev/research/flopoco_synth/synopsysDC/src_shared/Mux34.vhdl"
 # run_synth_common "Mux34" "Mux34"
 
-# exit
+exit
