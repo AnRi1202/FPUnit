@@ -7,3 +7,19 @@ srcに入ったvhdlをsynthする仕組み
 
 
  diff -u run-20251216-145000/report/original/power_f1_add.rpt run-20251216-150839/report/new/FPAdd_power.rpt
+
+
+
+
+## 結果
+### FPAdd_Kin_f1_origin
+
+
+
+### FPMult_Kin_f1_origin
+
+
+### FPMult_Kin_f1_origin
+
+
+### FPMult_Kin_f1_origin

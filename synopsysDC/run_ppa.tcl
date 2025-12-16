@@ -180,17 +180,23 @@ proc run_synth_common {entity_name label} {
 # Task 1: Baseline FPAdd
 puts "--- Task 1: FPAdd ---"
 remove_design -all
-analyze -library WORK -format vhdl {../rtl/src/FPAdd_frequency=1_target=Kintex7_wE=8_wF=23_FPAdd.vhdl}
+analyze -library WORK -format vhdl {../rtl/src/FPAdd_Kin_f1_origin.vhdl}
 run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd"
 
-# # Task 2: Baseline FPMult
-puts "--- Task 2: FPMult ---"
-remove_design -all
-analyze -library WORK -format vhdl {../rtl/src/FPMult_frequency=1_target=Kintex7_wE=8_wF=23_FPMult.vhdl}
-run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
+# # # Task 2: Baseline FPMult
+# puts "--- Task 2: FPMult ---"
+# remove_design -all
+# analyze -library WORK -format vhdl {../rtl/src/FPMult_frequency=1_target=Kintex7_wE=8_wF=23_FPMult.vhdl}
+# run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
 
-# # Task 3: Shared FPAddMul
-# puts "--- Task 3: Shared ---"
+# # # Task 3: Baseline FPMult
+# puts "--- Task 3: FPMult ---"
+# remove_design -all
+# analyze -library WORK -format vhdl {../rtl/src/FPMult_frequency=1_target=Kintex7_wE=8_wF=23_FPMult.vhdl}
+# run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
+
+# # Task 5: Shared FPAddMul
+# puts "--- Task 5: Shared ---"
 # remove_design -all
 # analyze -library WORK -format vhdl "./src/FPAdd_frequency=1_target=Kintex7_wE=8_wF=23_FPAdd.vhdl"
 # analyze -library WORK -format vhdl "./src/FPMult_frequency=1_target=Kintex7_wE=8_wF=23_FPMult.vhdl"

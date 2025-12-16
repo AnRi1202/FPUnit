@@ -42,7 +42,7 @@ define_design_lib WORK -path ./WORK; # 中間ファイル保存場所の指定
 #------------------------------------------ Synthesis -----------------------------------------#
 #----------------------------------------------------------------------------------------------#
 
-analyze -library WORK -format vhdl {../rtl/src/FPAdd_frequency=1_target=Kintex7_wE=8_wF=23_FPAdd.vhdl}
+analyze -library WORK -format vhdl {../rtl/src/FPAdd_Kin_f1_origin.vhdl}
 elaborate FPAdd_8_23_Freq1_uid2 -architecture arch -library WORK
 
 
