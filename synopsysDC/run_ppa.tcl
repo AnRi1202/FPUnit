@@ -48,7 +48,7 @@ close $f
 
 
 proc run_synth_common {entity_name label} {
-    global rpt_file, run_dir
+    global rpt_file run_dir
     
     elaborate $entity_name -architecture arch -library WORK
     
@@ -177,23 +177,33 @@ proc run_synth_common {entity_name label} {
    # =============================== 
 }
 
+#----------------------------------------------------------------------------------------------#
+#--------------------------------- CHOOSE DESIGNS     -----------------------------------------#
+#----------------------------------------------------------------------------------------------#
+
 # Task 1: Baseline FPAdd
 puts "--- Task 1: FPAdd ---"
 remove_design -all
 analyze -library WORK -format vhdl {../rtl/src/FPAdd_Kin_f1_origin.vhdl}
 run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd"
 
-# # # Task 2: Baseline FPMult
-# puts "--- Task 2: FPMult ---"
-# remove_design -all
-# analyze -library WORK -format vhdl {../rtl/src/FPMult_frequency=1_target=Kintex7_wE=8_wF=23_FPMult.vhdl}
-# run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
+# # Task 2: Baseline FPMult
+puts "--- Task 2: FPMult ---"
+remove_design -all
+analyze -library WORK -format vhdl {../rtl/src/FPMult_Kin_f1_origin.vhdl}
+run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
 
-# # # Task 3: Baseline FPMult
-# puts "--- Task 3: FPMult ---"
-# remove_design -all
-# analyze -library WORK -format vhdl {../rtl/src/FPMult_frequency=1_target=Kintex7_wE=8_wF=23_FPMult.vhdl}
-# run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
+# # Task 3: Baseline FPDiv
+puts "--- Task 3: FPDiv ---"
+remove_design -all
+analyze -library WORK -format vhdl {../rtl/src/FPDiv_Kin_f1_origin.vhdl}
+run_synth_common "FPDiv_8_23_Freq1_uid2" "FPDiv"
+
+# # Task 4: Baseline FPDiv
+puts "--- Task 4: FPSqrt ---"
+remove_design -all
+analyze -library WORK -format vhdl {../rtl/src/FPSqrt_Kin_f1_origin.vhdl}
+run_synth_common "FPSqrt_8_23" "FPSqrt"
 
 # # Task 5: Shared FPAddMul
 # puts "--- Task 5: Shared ---"
@@ -206,7 +216,7 @@ run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd"
 # run_synth_common "FPAddMul_Shared" "FPAddMul_Shared"
 
 # # Task 4: Mux34
-# puts "--- Task 4: Mux34 ---"
+# puts "--- Task 6: Mux34 ---"
 # remove_design -all
 # # Use absolute path to stay safe
 # analyze -library WORK -format vhdl "/fs1/eecg/janders/iderikut/dev/research/flopoco_synth/synopsysDC/src_shared/Mux34.vhdl"

@@ -19,7 +19,7 @@ srcに入ったvhdlをsynthする仕組み
 ### FPMult_Kin_f1_origin
 
 
-### FPMult_Kin_f1_origin
+### FPDiv_Kin_f1_origin
 
 
 ### FPMult_Kin_f1_origin
