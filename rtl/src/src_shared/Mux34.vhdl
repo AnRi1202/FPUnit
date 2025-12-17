@@ -12,7 +12,7 @@ entity Mux34 is
     );
 end entity;
 
-architecture rtl of Mux34 is
+architecture arch of Mux34 is
 begin
     Y <= A when sel = '0' else B;
 end architecture;
