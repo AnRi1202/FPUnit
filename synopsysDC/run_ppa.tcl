@@ -79,7 +79,7 @@ proc run_synth_common {entity_name label} {
 
     set_max_delay 1000 -from [all_inputs] -to [all_outputs]
     # Compile
-    compile_ultra -no_autoungroup -no_boundary_optimization
+    compile_ultra -no_autoungroup  -no_boundary_optimization
     
 
 
@@ -90,6 +90,7 @@ proc run_synth_common {entity_name label} {
     set rpt_area "$rpt_dir/${label}_area.rpt"
     set rpt_pwr "$rpt_dir/${label}_power.rpt"
     set rpt_time "$rpt_dir/${label}_timing.rpt"
+    set rpt_ref "$rpt_dir/${label}_reference.rpt"
 
     #--------------------
     # Report QoR:
@@ -123,6 +124,7 @@ proc run_synth_common {entity_name label} {
     report_area -hierarchy > $rpt_area
     report_power > $rpt_pwr
     report_timing > $rpt_time
+    report_reference > $rpt_ref
 
 
    # ==============================
@@ -184,53 +186,68 @@ proc run_synth_common {entity_name label} {
 
 set rtl_dir "../rtl/src"
 
-# Task 1: Baseline FPAdd
-puts "--- Task 1: FPAdd ---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd"
+# # Task 1: Baseline FPAdd
+# puts "--- Task 1: FPAdd ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
+# run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd"
 
-# # Task 2: Baseline FPMult
-puts "--- Task 2: FPMult ---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
+# # # Task 2: Baseline FPMult
+# puts "--- Task 2: FPMult ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
+# run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
 
-# # Task 3: Baseline FPDiv
-puts "--- Task 3: FPDiv ---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-run_synth_common "FPDiv_8_23_Freq1_uid2" "FPDiv"
+# # # Task 3: Baseline FPDiv
+# puts "--- Task 3: FPDiv ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
+# run_synth_common "FPDiv_8_23_Freq1_uid2" "FPDiv"
 
-# # Task 4: Baseline FPSqrt
-puts "--- Task 4: FPSqrt ---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
-run_synth_common "FPSqrt_8_23" "FPSqrt"
+# # # Task 4: Baseline FPSqrt
+# puts "--- Task 4: FPSqrt ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
+# run_synth_common "FPSqrt_8_23" "FPSqrt"
 
+# # Task 5: Shared FPAddMul
+# puts "--- Task 5: Shared ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAdd_NoRA.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPMult_NoRA.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAddMul_Shared.vhdl"
+# run_synth_common "FPAddMul_Shared" "FPAddMul_Shared"
+
+# # Task 6: Mux34
+# puts "--- Task 6: Mux34 ---"
+# remove_design -all
+# # Use absolute path to stay safe
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/Mux34.vhdl"
+# run_synth_common "Mux34" "SHARE"
+
+
+# # # Task 7: Baseline FPFMA
+# puts "--- Task 4: FPFMA ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPFMA_Kin_f1_origin.vhdl"
+# run_synth_common "IEEEFPFMA_8_23_Freq1_uid2" "FPFMA"
 # Task 5: Shared FPAddMul
-puts "--- Task 5: Shared ---"
+
+puts "--- Task 8: Shared ---"
 remove_design -all
 analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
 analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
+analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
+analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
+
 analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAdd_NoRA.vhdl"
 analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPMult_NoRA.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAddMul_Shared.vhdl"
-run_synth_common "FPAddMul_Shared" "FPAddMul_Shared"
+analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPDiv_NoRA.vhdl"
+analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPSqrt_NoRA.vhdl"
 
-# Task 6: Mux34
-puts "--- Task 6: Mux34 ---"
-remove_design -all
-# Use absolute path to stay safe
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/Mux34.vhdl"
-run_synth_common "Mux34" "SHARE"
-
-
-# # Task 7: Baseline FPFMA
-puts "--- Task 4: FPFMA ---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPFMA_Kin_f1_origin.vhdl"
-run_synth_common "IEEEFPFMA_8_23_Freq1_uid2" "FPFMA"
-
-exit
+analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPALL_Shared.vhdl"
+run_synth_common "FPALL_Shared" "FPALL_Shared"
+# exit
 

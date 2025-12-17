@@ -25,7 +25,11 @@ architecture arch of FPALL_Shared is
             R : out  std_logic_vector(33 downto 0);
             expFrac_out : out std_logic_vector(33 downto 0);
             round_out : out std_logic;
-            RoundedExpFrac_in : in std_logic_vector(33 downto 0)
+            RoundedExpFrac_in : in std_logic_vector(33 downto 0);
+            fracAdder_X_out : out std_logic_vector(26 downto 0);
+            fracAdder_Y_out : out std_logic_vector(26 downto 0);
+            fracAdder_Cin_out : out std_logic;
+            fracAdder_R_in : in std_logic_vector(26 downto 0)
         );
     end component;
 
@@ -37,7 +41,11 @@ architecture arch of FPALL_Shared is
             R : out  std_logic_vector(33 downto 0);
             expSig_out : out std_logic_vector(32 downto 0);
             round_out : out std_logic;
-            expSigPostRound_in : in std_logic_vector(32 downto 0)
+            expSigPostRound_in : in std_logic_vector(32 downto 0);
+            expAdder_X_out : out std_logic_vector(26 downto 0);
+            expAdder_Y_out : out std_logic_vector(26 downto 0);
+            expAdder_Cin_out : out std_logic;
+            expAdder_R_in : in std_logic_vector(26 downto 0)
         );
     end component;
 
@@ -71,6 +79,14 @@ architecture arch of FPALL_Shared is
               Cin : in  std_logic;
               R : out  std_logic_vector(33 downto 0)   );
     end component;
+    
+    component IntAdder_27_Freq1_uid6 is
+       port ( clk : in std_logic;
+              X : in  std_logic_vector(26 downto 0);
+              Y : in  std_logic_vector(26 downto 0);
+              Cin : in  std_logic;
+              R : out  std_logic_vector(26 downto 0)   );
+    end component;
 
     -- Add signals
     signal add_R : std_logic_vector(33 downto 0);
@@ -100,6 +116,22 @@ architecture arch of FPALL_Shared is
     signal ra_X : std_logic_vector(33 downto 0);
     signal ra_Cin : std_logic;
     signal ra_R : std_logic_vector(33 downto 0);
+    
+    -- Shared IntAdder_27 signals
+    signal add_fracAdder_X : std_logic_vector(26 downto 0);
+    signal add_fracAdder_Y : std_logic_vector(26 downto 0);
+    signal add_fracAdder_Cin : std_logic;
+    signal add_fracAdder_R : std_logic_vector(26 downto 0);
+    
+    signal mul_expAdder_X : std_logic_vector(26 downto 0);
+    signal mul_expAdder_Y : std_logic_vector(26 downto 0);
+    signal mul_expAdder_Cin : std_logic;
+    signal mul_expAdder_R : std_logic_vector(26 downto 0);
+    
+    signal ia27_X : std_logic_vector(26 downto 0);
+    signal ia27_Y : std_logic_vector(26 downto 0);
+    signal ia27_Cin : std_logic;
+    signal ia27_R : std_logic_vector(26 downto 0);
 
 begin
 
@@ -112,7 +144,11 @@ begin
         R => add_R,
         expFrac_out => add_expFrac,
         round_out => add_round,
-        RoundedExpFrac_in => add_ResultBack
+        RoundedExpFrac_in => add_ResultBack,
+        fracAdder_X_out => add_fracAdder_X,
+        fracAdder_Y_out => add_fracAdder_Y,
+        fracAdder_Cin_out => add_fracAdder_Cin,
+        fracAdder_R_in => add_fracAdder_R
     );
 
     -- Instantiate FPMult (No RA)
@@ -124,7 +160,11 @@ begin
         R => mul_R,
         expSig_out => mul_expSig,
         round_out => mul_round,
-        expSigPostRound_in => mul_ResultBack
+        expSigPostRound_in => mul_ResultBack,
+        expAdder_X_out => mul_expAdder_X,
+        expAdder_Y_out => mul_expAdder_Y,
+        expAdder_Cin_out => mul_expAdder_Cin,
+        expAdder_R_in => mul_expAdder_R
     );
 
     -- Instantiate FPSqrt (No RA)
@@ -161,6 +201,31 @@ begin
               mul_round when opcode="01" else
               sqrt_round when opcode="10" else
               div_round;
+    
+    -- Multiplex inputs to Shared IntAdder_27
+    -- opcode: 00=Add (fracAdder), 01=Mul (expAdder), others unused
+    ia27_X <= add_fracAdder_X when opcode="00" else
+              mul_expAdder_X; -- when opcode="01"
+    
+    ia27_Y <= add_fracAdder_Y when opcode="00" else
+              mul_expAdder_Y; -- when opcode="01"
+    
+    ia27_Cin <= add_fracAdder_Cin when opcode="00" else
+                mul_expAdder_Cin; -- when opcode="01"
+    
+    -- Shared IntAdder_27 for Add frac addition and Mult exp addition
+    U_SHARED_IA27: IntAdder_27_Freq1_uid6
+    port map (
+        clk => clk,
+        X => ia27_X,
+        Y => ia27_Y,
+        Cin => ia27_Cin,
+        R => ia27_R
+    );
+    
+    -- Route IntAdder_27 outputs back
+    add_fracAdder_R <= ia27_R;
+    mul_expAdder_R <= ia27_R;
     
     -- Shared Rounding Adder (34 bits)
     U_SHARED_RA: IntAdder_34_Freq1_uid11
