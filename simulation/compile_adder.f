@@ -2,10 +2,10 @@
 // VHDL files in dependency order
 
 // FPAdd source file (from flopoco folder)
-../../flopoco/FPAdd_FPMult_frequency=200_wE=8_wF=23_FPAdd.vhdl
+../rtl/src/FPAdd_Kin_f1_origin.vhdl
 
 // Testbench
-../verilog/tb/tb_fpadd_kintex.vhd
+../rtl/tb/tb_fpadd_kintex.vhd
 
 
 
