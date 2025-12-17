@@ -1,19 +1,35 @@
+
+--------------------------------------------------------------------------------
+--                           FPAdd_8_23_Freq1_uid2
+-- VHDL generated for Kintex7 @ 1MHz
+-- This operator is part of the Infinite Virtual Library FloPoCoLib
+-- All rights reserved 
+-- Authors: Florent de Dinechin, Bogdan Pasca (2010-2017)
+--------------------------------------------------------------------------------
+-- Pipeline depth: 0 cycles
+-- Clock period (ns): 1000
+-- Target frequency (MHz): 1
+-- Input signals: X Y
+-- Output signals: R
+--  approx. input signal timings: X: (c0, 0.000000ns)Y: (c0, 0.000000ns)
+--  approx. output signal timings: R: (c0, 16.604000ns)
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+library std;
+use std.textio.all;
 library work;
 
 entity FPAdd_NoRA is
     port (clk : in std_logic;
           X : in  std_logic_vector(8+23+2 downto 0);
           Y : in  std_logic_vector(8+23+2 downto 0);
-                    R : out  std_logic_vector(8+23+2 downto 0);
-          -- Added ports for shared RA
-          expFrac_out : out std_logic_vector(33 downto 0);
-          needToRound_out : out std_logic;
-          RoundedExpFrac_in : in std_logic_vector(33 downto 0)
-          );
+          R : out  std_logic_vector(8+23+2 downto 0);
+          round_out : out std_logic;
+          expFrac_out: out std_logic_vector(33 downto 0);
+          RoundExpFrac_in : in std_logic_vector(33 downto 0)); -- 再び入れるという不気味な形ではあるが、combinationalなので
 end entity;
 
 architecture arch of FPAdd_NoRA is
@@ -40,13 +56,13 @@ architecture arch of FPAdd_NoRA is
              R : out  std_logic_vector(27 downto 0)   );
    end component;
 
-   component IntAdder_34_Freq1_uid11 is
-      port ( clk : in std_logic;
-             X : in  std_logic_vector(33 downto 0);
-             Y : in  std_logic_vector(33 downto 0);
-             Cin : in  std_logic;
-             R : out  std_logic_vector(33 downto 0)   );
-   end component;
+   -- component IntAdder_34_Freq1_uid11 is
+   --    port ( clk : in std_logic;
+   --           X : in  std_logic_vector(33 downto 0);
+   --           Y : in  std_logic_vector(33 downto 0);
+   --           Cin : in  std_logic;
+   --           R : out  std_logic_vector(33 downto 0)   );
+   -- end component;
 
 signal excExpFracX :  std_logic_vector(32 downto 0);
    -- timing of excExpFracX: (c0, 0.000000ns)
@@ -126,8 +142,8 @@ signal rnd :  std_logic;
    -- timing of rnd: (c0, 13.583000ns)
 signal lsb :  std_logic;
    -- timing of lsb: (c0, 13.583000ns)
-signal needToRound :  std_logic;
-   -- timing of needToRound: (c0, 14.126000ns)
+signal round :  std_logic;
+   -- timing of round: (c0, 14.126000ns)
 signal RoundedExpFrac :  std_logic_vector(33 downto 0);
    -- timing of RoundedExpFrac: (c0, 15.518000ns)
 signal upExc :  std_logic_vector(1 downto 0);
@@ -149,7 +165,7 @@ signal computedR :  std_logic_vector(33 downto 0);
 begin
    excExpFracX <= X(33 downto 32) & X(30 downto 0);
    excExpFracY <= Y(33 downto 32) & Y(30 downto 0);
-   swap <= '1' when excExpFracX < excExpFracY else '0';
+   swap <= '1' when excExpFracX < excExpFracY else '0'; -- x is lager then y
    -- exponent difference
    eXmeY <= (X(30 downto 23)) - (Y(30 downto 23));
    eYmeX <= (Y(30 downto 23)) - (X(30 downto 23));
@@ -159,13 +175,13 @@ begin
    newY <= Y when swap = '0' else X;
    -- now we decompose the inputs into their sign, exponent, fraction
    expX<= newX(30 downto 23);
-   excX<= newX(33 downto 32);
+   excX<= newX(33 downto 32); -- normal などの表示
    excY<= newY(33 downto 32);
    signX<= newX(31);
    signY<= newY(31);
    EffSub <= signX xor signY;
    sXsYExnXY <= signX & signY & excX & excY;
-   sdExnXY <= excX & excY;
+   sdExnXY <= excX & excY; -- not used
    fracY <= "000000000000000000000000" when excY="00" else ('1' & newY(22 downto 0));
    -- Exception management logic
    with sXsYExnXY  select  
@@ -178,52 +194,56 @@ begin
    shiftVal <= expDiff(4 downto 0) when shiftedOut='0' else CONV_STD_LOGIC_VECTOR(26,5);
    RightShifterComponent: RightShifterSticky24_by_max_26_Freq1_uid4
       port map ( clk  => clk,
-                 S => shiftVal,
-                 X => fracY,
-                 R => shiftedFracY,
-                 Sticky => sticky);
-   fracYpad <= "0" & shiftedFracY;
-   EffSubVector <= (26 downto 0 => EffSub);
-   fracYpadXorOp <= fracYpad xor EffSubVector;
-   fracXpad <= "01" & (newX(22 downto 0)) & "00";
+                 S => shiftVal, -- in
+                 X => fracY, --in 
+                 R => shiftedFracY, -- out
+                 Sticky => sticky); -- out shiftoutがどれか一つでも1なら1かな
+   fracYpad <= "0" & shiftedFracY; -- 27bit
+   EffSubVector <= (26 downto 0 => EffSub); -- maskの役割
+   fracYpadXorOp <= fracYpad xor EffSubVector; --27bit
+   fracXpad <= "01" & (newX(22 downto 0)) & "00"; --27bit
    cInSigAdd <= EffSub and not sticky; -- if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
    fracAdder: IntAdder_27_Freq1_uid6
       port map ( clk  => clk,
-                 Cin => cInSigAdd,
+                 Cin => cInSigAdd, -- X- Y でYにstickyが存在しない時だけ、補数として1を足す
                  X => fracXpad,
                  Y => fracYpadXorOp,
                  R => fracAddResult);
-   fracSticky<= fracAddResult & sticky; 
-   LZCAndShifter: Normalizer_Z_28_28_28_Freq1_uid8
+   fracSticky<= fracAddResult & sticky; -- stickyありの計算結果
+   LZCAndShifter: Normalizer_Z_28_28_28_Freq1_uid8 --オーバーフローを考えて28桁なってる
       port map ( clk  => clk,
                  X => fracSticky,
-                 Count => nZerosNew,
-                 R => shiftedFrac);
-   extendedExpInc<= ("0" & expX) + '1';
-   updatedExp <= ("0" &extendedExpInc) - ("00000" & nZerosNew);
-   eqdiffsign <= '1' when nZerosNew="11111" else '0';
-   expFrac<= updatedExp & shiftedFrac(26 downto 3);
-   stk<= shiftedFrac(2) or shiftedFrac(1) or shiftedFrac(0);
+                 Count => nZerosNew, -- 先頭の0の数　maxで5桁
+                 R => shiftedFrac); -- 1.　。。。の形をしている -28桁
+   extendedExpInc<= ("0" & expX) + '1'; -- 28桁でやってる分1をプラスしてる
+   updatedExp <= ("0" &extendedExpInc) - ("00000" & nZerosNew); -- 5桁だったので、8と+2で10. 11. . .って時は1になろうようにして、減らす量を調整してる
+   -- updatedExpが最終的なexp.あとは丸め誤差用
+   eqdiffsign <= '1' when nZerosNew="11111" else '0'; --完全に0になったパターン
+   expFrac<= updatedExp & shiftedFrac(26 downto 3); -- 
+   stk<= shiftedFrac(2) or shiftedFrac(1) or shiftedFrac(0); 
    rnd<= shiftedFrac(3);
    lsb<= shiftedFrac(4);
-   needToRound<= '1' when (rnd='1' and stk='1') or (rnd='1' and stk='0' and lsb='1')
+   round<= '1' when (rnd='1' and stk='1') or (rnd='1' and stk='0' and lsb='1')
   else '0';
---    roundingAdder: IntAdder_34_Freq1_uid11
---       port map ( clk  => clk,
---                  Cin => needToRound,
---                  X => expFrac,
---                  Y => "0000000000000000000000000000000000",
---                  R => RoundedExpFrac);
+   -- roundingAdder: IntAdder_34_Freq1_uid11
+   --    port map ( clk  => clk,
+   --               Cin => round,
+   --               X => expFrac,
+   --               Y => "0000000000000000000000000000000000",
+   --               R => RoundedExpFrac);
    -- possible update to exception bits
---    upExc <= RoundedExpFrac(33 downto 32);
-   -- Bypass assignments
-   expFrac_out <= expFrac;
-   needToRound_out <= needToRound;
-   RoundedExpFrac <= RoundedExpFrac_in;
-   fracR <= RoundedExpFrac(23 downto 1);
-   expR <= RoundedExpFrac(31 downto 24);
+   expFrac_out <=expFrac;
+   round_out <= round;
+
+   -- ここまでで一回外にでて、また外から戻ってくる
+   RoundExpFrac <= RoundExpFrac_in;
+   upExc <= RoundedExpFrac(33 downto 32); -- overflowで01, underflowで11になる
+   fracR <= RoundedExpFrac(23 downto 1); --23bit
+   expR <= RoundedExpFrac(31 downto 24); --8bit
    exExpExc <= upExc & excRt;
    with exExpExc  select  
+   -- upExc は00で正常。 01でover, 11でunder
+   -- excRtは00がzero, 01が正常、10が無限(overflow), 11がNan
    excRt2<= "00" when "0000"|"0100"|"1000"|"1100"|"1001"|"1101",
       "01" when "0001",
       "10" when "0010"|"0110"|"1010"|"1110"|"0101",

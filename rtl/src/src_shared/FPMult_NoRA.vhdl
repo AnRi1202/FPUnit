@@ -2,21 +2,29 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+library std;
+use std.textio.all;
+library work;
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+library std;
+use std.textio.all;
 library work;
 
 entity FPMult_NoRA is
     port (clk : in std_logic;
           X : in  std_logic_vector(8+23+2 downto 0);
           Y : in  std_logic_vector(8+23+2 downto 0);
-                    R : out  std_logic_vector(8+23+2 downto 0);
-          -- Added ports for shared RA
-          expSig_out : out std_logic_vector(32 downto 0);
+          R : out  std_logic_vector(8+23+2 downto 0);
           round_out : out std_logic;
-          expSigPostRound_in : in std_logic_vector(32 downto 0)
-          );
+          expSig_out : out std_logic_vector(32 downto 0);
+          expSigPostRound_in : in std_logic_vector(32 downto 0) );
 end entity;
 
-architecture arch of FPMult_NoRA is
+architecture arch of FPMult_NoRA is 
    component IntMultiplier_24x24_48_Freq1_uid5 is
       port ( clk : in std_logic;
              X : in  std_logic_vector(23 downto 0);
@@ -24,13 +32,13 @@ architecture arch of FPMult_NoRA is
              R : out  std_logic_vector(47 downto 0)   );
    end component;
 
-   component IntAdder_33_Freq1_uid280 is
-      port ( clk : in std_logic;
-             X : in  std_logic_vector(32 downto 0);
-             Y : in  std_logic_vector(32 downto 0);
-             Cin : in  std_logic;
-             R : out  std_logic_vector(32 downto 0)   );
-   end component;
+   -- component IntAdder_33_Freq1_uid280 is
+   --    port ( clk : in std_logic;
+   --           X : in  std_logic_vector(32 downto 0);
+   --           Y : in  std_logic_vector(32 downto 0);
+   --           Cin : in  std_logic;
+   --           R : out  std_logic_vector(32 downto 0)   );
+   -- end component;
 
 signal sign :  std_logic;
    -- timing of sign: (c0, 0.043000ns)
@@ -87,29 +95,32 @@ begin
       port map ( clk  => clk,
                  X => sigX,
                  Y => sigY,
-                 R => sigProd);
+                 R => sigProd); -- 48bit
    excSel <= X(33 downto 32) & Y(33 downto 32);
    with excSel  select  
    exc <= "00" when  "0000" | "0001" | "0100", 
           "01" when "0101",
           "10" when "0110" | "1001" | "1010" ,
           "11" when others;
-   norm <= sigProd(47);
+   norm <= sigProd(47); -- 最大桁
    -- exponent update
-   expPostNorm <= expSum + ("000000000" & norm);
+   expPostNorm <= expSum + ("000000000" & norm); -- 最上位が1ならexpを1つ挙げる. [1,2)同士の掛け算は[2,4), 11ならnormが1になるからexpを上げる
    -- significand normalization shift
    sigProdExt <= sigProd(46 downto 0) & "0" when norm='1' else
-                         sigProd(45 downto 0) & "00";
+                         sigProd(45 downto 0) & "00"; --normが0なら01. . ってつづくから1でカットしていい
    expSig <= expPostNorm & sigProdExt(47 downto 25);
-   sticky <= sigProdExt(24);
+   sticky <= sigProdExt(24); -- addとは意味が違う sticky, guardの順番(addはguard, stickyだった)
    guard <= '0' when sigProdExt(23 downto 0)="000000000000000000000000" else '1';
    round <= sticky and ( (guard and not(sigProdExt(25))) or (sigProdExt(25) ))  ;
---    RoundingAdder: IntAdder_33_Freq1_uid280
---       port map ( clk  => clk,
---                  Cin => round,
---                  X => expSig,
---                  Y => "000000000000000000000000000000000",
---                  R => expSigPostRound);
+   -- RoundingAdder: IntAdder_33_Freq1_uid280
+   --    port map ( clk  => clk,
+   --               Cin => round,
+   --               X => expSig,
+   --               Y => "000000000000000000000000000000000",
+   --               R => expSigPostRound);
+   round_out <= round;
+   expSig_out <= expSig;
+   expSigPostRound <= expSigPostRound_in;
    with expSigPostRound(32 downto 31)  select 
    excPostNorm <=  "01"  when  "00",
                                "10"             when "01", 
@@ -118,10 +129,6 @@ begin
    with exc  select  
    finalExc <= exc when  "11"|"10"|"00",
                        excPostNorm when others; 
---    R <= finalExc & sign & expSigPostRound(30 downto 0);
-   -- Bypass assignments
-   expSig_out <= expSig;
-   round_out <= round;
-   expSigPostRound <= expSigPostRound_in;
+   R <= finalExc & sign & expSigPostRound(30 downto 0);
 end architecture;
 

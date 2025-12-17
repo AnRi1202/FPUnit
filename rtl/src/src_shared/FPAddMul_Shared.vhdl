@@ -5,6 +5,27 @@ use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 library work;
 
+--- new 
+
+entity IntAdder_34_Freq1_uid11 is
+    port (clk : in std_logic;
+          X : in  std_logic_vector(33 downto 0);
+          Y : in  std_logic_vector(33 downto 0);
+          Cin : in  std_logic;
+          R : out  std_logic_vector(33 downto 0)   );
+end entity;
+
+architecture arch of IntAdder_34_Freq1_uid11 is
+signal Rtmp :  std_logic_vector(33 downto 0);
+   -- timing of Rtmp: (c0, 15.518000ns)
+begin
+   Rtmp <= X + Y + Cin;
+   R <= Rtmp;
+end architecture;
+
+
+
+
 entity FPAddMul_Shared is
     port (
         clk : in std_logic;
@@ -17,6 +38,8 @@ end entity;
 
 architecture arch of FPAddMul_Shared is
 
+
+    --- addの引用
     component FPAdd_NoRA is
         port (
             clk : in std_logic;
@@ -24,7 +47,7 @@ architecture arch of FPAddMul_Shared is
             Y : in  std_logic_vector(33 downto 0);
             R : out  std_logic_vector(33 downto 0);
             expFrac_out : out std_logic_vector(33 downto 0);
-            needToRound_out : out std_logic;
+            round_out : out std_logic;
             RoundedExpFrac_in : in std_logic_vector(33 downto 0)
         );
     end component;
@@ -34,10 +57,8 @@ architecture arch of FPAddMul_Shared is
             clk : in std_logic;
             X : in  std_logic_vector(33 downto 0);
             Y : in  std_logic_vector(33 downto 0);
-            R : out  std_logic_vector(33 downto 0);
             expSig_out : out std_logic_vector(32 downto 0);
-            round_out : out std_logic;
-            expSigPostRound_in : in std_logic_vector(32 downto 0)
+            round_out : out std_logic
         );
     end component;
     
@@ -53,7 +74,7 @@ architecture arch of FPAddMul_Shared is
     
     -- Add signals
     signal add_expFrac : std_logic_vector(33 downto 0);
-    signal add_needToRound : std_logic;
+    signal add_round : std_logic;
     signal add_ResultBack : std_logic_vector(33 downto 0);
     
     -- Mul signals
@@ -74,9 +95,9 @@ begin
         clk => clk,
         X => X,
         Y => Y,
-        R => add_R,
-        expFrac_out => add_expFrac,
-        needToRound_out => add_needToRound,
+        R => add_R, --result
+        expFrac_out => add_expFrac, -- 出し入れされる
+        round_out => add_round,
         RoundedExpFrac_in => add_ResultBack
     );
 
@@ -93,7 +114,7 @@ begin
     );
     
     -- Multiplex inputs to Shared Rounding Adder
-    -- If opcode=0 (Add): X=add_expFrac, Cin=add_needToRound
+    -- If opcode=0 (Add): X=add_expFrac, Cin=add_round
     -- If opcode=1 (Mul): X=pad(mul_expSig), Cin=mul_round
     -- Note: FPMult 33 bit adder inputs were: X=expSig, Y=0.
     -- We map expSig to lower 33 bits? 
@@ -101,7 +122,7 @@ begin
     -- We use 34 bit adder. X = "0" & mul_expSig?
     
     ra_X <= add_expFrac when opcode='0' else ('0' & mul_expSig);
-    ra_Cin <= add_needToRound when opcode='0' else mul_round;
+    ra_Cin <= add_round when opcode='0' else mul_round;
     
     -- Shared Rounding Adder (34 bits)
     U_SHARED_RA: IntAdder_34_Freq1_uid11
@@ -125,6 +146,6 @@ begin
     mul_ResultBack <= ra_R(32 downto 0);
     
     -- Final Output Mux
-    R <= add_R when opcode='0' else mul_R;
+    R <= add_R when opcode='0' else mul_R; -- ここもmux
 
 end architecture;
