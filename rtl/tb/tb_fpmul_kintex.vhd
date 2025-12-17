@@ -1,161 +1,164 @@
+--------------------------------------------------------------------------------
+-- Testbench for FPMult_8_23_uid2_Freq1_uid3 (FPMult_Kin_f1_origin.vhdl)
+--------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity tb_fpmul_kintex is
-end entity;
+end tb_fpmul_kintex;
 
-architecture sim of tb_fpmul_kintex is
+architecture behavior of tb_fpmul_kintex is
 
-  signal clk : std_logic := '0';
-  signal rst : std_logic := '1';
-  signal X, Y : std_logic_vector(33 downto 0);  -- 8+23+2 = 33 bits
-  signal R   : std_logic_vector(33 downto 0);
+    -- Component Declaration for the Unit Under Test (UUT)
+    -- This matches the entity in research/flopoco_synth/rtl/src/FPMult_Kin_f1_origin.vhdl
+    component FPMult_8_23_uid2_Freq1_uid3
+    port(
+         clk : in  std_logic;
+         X : in  std_logic_vector(33 downto 0);
+         Y : in  std_logic_vector(33 downto 0);
+         R : out  std_logic_vector(33 downto 0)
+        );
+    end component;
+    
+    -- Input signals
+    signal clk : std_logic := '0';
+    signal X   : std_logic_vector(33 downto 0) := (others => '0');
+    signal Y   : std_logic_vector(33 downto 0) := (others => '0');
 
-  constant CLK_PERIOD : time := 5 ns; -- 200MHz
+    -- Output signals
+    signal R   : std_logic_vector(33 downto 0);
 
-  -- Helper function to create FP32 from components
-  -- Format: [33:32] EXC, [31] SIGN, [30:23] EXP, [22:0] FRAC
-  function to_fp32(exc : std_logic_vector(1 downto 0);
-                   sign : std_logic;
-                   exp : std_logic_vector(7 downto 0);
-                   frac : std_logic_vector(22 downto 0))
-    return std_logic_vector is
-  begin
-    return exc & sign & exp & frac;
-  end function;
-
-  -- Test case record
-  type test_case_t is record
-    x_val  : std_logic_vector(33 downto 0);
-    y_val  : std_logic_vector(33 downto 0);
-    name   : string(1 to 50);
-  end record;
-
-  type test_array_t is array (natural range <>) of test_case_t;
-
-  constant test_cases : test_array_t := (
-    -- Test 1: 2.0 * 3.0 = 6.0
-    (to_fp32("01", '0', "10000000", "00000000000000000000000"), -- 2.0
-     to_fp32("01", '0', "10000001", "10000000000000000000000"), -- 3.0
-     "MUL: 2.0 * 3.0 = 6.0                            "),
-    -- Test 2: 1.0 * 1.0 = 1.0
-    (to_fp32("01", '0', "01111111", "00000000000000000000000"), -- 1.0
-     to_fp32("01", '0', "01111111", "00000000000000000000000"), -- 1.0
-     "MUL: 1.0 * 1.0 = 1.0                            "),
-    -- Test 3: 0.5 * 4.0 = 2.0
-    (to_fp32("01", '0', "01111110", "00000000000000000000000"), -- 0.5
-     to_fp32("01", '0', "10000010", "00000000000000000000000"), -- 4.0
-     "MUL: 0.5 * 4.0 = 2.0                            "),
-    -- Test 4: -2.0 * 3.0 = -6.0
-    (to_fp32("01", '1', "10000000", "00000000000000000000000"), -- -2.0
-     to_fp32("01", '0', "10000001", "10000000000000000000000"), -- 3.0
-     "MUL: -2.0 * 3.0 = -6.0                          "),
-    -- Test 5: 1.5 * 2.0 = 3.0
-    (to_fp32("01", '0', "01111111", "10000000000000000000000"), -- 1.5
-     to_fp32("01", '0', "10000000", "00000000000000000000000"), -- 2.0
-     "MUL: 1.5 * 2.0 = 3.0                            "),
-    -- Test 6: 5.0 * 4.0 = 20.0
-    (to_fp32("01", '0', "10000001", "01000000000000000000000"), -- 5.0
-     to_fp32("01", '0', "10000010", "00000000000000000000000"), -- 4.0
-     "MUL: 5.0 * 4.0 = 20.0                           ")
-  );
-
-  signal test_index : integer := 0;
-  signal tests_running : std_logic := '0';
+    -- Clock period definition
+    constant clk_period : time := 10 ns;
 
 begin
+ 
+    -- Instantiate the Unit Under Test (UUT)
+    uut: FPMult_8_23_uid2_Freq1_uid3 PORT MAP (
+          clk => clk,
+          X => X,
+          Y => Y,
+          R => R
+        );
 
-  -- Clock Generation
-  clk <= not clk after CLK_PERIOD / 2;
+    -- Clock process definitions
+    clk_process :process
+    begin
+        clk <= '0';
+        wait for clk_period/2;
+        clk <= '1';
+        wait for clk_period/2;
+    end process;
 
-  -- DUT
-  DUT : entity work.FPMult_8_23_uid2_Freq200_uid3
-    port map (
-      clk => clk,
-      X   => X,
-      Y   => Y,
-      R   => R
-    );
+    -- Stimulus process
+    stim_proc: process
+    begin		
+        -- hold reset/wait state
+        wait for 100 ns;	
+        wait for clk_period*10;
 
-  -- Test Stimulus
-  stim : process
-  begin
-    -- Reset
-    rst <= '1';
-    X <= (others => '0');
-    Y <= (others => '0');
-    wait for CLK_PERIOD * 2;
-    rst <= '0';
-    wait until rising_edge(clk);
+        ------------------------------------------------------------
+        -- Format: Exc(2) & Sign(1) & Exp(8) & Frac(23)
+        -- Exc: 00=Zero, 01=Normal, 10=Inf/OF, 11=NaN
+        -- Exp: Bias 127
+        ------------------------------------------------------------
 
-    report "========================================" severity note;
-    report "FPMult_8_23_uid2_Freq200_uid3 (Kintex7) Testbench Starting" severity note;
-    report "========================================" severity note;
+        -- Test Case 1: 1.0 * 1.0 = 1.0
+        -- 1.0 = +1.0 * 2^0
+        -- Sign=0, Exp=127 (0x7F), Frac=0, Exc=01
+        X <= "01" & "0" & x"7F" & "000000" & x"0000" & "0"; 
+        Y <= "01" & "0" & x"7F" & "000000" & x"0000" & "0"; 
+        wait for clk_period;
+        
+        -- Test Case 2: 2.0 * 1.0 = 2.0
+        -- 2.0 = +1.0 * 2^1 -> Exp=128 (0x80)
+        X <= "01" & "0" & x"80" & "000000" & x"0000" & "0"; -- 2.0
+        Y <= "01" & "0" & x"7F" & "000000" & x"0000" & "0"; -- 1.0
+        wait for clk_period;
 
-    tests_running <= '1';
+        -- Test Case 3: 3.0 * 2.0 = 6.0
+        -- 3.0 = 1.5 * 2^1 = (1 + 0.5) * 2^1 -> Exp=128, Frac=0.5 (1000...)
+        -- 2.0 = Exp=128 (0x80)
+        -- Result 6.0 = 1.5 * 2^2 = (1+0.5) * 2^2 -> Exp=129 (0x81), Frac=0.5
+        X <= "01" & "0" & x"80" & "100000" & x"0000" & "0"; -- 3.0
+        Y <= "01" & "0" & x"80" & "000000" & x"0000" & "0"; -- 2.0
+        wait for clk_period;
+        
+        -- Test Case 4: 1.0 * -1.0 = -1.0
+        X <= "01" & "0" & x"7F" & "000000" & x"0000" & "0"; -- 1.0
+        Y <= "01" & "1" & x"7F" & "000000" & x"0000" & "0"; -- -1.0
+        wait for clk_period;
 
-    -- Run test cases
-    for i in test_cases'range loop
-      test_index <= i;
-      X <= test_cases(i).x_val;
-      Y <= test_cases(i).y_val;
+        -- Test Case 5: Zero * 5.0 = 0.0
+        X <= "00" & "0" & x"00" & "000000" & x"0000" & "0"; -- 0.0
+        Y <= "01" & "0" & x"81" & "010000" & x"0000" & "0"; -- 5.0 (approx)
+        wait for clk_period;
 
-      report test_cases(i).name severity note;
-      report "  X = " & to_hstring(X) & 
-              " (EXC=" & to_hstring(X(33 downto 32)) & 
-              ", SIGN=" & std_logic'image(X(31)) & 
-              ", EXP=" & to_hstring(X(30 downto 23)) & 
-              ", FRAC=" & to_hstring(X(22 downto 0)) & ")" severity note;
-      report "  Y = " & to_hstring(Y) & 
-              " (EXC=" & to_hstring(Y(33 downto 32)) & 
-              ", SIGN=" & std_logic'image(Y(31)) & 
-              ", EXP=" & to_hstring(Y(30 downto 23)) & 
-              ", FRAC=" & to_hstring(Y(22 downto 0)) & ")" severity note;
+        -- Test Case 6: 1.5 * 0.5 = 0.75
+        -- 1.5 = 1.1 * 2^0 -> Exp=127, Frac=0.100...
+        -- 0.5 = 1.0 * 2^-1 -> Exp=126, Frac=0.000...
+        -- Result 0.75 = 1.1 * 2^-1 -> Exp=126, Frac=0.100...
+        X <= "01" & "0" & x"7F" & "100000" & x"0000" & "0"; -- 1.5
+        Y <= "01" & "0" & x"7E" & "000000" & x"0000" & "0"; -- 0.5
+        wait for clk_period;
 
-      wait until rising_edge(clk);
+        -- Let the simulation run for a bit
+        wait for clk_period * 10;
+        
+        -- Stop simulation
+        assert false report "End of Simulation" severity failure;
+        wait;
+    end process;
 
-      -- Wait for pipeline latency (MUL: ~2-3 cycles)
-      for j in 0 to 2 loop
-        wait until rising_edge(clk);
-      end loop;
-      
-      -- Display result
-      report "  Result: R = " & to_hstring(R) & 
-              " (EXC=" & to_hstring(R(33 downto 32)) & 
-              ", SIGN=" & std_logic'image(R(31)) & 
-              ", EXP=" & to_hstring(R(30 downto 23)) & 
-              ", FRAC=" & to_hstring(R(22 downto 0)) & ")" severity note;
-      report "" severity note;
-    end loop;
+    -- Monitor process to print results
+    monitor_proc: process(clk)
+        function to_hex_string(slv : std_logic_vector) return string is
+            variable hex_str : string(1 to (slv'length + 3) / 4);
+            variable digit : std_logic_vector(3 downto 0);
+            variable hex_char : character;
+            variable idx : integer;
+            variable padded_slv : std_logic_vector(((slv'length + 3) / 4) * 4 - 1 downto 0);
+        begin
+            padded_slv := (others => '0');
+            padded_slv(slv'length-1 downto 0) := slv;
+            idx := 1;
+            for i in padded_slv'length/4 - 1 downto 0 loop
+                digit := padded_slv(i*4+3 downto i*4);
+                case digit is
+                    when "0000" => hex_char := '0';
+                    when "0001" => hex_char := '1';
+                    when "0010" => hex_char := '2';
+                    when "0011" => hex_char := '3';
+                    when "0100" => hex_char := '4';
+                    when "0101" => hex_char := '5';
+                    when "0110" => hex_char := '6';
+                    when "0111" => hex_char := '7';
+                    when "1000" => hex_char := '8';
+                    when "1001" => hex_char := '9';
+                    when "1010" => hex_char := 'A';
+                    when "1011" => hex_char := 'B';
+                    when "1100" => hex_char := 'C';
+                    when "1101" => hex_char := 'D';
+                    when "1110" => hex_char := 'E';
+                    when "1111" => hex_char := 'F';
+                    when others => hex_char := 'X';
+                end case;
+                hex_str(idx) := hex_char;
+                idx := idx + 1;
+            end loop;
+            return hex_str;
+        end function;
+    begin
+        if rising_edge(clk) then
+             -- Wait a little for combinational logic to settle after input change (if inputs change on clk edges)
+            if X /= (X'range => '0') or Y /= (Y'range => '0') then
+                report "Time: " & time'image(now) & 
+                       " X=" & to_hex_string(X) & 
+                       " Y=" & to_hex_string(Y) & 
+                       " R=" & to_hex_string(R);
+            end if;
+        end if;
+    end process;
 
-    report "========================================" severity note;
-    report "All Tests Completed" severity note;
-    report "========================================" severity note;
-
-    -- Stop monitoring after tests complete
-    tests_running <= '0';
-    wait for CLK_PERIOD * 10;  -- Wait for pipeline to clear
-    
-    -- Finish simulation
-    report "Simulation finished - stopping" severity note;
-    assert false report "Simulation finished successfully" severity failure;
-  end process;
-
-  -- Monitor process (for debugging)
-  monitor : process(clk)
-  begin
-    if rising_edge(clk) and rst = '0' and tests_running = '1' then
-      report "Monitor: R = " & to_hstring(R) & 
-              " (EXC=" & to_hstring(R(33 downto 32)) & 
-              ", SIGN=" & std_logic'image(R(31)) & 
-              ", EXP=" & to_hstring(R(30 downto 23)) & 
-              ", FRAC=" & to_hstring(R(22 downto 0)) & ")" severity note;
-    end if;
-  end process;
-
-end architecture;
-
-
-
-
+end behavior;
