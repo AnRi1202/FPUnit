@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
---                                FPSqrt_8_23
+--                                FPSqrt_NoRA
 -- VHDL generated for Kintex7 @ 1MHz
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
 -- All rights reserved 
@@ -21,13 +21,17 @@ library std;
 use std.textio.all;
 library work;
 
-entity FPSqrt_8_23 is
+entity FPSqrt_NoRA is
     port (clk : in std_logic;
           X : in  std_logic_vector(8+23+2 downto 0);
-          R : out  std_logic_vector(8+23+2 downto 0)   );
+          R : out  std_logic_vector(8+23+2 downto 0);
+          round_out : out std_logic;
+          expFrac_out: out std_logic_vector(33 downto 0);
+          RoundedExpFrac_in : in std_logic_vector(33 downto 0)
+          );
 end entity;
 
-architecture arch of FPSqrt_8_23 is
+architecture arch of FPSqrt_NoRA is
 signal fracX :  std_logic_vector(22 downto 0);
    -- timing of fracX: (c0, 0.000000ns)
 signal eRn0 :  std_logic_vector(7 downto 0);
@@ -427,36 +431,29 @@ begin
    eRn0 <= "0" & X(30 downto 24); -- exponent 最上位切り捨てなので　/2をしている
    xsX <= X(33 downto 31); -- exception and sign
    eRn1 <= eRn0 + ("00" & (5 downto 0 => '1')) + X(23); --63のバイアスを足す。奇数の場合X(23)の場合はさらに1足して偶数にする
-   fracXnorm <= "1" & fracX & "000" when X(23) = '0' else --27bit 左詰めで1.11みたいな形
+   fracXnorm <= "1" & fracX & "000" when X(23) = '0' else
          "01" & fracX&"00"; -- pre-normalization　eRn1で奇数の場合は1つ桁を挙げたから0.1的な形になってる
-   S0 <= "01"; --2bit
+   S0 <= "01";
    T1 <= ("0111" + fracXnorm(26 downto 23)) & fracXnorm(22 downto 0);
    -- now implementing the recurrence 
    --  this is a binary non-restoring algorithm, see ASA book
    -- Step 2
    d1 <= not T1(26); --  bit of weight -1
-   T1s <= T1 & "0"; --27bit
-   T1s_h <= T1s(27 downto 22); --大きい部分6bit
-   T1s_l <= T1s(21 downto 0); -- 小さい部分
-   U1 <=  "0" & S0 & d1 & (not d1) & "1"; -- 6bit 
+   T1s <= T1 & "0";
+   T1s_h <= T1s(27 downto 22);
+   T1s_l <= T1s(21 downto 0);
+   U1 <=  "0" & S0 & d1 & (not d1) & "1"; 
    T3_h <=   T1s_h - U1 when d1='1'
-        else T1s_h + U1; -- dが0は前の結果Tがマイナスの時。だから次は足す
-   T2 <= T3_h(4 downto 0) & T1s_l; -- 絶対値の部分5bitがT2
+        else T1s_h + U1;
+   T2 <= T3_h(4 downto 0) & T1s_l;
    S1 <= S0 & d1; -- here -1 becomes 0 and 1 becomes 1
-
-
-
-   -- Snはn+2bit ----------------------------------------------------------
-   -- Unはn+5bit (一つ前のSnに対して+4されてる) -----------------------------------------------
-
-
    -- Step 3
-   d2 <= not T2(26); --  bit of weight -2　T2が負の時にd2は0 2つ上にも書いてる
-   T2s <= T2 & "0"; -- 28bit
-   T2s_h <= T2s(27 downto 21); --7bit
+   d2 <= not T2(26); --  bit of weight -2
+   T2s <= T2 & "0";
+   T2s_h <= T2s(27 downto 21);
    T2s_l <= T2s(20 downto 0);
-   U2 <=  "0" & S1 & d2 & (not d2) & "1";  --7bit
-   T4_h <=   T2s_h - U2 when d2='1' -- d2が+の場合
+   U2 <=  "0" & S1 & d2 & (not d2) & "1"; 
+   T4_h <=   T2s_h - U2 when d2='1'
         else T2s_h + U2;
    T3 <= T4_h(5 downto 0) & T2s_l;
    S2 <= S1 & d2; -- here -1 becomes 0 and 1 becomes 1
@@ -673,7 +670,17 @@ begin
    mR <= S23 & d25; -- result significand
    fR <= mR(23 downto 1);-- removing leading 1
    round <= mR(0); -- round bit
-   fRrnd <= fR + ((22 downto 1 => '0') & round); -- rounding sqrt never changes exponents 
+   -- fRrnd <= fR + ((22 downto 1 => '0') & round); -- rounding sqrt never changes exponents 
+   
+   -- Output to shared rounding adder
+   -- fR is 23 bits. We pad it to 34 bits.
+   expFrac_out <= "00000000000" & fR; 
+   round_out <= round;
+   
+   -- Input from shared rounding adder
+   -- It returns 34 bits, but we only used the lower bits appropriately.
+   fRrnd <= RoundedExpFrac_in(22 downto 0); 
+   
    Rn2 <= eRn1 & fRrnd;
    -- sign and exception processing
    with xsX  select 
@@ -684,4 +691,3 @@ begin
              "110"  when others; -- return NaN
    R <= xsR & Rn2; 
 end architecture;
-
