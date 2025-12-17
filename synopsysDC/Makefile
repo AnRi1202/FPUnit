@@ -1,4 +1,4 @@
-SCRIPT ?= synthesis.tcl
+SCRIPT ?= run_ppa.tcl
 LOG ?= $(basename $(SCRIPT)).log
 
 run:
