@@ -1,12 +1,14 @@
-// File list for FPMult_8_23_uid2_Freq200_uid3 (Kintex7) testbench
+// File list for FPAddMul_Shared testbench
 // VHDL files in dependency order
 
-// FPMult source file
-../rtl/src/src_shared/*.vhdl
+// Origin files (providing helper components)
+../rtl/src/FPAdd_Kin_f1_origin.vhdl
+../rtl/src/FPMult_Kin_f1_origin.vhdl
 
-// Testbench
-../verilog/tb/tb_fpmul_kintex.vhd
+// Shared source files
+../rtl/src/src_shared/FPAdd_NoRA.vhdl
+../rtl/src/src_shared/FPMult_NoRA.vhdl
+../rtl/src/src_shared/FPAddMul_Shared.vhdl
 
-
-
-
+// Testbench (located in personal/vhdl/tb)
+../rtl/tb/tb_fpaddmul_shared.vhd

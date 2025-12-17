@@ -29,7 +29,7 @@ entity FPAdd_NoRA is
           R : out  std_logic_vector(8+23+2 downto 0);
           round_out : out std_logic;
           expFrac_out: out std_logic_vector(33 downto 0);
-          RoundedExpFrac_in : in std_logic_vector(33 downto 0)); -- 再び入れるという不気味な形ではあるが、combinationalなので
+          RoundExpFrac_in : in std_logic_vector(33 downto 0)); -- 再び入れるという不気味な形ではあるが、combinationalなので
 end entity;
 
 architecture arch of FPAdd_NoRA is
@@ -236,7 +236,7 @@ begin
    round_out <= round;
 
    -- ここまでで一回外にでて、また外から戻ってくる
-   RoundedExpFrac <= RoundedExpFrac_in;
+   RoundExpFrac <= RoundExpFrac_in;
    upExc <= RoundedExpFrac(33 downto 32); -- overflowで01, underflowで11になる
    fracR <= RoundedExpFrac(23 downto 1); --23bit
    expR <= RoundedExpFrac(31 downto 24); --8bit

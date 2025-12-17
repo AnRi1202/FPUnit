@@ -10,6 +10,6 @@ if ( -d xcelium.d ) then
 endif
 
 # Compile & simulate with xrun
-xrun -v200x -64bit -f compile_shared.f -top tb_fpmul_kintex -access +rwc -timescale 1ns/1ps |& tee xrun_mult.log
+xrun -v200x -64bit -f compile_shared.f -top tb_fpaddmul_shared -access +rwc -timescale 1ns/1ps |& tee xrun_shared.log
 
-echo "Xcelium (xrun) simulation finished. Log: xrun_mult.log"
+echo "Xcelium (xrun) simulation finished. Log: xrun_shared.log"

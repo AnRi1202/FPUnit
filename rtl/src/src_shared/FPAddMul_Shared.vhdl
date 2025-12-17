@@ -7,24 +7,6 @@ library work;
 
 --- new 
 
-entity IntAdder_34_Freq1_uid11 is
-    port (clk : in std_logic;
-          X : in  std_logic_vector(33 downto 0);
-          Y : in  std_logic_vector(33 downto 0);
-          Cin : in  std_logic;
-          R : out  std_logic_vector(33 downto 0)   );
-end entity;
-
-architecture arch of IntAdder_34_Freq1_uid11 is
-signal Rtmp :  std_logic_vector(33 downto 0);
-   -- timing of Rtmp: (c0, 15.518000ns)
-begin
-   Rtmp <= X + Y + Cin;
-   R <= Rtmp;
-end architecture;
-
-
-
 
 entity FPAddMul_Shared is
     port (
@@ -57,8 +39,10 @@ architecture arch of FPAddMul_Shared is
             clk : in std_logic;
             X : in  std_logic_vector(33 downto 0);
             Y : in  std_logic_vector(33 downto 0);
+            R : out std_logic_vector(33 downto 0);
             expSig_out : out std_logic_vector(32 downto 0);
-            round_out : out std_logic
+            round_out : out std_logic;
+            expSigPostRound_in : in std_logic_vector(32 downto 0)
         );
     end component;
     
