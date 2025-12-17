@@ -22,8 +22,8 @@ use std.textio.all;
 library work;
 
 entity selFunction_Freq1_uid4 is
-    port (X : in  std_logic_vector(8 downto 0);
-          Y : out  std_logic_vector(2 downto 0)   );
+    port (X : in  std_logic_vector(8 downto 0); -- Partial (w)の先頭6bitと、Dividerの先頭3bitのPDプロット
+          Y : out  std_logic_vector(2 downto 0)   ); -- -2から2を出す
 end entity;
 
 architecture arch of selFunction_Freq1_uid4 is
@@ -853,7 +853,7 @@ signal exnR :  std_logic_vector(1 downto 0);
 signal exnRfinal :  std_logic_vector(1 downto 0);
    -- timing of exnRfinal: (c0, 28.192000ns)
 begin
-   fX <= "1" & X(22 downto 0);
+   fX <= "1" & X(22 downto 0); --24bit
    fY <= "1" & Y(22 downto 0);
    -- exponent difference, sign and exception combination computed early, to have fewer bits to pipeline
    expR0 <= ("00" & X(30 downto 23)) - ("00" & Y(30 downto 23));
@@ -866,6 +866,8 @@ begin
          "00"	 when "0001" | "0010" | "0110", -- zero
          "10"	 when "0100" | "1000" | "1001", -- overflow
          "11"	 when others;										-- NaN
+
+   -- ここまでが例外処理
    D <= fY ;
    psX <= "0" & fX ;
    betaw14 <=  "00" & psX;
@@ -873,19 +875,19 @@ begin
    SelFunctionTable14: selFunction_Freq1_uid4
       port map ( X => sel14,
                  Y => q14_copy5);
-   q14 <= q14_copy5; -- output copy to hold a pipeline register if needed
+   q14 <= q14_copy5; -- 3bit で-2から2
 
    with q14  select 
-      absq14D <= 
+      absq14D <= --|q|D これをwから引く。実際はbetawという4倍したもの
          "000" & D						 when "001" | "111", -- mult by 1
          "00" & D & "0"			   when "010" | "110", -- mult by 2
          (26 downto 0 => '0')	 when others;        -- mult by 0
 
-   with q14(2)  select 
+   with q14(2)  select -- q１４の正負で分ける方式
    w13<= betaw14 - absq14D when '0',
          betaw14 + absq14D when others;
-
-   betaw13 <= w13(24 downto 0) & "00"; -- multiplication by the radix
+--- これで1周期終了
+   betaw13 <= w13(24 downto 0) & "00"; -- 4をかけてる
    sel13 <= betaw13(26 downto 21) & D(22 downto 20);
    SelFunctionTable13: selFunction_Freq1_uid4
       port map ( X => sel13,
@@ -1105,11 +1107,12 @@ begin
    with q1(2)  select 
    w0<= betaw1 - absq1D when '0',
          betaw1 + absq1D when others;
+--- ここまでが繰り返し
 
    wfinal <= w0(24 downto 0);
    qM0 <= wfinal(24); -- rounding bit is the sign of the remainder
-   qP14 <=      q14(1 downto 0);
-   qM14 <=      q14(2) & "0";
+   qP14 <=      q14(1 downto 0); -- qP は元の数の下二桁　正ならそのまま、負なら-2をすれば元に戻る
+   qM14 <=      q14(2) & "0"; --qMは正の時は0, ふならば-2になるから、まとめてqP-qMを計算するとちゃんとした値に戻る
    qP13 <=      q13(1 downto 0);
    qM13 <=      q13(2) & "0";
    qP12 <=      q12(1 downto 0);
@@ -1142,12 +1145,19 @@ begin
    -- We need a mR in (0, -wf-2) format: 1+wF fraction bits, 1 round bit, and 1 guard bit for the normalisation,
    -- quotient is the truncation of the exact quotient to at least 2^(-wF-2) bits
    -- now discarding its possible known MSB zeroes, and dropping the possible extra LSB bit (due to radix 4) 
-   mR <= quotient(26 downto 1); 
+  
+  
+   -- wは23bitのfrac.でも、roudningとguardが欲しいから25bit
+
+   -- qは28bit
+   -- 23bitは1がないので、24bit.さらに、rounding, guardで26bit.　guradの計算のために追加で2bitをとっている
+   mR <= quotient(26 downto 1); -- 01.1みたいな形で計算をしていってるから、最上位は不要
    -- normalisation
-   fRnorm <=    mR(24 downto 1)  when mR(25)= '1'
+   fRnorm <=    mR(24 downto 1)  when mR(25)= '1' -- 1.の形にする
            else mR(23 downto 0);  -- now fRnorm is a (-1, -wF-1) fraction
    round <= fRnorm(0); 
    expR1 <= expR0 + ("000" & (6 downto 1 => '1') & mR(25)); -- add back bias
+   --  最初にexpR0を計算した時、eX -eYによりバイアスが打ち消し合ってた　よって6downto0を足す。mR25が0のばあいは−１をする必要がある
    -- final rounding
    expfrac <= expR1 & fRnorm(23 downto 1) ;
    expfracR <= expfrac + ((32 downto 1 => '0') & round);

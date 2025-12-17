@@ -424,11 +424,11 @@ signal xsR :  std_logic_vector(2 downto 0);
    -- timing of xsR: (c0, 0.043000ns)
 begin
    fracX <= X(22 downto 0); -- fraction
-   eRn0 <= "0" & X(30 downto 24); -- exponent
+   eRn0 <= "0" & X(30 downto 24); -- exponent 最上位切り捨てなので　/2をしている
    xsX <= X(33 downto 31); -- exception and sign
-   eRn1 <= eRn0 + ("00" & (5 downto 0 => '1')) + X(23);
+   eRn1 <= eRn0 + ("00" & (5 downto 0 => '1')) + X(23); --63のバイアスを足す。奇数の場合X(23)の場合はさらに1足して偶数にする
    fracXnorm <= "1" & fracX & "000" when X(23) = '0' else
-         "01" & fracX&"00"; -- pre-normalization
+         "01" & fracX&"00"; -- pre-normalization　eRn1で奇数の場合は1つ桁を挙げたから0.1的な形になってる
    S0 <= "01";
    T1 <= ("0111" + fracXnorm(26 downto 23)) & fracXnorm(22 downto 0);
    -- now implementing the recurrence 
