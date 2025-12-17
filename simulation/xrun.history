@@ -1,1 +1,0 @@
-s1(16Dec2025:23:00:53):  xrun -v200x -64bit -f compile_shared.f -top tb_fpaddmul_shared -access +rwc -timescale 1ns/1ps 
