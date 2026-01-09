@@ -53,3 +53,5 @@ simulation/transcript
 
 # Root level specific
 run.log
+
+run/
