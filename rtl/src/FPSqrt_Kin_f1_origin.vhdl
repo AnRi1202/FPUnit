@@ -58,6 +58,7 @@ signal T2 :  std_logic_vector(26 downto 0);
    -- timing of T2: (c0, 2.080000ns)
 signal S1 :  std_logic_vector(2 downto 0);
    -- timing of S1: (c0, 1.086000ns)
+
 signal d2 :  std_logic;
    -- timing of d2: (c0, 2.080000ns)
 signal T2s :  std_logic_vector(27 downto 0);
@@ -74,6 +75,7 @@ signal T3 :  std_logic_vector(26 downto 0);
    -- timing of T3: (c0, 3.123000ns)
 signal S2 :  std_logic_vector(3 downto 0);
    -- timing of S2: (c0, 2.080000ns)
+
 signal d3 :  std_logic;
    -- timing of d3: (c0, 3.123000ns)
 signal T3s :  std_logic_vector(27 downto 0);
@@ -90,6 +92,7 @@ signal T4 :  std_logic_vector(26 downto 0);
    -- timing of T4: (c0, 4.166000ns)
 signal S3 :  std_logic_vector(4 downto 0);
    -- timing of S3: (c0, 3.123000ns)
+   
 signal d4 :  std_logic;
    -- timing of d4: (c0, 4.166000ns)
 signal T4s :  std_logic_vector(27 downto 0);
@@ -426,23 +429,23 @@ begin
    fracX <= X(22 downto 0); -- fraction
    eRn0 <= "0" & X(30 downto 24); -- exponent 最上位切り捨てなので　/2をしている
    xsX <= X(33 downto 31); -- exception and sign
-   eRn1 <= eRn0 + ("00" & (5 downto 0 => '1')) + X(23); --63のバイアスを足す。奇数の場合X(23)の場合はさらに1足して偶数にする
-   fracXnorm <= "1" & fracX & "000" when X(23) = '0' else --27bit 左詰めで1.11みたいな形
+   eRn1 <= eRn0 + ("00" & (5 downto 0 => '1')) + X(23); --63のバイアスを足す。奇数の場合X(23)の場合はさらに1足して偶数にする X(23)は指数のLSB
+   fracXnorm <= "1" & fracX & "000" when X(23) = '0' else --27bit 左詰めで1.11みたいな形　最初は暗黙の1 
          "01" & fracX&"00"; -- pre-normalization　eRn1で奇数の場合は1つ桁を挙げたから0.1的な形になってる
    S0 <= "01"; --2bit
-   T1 <= ("0111" + fracXnorm(26 downto 23)) & fracXnorm(22 downto 0);
+   T1 <= ("0111" + fracXnorm(26 downto 23)) & fracXnorm(22 downto 0); --27bit
    -- now implementing the recurrence 
    --  this is a binary non-restoring algorithm, see ASA book
    -- Step 2
-   d1 <= not T1(26); --  bit of weight -1
-   T1s <= T1 & "0"; --27bit
+   d1 <= not T1(26); -- MSB. fracの上位4bitが9(1001)以上だと上位四ビットは0111の加算でオーバーフローするので、T1(26)が0になる。つまり、引く必要がある
+   T1s <= T1 & "0"; --28bit
    T1s_h <= T1s(27 downto 22); --大きい部分6bit
    T1s_l <= T1s(21 downto 0); -- 小さい部分
-   U1 <=  "0" & S0 & d1 & (not d1) & "1"; -- 6bit 
+   U1 <=  "0" & S0 & d1 & (not d1) & "1"; -- 6bit  S0 & d1がSi,  not d1 & 1 がUiに相当
    T3_h <=   T1s_h - U1 when d1='1'
-        else T1s_h + U1; -- dが0は前の結果Tがマイナスの時。だから次は足す
+        else T1s_h + U1; -- dが0は前の結果Tがマイナスの時。だから次は足す。最初のstepにおいては、オーバーフローしてその桁は結果を0にする
    T2 <= T3_h(4 downto 0) & T1s_l; -- 絶対値の部分5bitがT2
-   S1 <= S0 & d1; -- here -1 becomes 0 and 1 becomes 1
+   S1 <= S0 & d1; -- here -1 becomes 0 and 1 becomes 1　dは前回の計算でオーバーフローしてない時に立つフラグ。
 
 
 
@@ -511,7 +514,7 @@ begin
    T8 <= T9_h(10 downto 0) & T7s_l;
    S7 <= S6 & d7; -- here -1 becomes 0 and 1 becomes 1
    -- Step 9
-   d8 <= not T8(26); --  bit of weight -8
+   d8 <= not T8(26); --  bit of weight -8　オーバーフローしてないときのflag 前の計算が正なら　１
    T8s <= T8 & "0";
    T8s_h <= T8s(27 downto 15);
    T8s_l <= T8s(14 downto 0);
@@ -674,7 +677,7 @@ begin
    fR <= mR(23 downto 1);-- removing leading 1
    round <= mR(0); -- round bit
    fRrnd <= fR + ((22 downto 1 => '0') & round); -- rounding sqrt never changes exponents 
-   Rn2 <= eRn1 & fRrnd;
+   Rn2 <= eRn1 & fRrnd; -- (x +127) /2 = x/2 -127 +63.5 つまり、x/2+63.5が下駄状態なので、そのまま返して良い
    -- sign and exception processing
    with xsX  select 
       xsR <= "010"  when "010",  -- normal case
