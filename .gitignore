@@ -38,6 +38,7 @@ primetime/output/
 # Simulation
 simulation/INCA_libs/
 simulation/xcelium.d/
+simulation/xrun.history
 simulation/*.shm/
 simulation/*.dsn
 simulation/*.trn
