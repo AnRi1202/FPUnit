@@ -2,7 +2,7 @@
 
 # Project root (Run from anywhere)
 # Resolve script directory to handle relative paths correctly
-set SCRIPT_PATH = `readlink -f $0`
+set SCRIPT_PATH = `readlink -f $0` # $0 is current file path # readlink is invoking absolute path
 set SCRIPT_DIR = `dirname $SCRIPT_PATH`
 setenv ROOT "$SCRIPT_DIR/.."
 
