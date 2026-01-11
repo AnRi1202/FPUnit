@@ -3,6 +3,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
+use std.env.all;
 
 entity tb_fpsqrt_kintex is
   generic (
@@ -14,10 +15,17 @@ entity tb_fpsqrt_kintex is
 end entity;
 
 architecture tb of tb_fpsqrt_kintex is
-  component FPSqrt_8_23 is
+--  component FPSqrt_8_23 is
+
+
+  component FPALL_Shared_Wrapper is
+    generic (
+      OP_CODE_GEN : std_logic_vector(1 downto 0) := "00"
+    );
     port (
       clk : in  std_logic;
       X   : in  std_logic_vector(33 downto 0);
+      Y   : in  std_logic_vector(33 downto 0);
       R   : out std_logic_vector(33 downto 0)
     );
   end component;
@@ -187,22 +195,31 @@ architecture tb of tb_fpsqrt_kintex is
   -- 比較：specialは xs(exn+sign) だけ、normalはULP
   procedure check_result(r_act : std_logic_vector(33 downto 0);
                          r_exp : std_logic_vector(33 downto 0);
-                         tag   : string) is
+                         tag   : string;
+                         pass_cnt : inout natural;
+                         fail_cnt : inout natural) is
     variable d : natural;
   begin
     if r_exp(33 downto 32) /= "01" then
       -- special: xs= [exn(2)+sign] のみチェック（exp/fracはdon't care）
       if r_act(33 downto 31) /= r_exp(33 downto 31) then
         assert false report "FAIL(special) " & tag severity error;
+        fail_cnt := fail_cnt + 1;
+      else
+        pass_cnt := pass_cnt + 1;
       end if;
     else
       -- normal
       if r_act(33 downto 31) /= "010" then
         assert false report "FAIL(normal xs) " & tag severity error;
+        fail_cnt := fail_cnt + 1;
       else
         d := ulp_diff(r_act, r_exp);
         if d > MAX_ULP then
           assert false report "FAIL(normal ulp=" & integer'image(integer(d)) & ") " & tag severity error;
+          fail_cnt := fail_cnt + 1;
+        else
+          pass_cnt := pass_cnt + 1;
         end if;
       end if;
     end if;
@@ -212,14 +229,25 @@ architecture tb of tb_fpsqrt_kintex is
   type slv_arr is array (natural range <>) of std_logic_vector(33 downto 0);
   type sl_arr  is array (natural range <>) of std_logic;
 
-  signal exp_pipe : slv_arr(0 to LATENCY) := (others => (others => '0'));
-  signal val_pipe : sl_arr (0 to LATENCY) := (others => '0');
+
+
 
 begin
-  uut: FPSqrt_8_23
+--  uut: FPSqrt_8_23
+--    port map (
+--      clk => clk,
+--      X   => X,
+--      R   => R
+--    );
+
+  uut: FPALL_Shared_Wrapper
+    generic map (
+      OP_CODE_GEN => "10"
+    )
     port map (
       clk => clk,
       X   => X,
+      Y   => (others => '0'),
       R   => R
     );
 
@@ -234,31 +262,43 @@ begin
 
   -- ========== Scoreboard: pipeline latency を吸収して比較 ==========
   p_scoreboard: process
-    variable cyc : natural := 0;
+    variable exp_q : slv_arr(0 to LATENCY);
+    variable val_q : sl_arr (0 to LATENCY);
+    variable cyc   : natural := 0;
+    variable pass_cnt : natural := 0;
+    variable fail_cnt : natural := 0;
   begin
-    wait until rising_edge(clk);
-    cyc := cyc + 1;
-
-    -- 出力照合（LATENCY サイクル前に投入した期待値）
-    if val_pipe(LATENCY) = '1' then
-      check_result(R, exp_pipe(LATENCY), "cycle=" & integer'image(integer(cyc)));
-    end if;
-
-    -- シフト
-    for k in LATENCY downto 1 loop
-      exp_pipe(k) <= exp_pipe(k-1);
-      val_pipe(k) <= val_pipe(k-1);
+    -- 初期化
+    for k in 0 to LATENCY loop
+      exp_q(k) := (others => '0');
+      val_q(k) := '0';
     end loop;
 
-    -- 今回投入分を stage0 へ
-    exp_pipe(0) <= exp_in;
-    val_pipe(0) <= exp_valid;
+    wait until rising_edge(clk);
+    loop
+      cyc := cyc + 1;
 
-    -- done 後は、driver側で flush 済み前提。ここで停止してもよい。
-    if done = '1' then
-      report "TB done." severity note;
-      wait;
-    end if;
+      -- 1) まずシフト（古いものが後段へ）
+      for k in LATENCY downto 1 loop
+        exp_q(k) := exp_q(k-1);
+        val_q(k) := val_q(k-1);
+      end loop;
+
+      -- 2) そのサイクルの期待値を stage0 に投入
+      exp_q(0) := exp_in;
+      val_q(0) := exp_valid;
+
+      -- 3) 投入後のキューで比較（LATENCY=0でも正しい）
+      if val_q(LATENCY) = '1' then
+        check_result(R, exp_q(LATENCY), "cycle=" & integer'image(integer(cyc)), pass_cnt, fail_cnt);
+      end if;
+
+      exit when done = '1';
+      wait until rising_edge(clk);
+    end loop;
+
+    report "TB done. pass=" & integer'image(pass_cnt) & " fail=" & integer'image(fail_cnt) severity note;
+    finish;
   end process;
 
   -- ========== Driver: 入力生成（directed + random） ==========
@@ -351,4 +391,6 @@ begin
     wait;
   end process;
 
+
+  
 end architecture;

@@ -13,7 +13,11 @@ entity tb_fpadd_8_23 is
 end entity;
 
 architecture tb of tb_fpadd_8_23 is
-  component FPAdd_8_23_Freq1_uid2 is
+--  component FPAdd_8_23_Freq1_uid2 is
+  component FPALL_Shared_Wrapper is
+    generic (
+      OP_CODE_GEN : std_logic_vector(1 downto 0) := "00"
+    );
     port (
       clk : in  std_logic;
       X   : in  std_logic_vector(33 downto 0);
@@ -335,6 +339,37 @@ architecture tb of tb_fpadd_8_23 is
 type slv_arr is array (natural range <>) of std_logic_vector(33 downto 0);
   type sl_arr  is array (natural range <>) of std_logic;
 
+
+begin
+--  uut: FPAdd_8_23_Freq1_uid2
+--    port map (
+--      clk => clk,
+--      X   => X_in,
+--      Y   => Y_in,
+--      R   => R_dut
+--    );
+
+  uut: FPALL_Shared_Wrapper
+    generic map (
+      OP_CODE_GEN => "00"
+    )
+    port map (
+      clk => clk,
+      X   => X_in,
+      Y   => Y_in,
+      R   => R_dut
+    );
+
+  -- clock
+  p_clk: process
+  begin
+    clk <= '0';
+    wait for CLK_PERIOD/2;
+    clk <= '1';
+    wait for CLK_PERIOD/2;
+  end process;
+
+  -- scoreboard: compare after LATENCY cycles
   p_scoreboard: process
     variable exp_q : slv_arr(0 to LATENCY);
     variable val_q : sl_arr (0 to LATENCY);
@@ -362,7 +397,7 @@ type slv_arr is array (natural range <>) of std_logic_vector(33 downto 0);
 
       -- 3) 投入後のキューで比較（LATENCY=0でも正しい）
       if val_q(LATENCY) = '1' then
-        check_result(R, exp_q(LATENCY), "cycle=" & integer'image(integer(cyc)));
+        check_result(R_dut, exp_q(LATENCY), "cycle=" & integer'image(integer(cyc)));
       end if;
 
       exit when done = '1';
@@ -373,48 +408,6 @@ type slv_arr is array (natural range <>) of std_logic_vector(33 downto 0);
     wait;
   end process;
 
-begin
-  uut: FPAdd_8_23_Freq1_uid2
-    port map (
-      clk => clk,
-      X   => X_in,
-      Y   => Y_in,
-      R   => R_dut
-    );
-
-  -- clock
-  p_clk: process
-  begin
-    clk <= '0';
-    wait for CLK_PERIOD/2;
-    clk <= '1';
-    wait for CLK_PERIOD/2;
-  end process;
-
-  -- scoreboard: compare after LATENCY cycles
-  p_scoreboard: process
-    variable cyc : natural := 0;
-  begin
-    wait until rising_edge(clk);
-    cyc := cyc + 1;
-
-    if val_pipe(LATENCY) = '1' then
-      check_result(R_dut, exp_pipe(LATENCY), "cycle=" & integer'image(integer(cyc)));
-    end if;
-
-    for k in LATENCY downto 1 loop
-      exp_pipe(k) <= exp_pipe(k-1);
-      val_pipe(k) <= val_pipe(k-1);
-    end loop;
-
-    exp_pipe(0) <= exp_in;
-    val_pipe(0) <= exp_valid;
-
-    if done = '1' then
-      report "TB done." severity note;
-      wait;
-    end if;
-  end process;
 
   -- driver: directed + random
   p_driver: process
@@ -441,7 +434,6 @@ begin
 
       -- 入力は rising edge 前に安定させたいので、falling->rising を使う
       wait until rising_edge(clk);
-      wait until falling_edge(clk);
     end procedure;
 
   begin

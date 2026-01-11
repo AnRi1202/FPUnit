@@ -12,10 +12,17 @@ entity tb_fpsqrt_kintex is
 end entity;
 
 architecture tb of tb_fpsqrt_kintex is
-  component FPSqrt_8_23 is
+--  component FPSqrt_8_23 is
+
+
+  component FPALL_Shared_Wrapper is
+    generic (
+      OP_CODE_GEN : std_logic_vector(1 downto 0) := "00"
+    );
     port (
       clk : in  std_logic;
       X   : in  std_logic_vector(33 downto 0);
+      Y   : in  std_logic_vector(33 downto 0);
       R   : out std_logic_vector(33 downto 0)
     );
   end component;
@@ -218,10 +225,21 @@ architecture tb of tb_fpsqrt_kintex is
   end function;
 
 begin
-  uut: FPSqrt_8_23
+--  uut: FPSqrt_8_23
+--    port map (
+--      clk => clk,
+--      X   => X,
+--      R   => R
+--    );
+
+  uut: FPALL_Shared_Wrapper
+    generic map (
+      OP_CODE_GEN => "10" -- ここで指定
+    )
     port map (
       clk => clk,
       X   => X,
+      Y   => (others => '0'),
       R   => R
     );
 
