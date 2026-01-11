@@ -226,8 +226,8 @@ architecture tb of tb_fpsqrt_kintex is
   end procedure;
 
   -- スコアボード用配列型
-  type slv_arr is array (natural range <>) of std_logic_vector(33 downto 0);
-  type sl_arr  is array (natural range <>) of std_logic;
+  type slv_arr is array (natural range <>) of std_logic_vector(33 downto 0); -- std_logic_vector = slv
+  type sl_arr  is array (natural range <>) of std_logic; -- std_logc = sl
 
 
 

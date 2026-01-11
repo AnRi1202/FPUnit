@@ -331,7 +331,7 @@ begin
       elsif rand_u < 0.08 then
         v_in := pack_fp("11",'0',0,1); -- NaN
       elsif rand_u < 0.10 then
-        -- negative normal を混ぜる
+        -- negative normal を混ぜる NaNになるはず
         uniform(seed1, seed2, rand_u); exp_e := 1 + natural(integer(rand_u * 254.0)); -- 1..254
         uniform(seed1, seed2, rand_u); exp_f := natural(integer(rand_u * real(2**23)));
         if exp_f > (2**23 - 1) then exp_f := 2**23 - 1; end if;
