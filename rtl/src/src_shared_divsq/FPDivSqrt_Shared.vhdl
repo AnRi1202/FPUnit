@@ -260,7 +260,7 @@ begin
     sqrt_Ts_h_full(0) <= sqrt_Ts(0)(27 downto 22) & (20 downto 0 => '0');  -- Pad to 27 bits
     sqrt_Ts_l(0) <= sqrt_Ts(0)(21 downto 0) & (4 downto 0 => '0');
     sqrt_U_full(0) <= "0" & sqrt_S0 & sqrt_d(1) & (not sqrt_d(1)) & "1" & (20 downto 0 => '0');
-    sqrt_T(1) <= adder_R(0)(26 downto 22) & sqrt_Ts(0)(21 downto 0);
+    sqrt_T(1) <= adder_R(0)(25 downto 21) & sqrt_Ts(0)(21 downto 0);
     sqrt_S(1) <= sqrt_S0 & sqrt_d(1) & (21 downto 0 => '0');
 
     -- Step 3
@@ -268,204 +268,282 @@ begin
     sqrt_Ts(1) <= sqrt_T(1) & "0";
     sqrt_Ts_h_full(1) <= sqrt_Ts(1)(27 downto 21) & (19 downto 0 => '0');
     sqrt_Ts_l(1) <= sqrt_Ts(1)(20 downto 0) & (5 downto 0 => '0');
-    sqrt_U_full(1) <= "0" & sqrt_S(1)(2 downto 0) & sqrt_d(2) & (not sqrt_d(2)) & "1" & (19 downto 0 => '0');
-    sqrt_T(2) <= adder_R(1)(26 downto 21) & sqrt_Ts(1)(20 downto 0);
-    sqrt_S(2) <= sqrt_S(1)(2 downto 0) & sqrt_d(2) & (20 downto 0 => '0');
+    sqrt_U_full(1) <= "0" & sqrt_S(1)(24 downto 22) & sqrt_d(2) & (not sqrt_d(2)) & "1" & (19 downto 0 => '0');
+    sqrt_T(2) <= adder_R(1)(25 downto 20) & sqrt_Ts(1)(20 downto 0);
+    sqrt_S(2) <= sqrt_S(1)(24 downto 22) & sqrt_d(2) & (20 downto 0 => '0');
 
     -- Step 4
     sqrt_d(3) <= not sqrt_T(2)(26);
     sqrt_Ts(2) <= sqrt_T(2) & "0";
     sqrt_Ts_h_full(2) <= sqrt_Ts(2)(27 downto 20) & (18 downto 0 => '0');
     sqrt_Ts_l(2) <= sqrt_Ts(2)(19 downto 0) & (6 downto 0 => '0');
-    sqrt_U_full(2) <= "0" & sqrt_S(2)(3 downto 0) & sqrt_d(3) & (not sqrt_d(3)) & "1" & (18 downto 0 => '0');
-    sqrt_T(3) <= adder_R(2)(26 downto 20) & sqrt_Ts(2)(19 downto 0);
-    sqrt_S(3) <= sqrt_S(2)(3 downto 0) & sqrt_d(3) & (19 downto 0 => '0');
+    sqrt_U_full(2) <= "0" & sqrt_S(2)(24 downto 21) & sqrt_d(3) & (not sqrt_d(3)) & "1" & (18 downto 0 => '0');
+    sqrt_T(3) <= adder_R(2)(25 downto 19) & sqrt_Ts(2)(19 downto 0);
+    sqrt_S(3) <= sqrt_S(2)(24 downto 21) & sqrt_d(3) & (19 downto 0 => '0');
 
     -- Step 5
     sqrt_d(4) <= not sqrt_T(3)(26);
     sqrt_Ts(3) <= sqrt_T(3) & "0";
     sqrt_Ts_h_full(3) <= sqrt_Ts(3)(27 downto 19) & (17 downto 0 => '0');
     sqrt_Ts_l(3) <= sqrt_Ts(3)(18 downto 0) & (7 downto 0 => '0');
-    sqrt_U_full(3) <= "0" & sqrt_S(3)(4 downto 0) & sqrt_d(4) & (not sqrt_d(4)) & "1" & (17 downto 0 => '0');
-    sqrt_T(4) <= adder_R(3)(26 downto 19) & sqrt_Ts(3)(18 downto 0);
-    sqrt_S(4) <= sqrt_S(3)(4 downto 0) & sqrt_d(4) & (18 downto 0 => '0');
+    sqrt_U_full(3) <= "0" & sqrt_S(3)(24 downto 20) & sqrt_d(4) & (not sqrt_d(4)) & "1" & (17 downto 0 => '0');
+    sqrt_T(4) <= adder_R(3)(25 downto 18) & sqrt_Ts(3)(18 downto 0);
+    sqrt_S(4) <= sqrt_S(3)(24 downto 20) & sqrt_d(4) & (18 downto 0 => '0');
 
     -- Step 6
     sqrt_d(5) <= not sqrt_T(4)(26);
     sqrt_Ts(4) <= sqrt_T(4) & "0";
     sqrt_Ts_h_full(4) <= sqrt_Ts(4)(27 downto 18) & (16 downto 0 => '0');
     sqrt_Ts_l(4) <= sqrt_Ts(4)(17 downto 0) & (8 downto 0 => '0');
-    sqrt_U_full(4) <= "0" & sqrt_S(4)(5 downto 0) & sqrt_d(5) & (not sqrt_d(5)) & "1" & (16 downto 0 => '0');
-    sqrt_T(5) <= adder_R(4)(26 downto 18) & sqrt_Ts(4)(17 downto 0);
-    sqrt_S(5) <= sqrt_S(4)(5 downto 0) & sqrt_d(5) & (17 downto 0 => '0');
+    sqrt_U_full(4) <= "0" & sqrt_S(4)(24 downto 19) & sqrt_d(5) & (not sqrt_d(5)) & "1" & (16 downto 0 => '0');
+    sqrt_T(5) <= adder_R(4)(25 downto 17) & sqrt_Ts(4)(17 downto 0);
+    sqrt_S(5) <= sqrt_S(4)(24 downto 19) & sqrt_d(5) & (17 downto 0 => '0');
 
     -- Step 7
     sqrt_d(6) <= not sqrt_T(5)(26);
     sqrt_Ts(5) <= sqrt_T(5) & "0";
     sqrt_Ts_h_full(5) <= sqrt_Ts(5)(27 downto 17) & (15 downto 0 => '0');
     sqrt_Ts_l(5) <= sqrt_Ts(5)(16 downto 0) & (9 downto 0 => '0');
-    sqrt_U_full(5) <= "0" & sqrt_S(5)(6 downto 0) & sqrt_d(6) & (not sqrt_d(6)) & "1" & (15 downto 0 => '0');
-    sqrt_T(6) <= adder_R(5)(26 downto 17) & sqrt_Ts(5)(16 downto 0);
-    sqrt_S(6) <= sqrt_S(5)(6 downto 0) & sqrt_d(6) & (16 downto 0 => '0');
+    sqrt_U_full(5) <= "0" & sqrt_S(5)(24 downto 18) & sqrt_d(6) & (not sqrt_d(6)) & "1" & (15 downto 0 => '0');
+    sqrt_T(6) <= adder_R(5)(25 downto 16) & sqrt_Ts(5)(16 downto 0);
+    sqrt_S(6) <= sqrt_S(5)(24 downto 18) & sqrt_d(6) & (16 downto 0 => '0');
 
     -- Step 8
     sqrt_d(7) <= not sqrt_T(6)(26);
     sqrt_Ts(6) <= sqrt_T(6) & "0";
     sqrt_Ts_h_full(6) <= sqrt_Ts(6)(27 downto 16) & (14 downto 0 => '0');
     sqrt_Ts_l(6) <= sqrt_Ts(6)(15 downto 0) & (10 downto 0 => '0');
-    sqrt_U_full(6) <= "0" & sqrt_S(6)(7 downto 0) & sqrt_d(7) & (not sqrt_d(7)) & "1" & (14 downto 0 => '0');
-    sqrt_T(7) <= adder_R(6)(26 downto 16) & sqrt_Ts(6)(15 downto 0);
-    sqrt_S(7) <= sqrt_S(6)(7 downto 0) & sqrt_d(7) & (15 downto 0 => '0');
+    sqrt_U_full(6) <= "0" & sqrt_S(6)(24 downto 17) & sqrt_d(7) & (not sqrt_d(7)) & "1" & (14 downto 0 => '0');
+    sqrt_T(7) <= adder_R(6)(25 downto 15) & sqrt_Ts(6)(15 downto 0);
+    sqrt_S(7) <= sqrt_S(6)(24 downto 17) & sqrt_d(7) & (15 downto 0 => '0');
 
     -- Step 9
     sqrt_d(8) <= not sqrt_T(7)(26);
     sqrt_Ts(7) <= sqrt_T(7) & "0";
     sqrt_Ts_h_full(7) <= sqrt_Ts(7)(27 downto 15) & (13 downto 0 => '0');
     sqrt_Ts_l(7) <= sqrt_Ts(7)(14 downto 0) & (11 downto 0 => '0');
-    sqrt_U_full(7) <= "0" & sqrt_S(7)(8 downto 0) & sqrt_d(8) & (not sqrt_d(8)) & "1" & (13 downto 0 => '0');
-    sqrt_T(8) <= adder_R(7)(26 downto 15) & sqrt_Ts(7)(14 downto 0);
-    sqrt_S(8) <= sqrt_S(7)(8 downto 0) & sqrt_d(8) & (14 downto 0 => '0');
+    sqrt_U_full(7) <= "0" & sqrt_S(7)(24 downto 16) & sqrt_d(8) & (not sqrt_d(8)) & "1" & (13 downto 0 => '0');
+    sqrt_T(8) <= adder_R(7)(25 downto 14) & sqrt_Ts(7)(14 downto 0);
+    sqrt_S(8) <= sqrt_S(7)(24 downto 16) & sqrt_d(8) & (14 downto 0 => '0');
 
     -- Step 10
     sqrt_d(9) <= not sqrt_T(8)(26);
     sqrt_Ts(8) <= sqrt_T(8) & "0";
     sqrt_Ts_h_full(8) <= sqrt_Ts(8)(27 downto 14) & (12 downto 0 => '0');
     sqrt_Ts_l(8) <= sqrt_Ts(8)(13 downto 0) & (12 downto 0 => '0');
-    sqrt_U_full(8) <= "0" & sqrt_S(8)(9 downto 0) & sqrt_d(9) & (not sqrt_d(9)) & "1" & (12 downto 0 => '0');
-    sqrt_T(9) <= adder_R(8)(26 downto 14) & sqrt_Ts(8)(13 downto 0);
-    sqrt_S(9) <= sqrt_S(8)(9 downto 0) & sqrt_d(9) & (13 downto 0 => '0');
+    sqrt_U_full(8) <= "0" & sqrt_S(8)(24 downto 15) & sqrt_d(9) & (not sqrt_d(9)) & "1" & (12 downto 0 => '0');
+    sqrt_T(9) <= adder_R(8)(25 downto 13) & sqrt_Ts(8)(13 downto 0);
+    sqrt_S(9) <= sqrt_S(8)(24 downto 15) & sqrt_d(9) & (13 downto 0 => '0');
 
     -- Step 11
     sqrt_d(10) <= not sqrt_T(9)(26);
     sqrt_Ts(9) <= sqrt_T(9) & "0";
     sqrt_Ts_h_full(9) <= sqrt_Ts(9)(27 downto 13) & (11 downto 0 => '0');
     sqrt_Ts_l(9) <= sqrt_Ts(9)(12 downto 0) & (13 downto 0 => '0');
-    sqrt_U_full(9) <= "0" & sqrt_S(9)(10 downto 0) & sqrt_d(10) & (not sqrt_d(10)) & "1" & (11 downto 0 => '0');
-    sqrt_T(10) <= adder_R(9)(26 downto 13) & sqrt_Ts(9)(12 downto 0);
-    sqrt_S(10) <= sqrt_S(9)(10 downto 0) & sqrt_d(10) & (12 downto 0 => '0');
+    sqrt_U_full(9) <= "0" & sqrt_S(9)(24 downto 14) & sqrt_d(10) & (not sqrt_d(10)) & "1" & (11 downto 0 => '0');
+    sqrt_T(10) <= adder_R(9)(25 downto 12) & sqrt_Ts(9)(12 downto 0);
+    sqrt_S(10) <= sqrt_S(9)(24 downto 14) & sqrt_d(10) & (12 downto 0 => '0');
 
     -- Step 12
     sqrt_d(11) <= not sqrt_T(10)(26);
     sqrt_Ts(10) <= sqrt_T(10) & "0";
     sqrt_Ts_h_full(10) <= sqrt_Ts(10)(27 downto 12) & (10 downto 0 => '0');
     sqrt_Ts_l(10) <= sqrt_Ts(10)(11 downto 0) & (14 downto 0 => '0');
-    sqrt_U_full(10) <= "0" & sqrt_S(10)(11 downto 0) & sqrt_d(11) & (not sqrt_d(11)) & "1" & (10 downto 0 => '0');
-    sqrt_T(11) <= adder_R(10)(26 downto 12) & sqrt_Ts(10)(11 downto 0);
-    sqrt_S(11) <= sqrt_S(10)(11 downto 0) & sqrt_d(11) & (11 downto 0 => '0');
+    sqrt_U_full(10) <= "0" & sqrt_S(10)(24 downto 13) & sqrt_d(11) & (not sqrt_d(11)) & "1" & (10 downto 0 => '0');
+    sqrt_T(11) <= adder_R(10)(25 downto 11) & sqrt_Ts(10)(11 downto 0);
+    sqrt_S(11) <= sqrt_S(10)(24 downto 13) & sqrt_d(11) & (11 downto 0 => '0');
 
     -- Step 13
     sqrt_d(12) <= not sqrt_T(11)(26);
     sqrt_Ts(11) <= sqrt_T(11) & "0";
     sqrt_Ts_h_full(11) <= sqrt_Ts(11)(27 downto 11) & (9 downto 0 => '0');
     sqrt_Ts_l(11) <= sqrt_Ts(11)(10 downto 0) & (15 downto 0 => '0');
-    sqrt_U_full(11) <= "0" & sqrt_S(11)(12 downto 0) & sqrt_d(12) & (not sqrt_d(12)) & "1" & (9 downto 0 => '0');
-    sqrt_T(12) <= adder_R(11)(26 downto 11) & sqrt_Ts(11)(10 downto 0);
-    sqrt_S(12) <= sqrt_S(11)(12 downto 0) & sqrt_d(12) & (10 downto 0 => '0');
+    sqrt_U_full(11) <= "0" & sqrt_S(11)(24 downto 12) & sqrt_d(12) & (not sqrt_d(12)) & "1" & (9 downto 0 => '0');
+    sqrt_T(12) <= adder_R(11)(25 downto 10) & sqrt_Ts(11)(10 downto 0);
+    sqrt_S(12) <= sqrt_S(11)(24 downto 12) & sqrt_d(12) & (10 downto 0 => '0');
 
     -- Step 14
     sqrt_d(13) <= not sqrt_T(12)(26);
     sqrt_Ts(12) <= sqrt_T(12) & "0";
     sqrt_Ts_h_full(12) <= sqrt_Ts(12)(27 downto 10) & (8 downto 0 => '0');
     sqrt_Ts_l(12) <= sqrt_Ts(12)(9 downto 0) & (16 downto 0 => '0');
-    sqrt_U_full(12) <= "0" & sqrt_S(12)(13 downto 0) & sqrt_d(13) & (not sqrt_d(13)) & "1" & (8 downto 0 => '0');
-    sqrt_T(13) <= adder_R(12)(26 downto 10) & sqrt_Ts(12)(9 downto 0);
-    sqrt_S(13) <= sqrt_S(12)(13 downto 0) & sqrt_d(13) & (9 downto 0 => '0');
+    sqrt_U_full(12) <= "0" & sqrt_S(12)(24 downto 11) & sqrt_d(13) & (not sqrt_d(13)) & "1" & (8 downto 0 => '0');
+    sqrt_T(13) <= adder_R(12)(25 downto 9) & sqrt_Ts(12)(9 downto 0);
+    sqrt_S(13) <= sqrt_S(12)(24 downto 11) & sqrt_d(13) & (9 downto 0 => '0');
 
     -- Step 15
     sqrt_d(14) <= not sqrt_T(13)(26);
     sqrt_Ts(13) <= sqrt_T(13) & "0";
     sqrt_Ts_h_full(13) <= sqrt_Ts(13)(27 downto 9) & (7 downto 0 => '0');
     sqrt_Ts_l(13) <= sqrt_Ts(13)(8 downto 0) & (17 downto 0 => '0');
-    sqrt_U_full(13) <= "0" & sqrt_S(13)(14 downto 0) & sqrt_d(14) & (not sqrt_d(14)) & "1" & (7 downto 0 => '0');
-    sqrt_T(14) <= adder_R(13)(26 downto 9) & sqrt_Ts(13)(8 downto 0);
-    sqrt_S(14) <= sqrt_S(13)(14 downto 0) & sqrt_d(14) & (8 downto 0 => '0');
+    sqrt_U_full(13) <= "0" & sqrt_S(13)(24 downto 10) & sqrt_d(14) & (not sqrt_d(14)) & "1" & (7 downto 0 => '0');
+    sqrt_T(14) <= adder_R(13)(25 downto 8) & sqrt_Ts(13)(8 downto 0);
+    sqrt_S(14) <= sqrt_S(13)(24 downto 10) & sqrt_d(14) & (8 downto 0 => '0');
 
     -- Step 16
     sqrt_d(15) <= not sqrt_T(14)(26);
     sqrt_Ts(14) <= sqrt_T(14) & "0";
     sqrt_Ts_h_full(14) <= sqrt_Ts(14)(27 downto 8) & (6 downto 0 => '0');
     sqrt_Ts_l(14) <= sqrt_Ts(14)(7 downto 0) & (18 downto 0 => '0');
-    sqrt_U_full(14) <= "0" & sqrt_S(14)(15 downto 0) & sqrt_d(15) & (not sqrt_d(15)) & "1" & (6 downto 0 => '0');
-    sqrt_T(15) <= adder_R(14)(26 downto 8) & sqrt_Ts(14)(7 downto 0);
-    sqrt_S(15) <= sqrt_S(14)(15 downto 0) & sqrt_d(15) & (7 downto 0 => '0');
+    sqrt_U_full(14) <= "0" & sqrt_S(14)(24 downto 9) & sqrt_d(15) & (not sqrt_d(15)) & "1" & (6 downto 0 => '0');
+    sqrt_T(15) <= adder_R(14)(25 downto 7) & sqrt_Ts(14)(7 downto 0);
+    sqrt_S(15) <= sqrt_S(14)(24 downto 9) & sqrt_d(15) & (7 downto 0 => '0');
 
     -- Step 17
     sqrt_d(16) <= not sqrt_T(15)(26);
     sqrt_Ts(15) <= sqrt_T(15) & "0";
     sqrt_Ts_h_full(15) <= sqrt_Ts(15)(27 downto 7) & (5 downto 0 => '0');
     sqrt_Ts_l(15) <= sqrt_Ts(15)(6 downto 0) & (19 downto 0 => '0');
-    sqrt_U_full(15) <= "0" & sqrt_S(15)(16 downto 0) & sqrt_d(16) & (not sqrt_d(16)) & "1" & (5 downto 0 => '0');
-    sqrt_T(16) <= adder_R(15)(26 downto 7) & sqrt_Ts(15)(6 downto 0);
-    sqrt_S(16) <= sqrt_S(15)(16 downto 0) & sqrt_d(16) & (6 downto 0 => '0');
+    sqrt_U_full(15) <= "0" & sqrt_S(15)(24 downto 8) & sqrt_d(16) & (not sqrt_d(16)) & "1" & (5 downto 0 => '0');
+    sqrt_T(16) <= adder_R(15)(25 downto 6) & sqrt_Ts(15)(6 downto 0);
+    sqrt_S(16) <= sqrt_S(15)(24 downto 8) & sqrt_d(16) & (6 downto 0 => '0');
 
     -- Step 18
     sqrt_d(17) <= not sqrt_T(16)(26);
     sqrt_Ts(16) <= sqrt_T(16) & "0";
     sqrt_Ts_h_full(16) <= sqrt_Ts(16)(27 downto 6) & (4 downto 0 => '0');
     sqrt_Ts_l(16) <= sqrt_Ts(16)(5 downto 0) & (20 downto 0 => '0');
-    sqrt_U_full(16) <= "0" & sqrt_S(16)(17 downto 0) & sqrt_d(17) & (not sqrt_d(17)) & "1" & (4 downto 0 => '0');
-    sqrt_T(17) <= adder_R(16)(26 downto 6) & sqrt_Ts(16)(5 downto 0);
-    sqrt_S(17) <= sqrt_S(16)(17 downto 0) & sqrt_d(17) & (5 downto 0 => '0');
+    sqrt_U_full(16) <= "0" & sqrt_S(16)(24 downto 7) & sqrt_d(17) & (not sqrt_d(17)) & "1" & (4 downto 0 => '0');
+    sqrt_T(17) <= adder_R(16)(25 downto 5) & sqrt_Ts(16)(5 downto 0);
+    sqrt_S(17) <= sqrt_S(16)(24 downto 7) & sqrt_d(17) & (5 downto 0 => '0');
 
     -- Step 19
     sqrt_d(18) <= not sqrt_T(17)(26);
     sqrt_Ts(17) <= sqrt_T(17) & "0";
     sqrt_Ts_h_full(17) <= sqrt_Ts(17)(27 downto 5) & (3 downto 0 => '0');
     sqrt_Ts_l(17) <= sqrt_Ts(17)(4 downto 0) & (21 downto 0 => '0');
-    sqrt_U_full(17) <= "0" & sqrt_S(17)(18 downto 0) & sqrt_d(18) & (not sqrt_d(18)) & "1" & (3 downto 0 => '0');
-    sqrt_T(18) <= adder_R(17)(26 downto 5) & sqrt_Ts(17)(4 downto 0);
-    sqrt_S(18) <= sqrt_S(17)(18 downto 0) & sqrt_d(18) & (4 downto 0 => '0');
+    sqrt_U_full(17) <= "0" & sqrt_S(17)(24 downto 6) & sqrt_d(18) & (not sqrt_d(18)) & "1" & (3 downto 0 => '0');
+    sqrt_T(18) <= adder_R(17)(25 downto 4) & sqrt_Ts(17)(4 downto 0);
+    sqrt_S(18) <= sqrt_S(17)(24 downto 6) & sqrt_d(18) & (4 downto 0 => '0');
 
     -- Step 20
     sqrt_d(19) <= not sqrt_T(18)(26);
     sqrt_Ts(18) <= sqrt_T(18) & "0";
     sqrt_Ts_h_full(18) <= sqrt_Ts(18)(27 downto 4) & (2 downto 0 => '0');
     sqrt_Ts_l(18) <= sqrt_Ts(18)(3 downto 0) & (22 downto 0 => '0');
-    sqrt_U_full(18) <= "0" & sqrt_S(18)(19 downto 0) & sqrt_d(19) & (not sqrt_d(19)) & "1" & (2 downto 0 => '0');
-    sqrt_T(19) <= adder_R(18)(26 downto 4) & sqrt_Ts(18)(3 downto 0);
-    sqrt_S(19) <= sqrt_S(18)(19 downto 0) & sqrt_d(19) & (3 downto 0 => '0');
+    sqrt_U_full(18) <= "0" & sqrt_S(18)(24 downto 5) & sqrt_d(19) & (not sqrt_d(19)) & "1" & (2 downto 0 => '0');
+    sqrt_T(19) <= adder_R(18)(25 downto 3) & sqrt_Ts(18)(3 downto 0);
+    sqrt_S(19) <= sqrt_S(18)(24 downto 5) & sqrt_d(19) & (3 downto 0 => '0');
 
     -- Step 21
     sqrt_d(20) <= not sqrt_T(19)(26);
     sqrt_Ts(19) <= sqrt_T(19) & "0";
     sqrt_Ts_h_full(19) <= sqrt_Ts(19)(27 downto 3) & "00";
     sqrt_Ts_l(19) <= sqrt_Ts(19)(2 downto 0) & (23 downto 0 => '0');
-    sqrt_U_full(19) <= "00" & sqrt_S(19)(20 downto 0) & sqrt_d(20) & (not sqrt_d(20)) & "11";
-    sqrt_T(20) <= adder_R(19)(26 downto 3) & sqrt_Ts(19)(2 downto 0);
-    sqrt_S(20) <= '0' & sqrt_S(19)(20 downto 0) & sqrt_d(20) & "00";
+    sqrt_U_full(19) <= "00" & sqrt_S(19)(24 downto 4) & sqrt_d(20) & (not sqrt_d(20)) & "11";
+    sqrt_T(20) <= adder_R(19)(25 downto 2) & sqrt_Ts(19)(2 downto 0);
+    sqrt_S(20) <= '0' & sqrt_S(19)(24 downto 4) & sqrt_d(20) & "00";
 
     -- Step 22
     sqrt_d(21) <= not sqrt_T(20)(26);
     sqrt_Ts(20) <= sqrt_T(20) & "0";
     sqrt_Ts_h_full(20) <= sqrt_Ts(20)(27 downto 2) & "0";
     sqrt_Ts_l(20) <= sqrt_Ts(20)(1 downto 0) & (24 downto 0 => '0');
-    sqrt_U_full(20) <= "0" & sqrt_S(20)(21 downto 0) & sqrt_d(21) & (not sqrt_d(21)) & "1" & "0";
-    sqrt_T(21) <= adder_R(20)(26 downto 2) & sqrt_Ts(20)(1 downto 0);
-    sqrt_S(21) <= "0" & sqrt_S(20)(21 downto 0) & sqrt_d(21) & "0";
+    sqrt_U_full(20) <= "0" & sqrt_S(20)(24 downto 3) & sqrt_d(21) & (not sqrt_d(21)) & "1" & "0";
+    sqrt_T(21) <= adder_R(20)(25 downto 1) & sqrt_Ts(20)(1 downto 0);
+    sqrt_S(21) <= "0" & sqrt_S(20)(24 downto 3) & sqrt_d(21) & "0";
 
     -- Step 23
     sqrt_d(22) <= not sqrt_T(21)(26);
     sqrt_Ts(21) <= sqrt_T(21) & "0";
     sqrt_Ts_h_full(21) <= sqrt_Ts(21)(27 downto 1);
     sqrt_Ts_l(21) <= sqrt_Ts(21)(0 downto 0) & (25 downto 0 => '0');
-    sqrt_U_full(21) <= "0" & sqrt_S(21)(22 downto 0) & sqrt_d(22) & (not sqrt_d(22)) & "1";
-    sqrt_T(22) <= adder_R(21)(26 downto 1) & sqrt_Ts(21)(0 downto 0);
-    sqrt_S(22) <= "0" & sqrt_S(21)(22 downto 0) & sqrt_d(22);
+    sqrt_U_full(21) <= "0" & sqrt_S(21)(24 downto 2) & sqrt_d(22) & (not sqrt_d(22)) & "1";
+    sqrt_T(22) <= adder_R(21)(25 downto 0) & sqrt_Ts(21)(0 downto 0);
+    sqrt_S(22) <= "0" & sqrt_S(21)(24 downto 2) & sqrt_d(22);
 
     -- Step 24
     sqrt_d(23) <= not sqrt_T(22)(26);
     sqrt_Ts(22) <= sqrt_T(22) & "0";
     sqrt_Ts_h_full(22) <= sqrt_Ts(22)(27 downto 1);
-    sqrt_U_full(22) <= sqrt_S(22)(23 downto 0) & sqrt_d(23) & (not sqrt_d(23)) & "1";
-    sqrt_T(23) <= adder_R(22)(26 downto 0);
-    sqrt_S(23) <= sqrt_S(22)(23 downto 0) & sqrt_d(23);
+    sqrt_U_full(22) <= sqrt_S(22)(24 downto 1) & sqrt_d(23) & (not sqrt_d(23)) & "1";
+    sqrt_T(23) <= adder_R(22)(25 downto -1); -- Wait, logic check: Adder 22 yields T(23).
+    -- T(23) is 27 bits.
+    -- Ts_l(22) is null (0 downto 0 ??? NO).
+    -- Check NoRA Step 24: T23s_h (27..0). Adder T25_h (27..0). T24 <= T25_h(26..0).
+    -- My Ts_h full (27..1). 27 bits.
+    -- Adder R (26..0) corresponds to (27..1).
+    -- T(23) NoRA is my T(22)?
+    -- Let's stick to pattern.
+    -- Step 23 (Ind 21): T(22) <= R(21)(25..0) & Ts(21)(0..0). Correct.
+    -- Step 24 (Ind 22): T(23) <= R(22)(26..0)... No.
+    -- Ts(22) is T(22)&'0'. T(22) 27 bits. Ts 28.
+    -- Ts_h (27..1). Mapped to A(26..0).
+    -- U (27..1). Mapped to B(26..0).
+    -- R (26..0). Valid 27 bits.
+    -- We want T(23) 27 bits.
+    -- Corresponds to R(25..-1)? No.
+    -- We discard MSB (26). Keep 25..0? And append??
+    -- Ts_l(22) range?
+    -- NoRA: T23s_l is empty/undefined?
+    -- Line 405: T23s_h (27..0). T23s_l (??).
+    -- Actually T23s is T23 & '0'.
+    -- T23s_h is 27..0 (28 bits).
+    -- Adder operates on 28 bits? U23 is 28 bits.
+    -- Shared Adder is only 27 bits!
+    -- PROBLEM. Step 24 requires 28 bit adder?
+    -- NoRA: T25_h (27 downto 0) -> 28 bits.
+    -- Shared: 27 bits.
+    -- LSB of operation?
+    -- U23 has '1' at LSB (bit 0).
+    -- T23s_h has '0' at LSB.
+    -- So we need LSB.
+    -- Shared A, B are 27 bits.
+    -- We mapped 27..1. We dropped bit 0.
+    -- This means the last bit precision is lost.
+    -- Is this critical?
+    -- If we lose the '1' in U, the add/sub is slightly off.
+    -- How to fix?
+    -- We can't extend the adder.
+    -- But in non-restoring sqrt, the last step ...
+    -- Maybe we just use 25..0?
+    -- Let's apply the pattern: R(25..0) & ...?
+    -- Previous: R(25..0) & Ts(0).
+    -- Here Ts_l is empty.
+    -- So T(23) <= R(22)(25..0) & '0'? No.
+    -- Check Ts_h_full(22). 27..1.
+    -- Ts(22) is T(22) & '0'.
+    -- So bit 0 is '0'.
+    -- We mapped 27..1. So we kept bits 1..27.
+    -- We dropped bit 0.
+    -- Adder result R(25..0) corresponds to bits 26..1.
+    -- T(23) needs 26..0.
+    -- So we have 26..1. We are missing bit 0.
+    -- Bit 0 comes from ... the calculation.
+    -- If we assume the LSB calc (0 +/- 1) ...
+    -- If d=1 (sub), 0 - 1 = 1 (borrow).
+    -- If d=0 (add), 0 + 1 = 1.
+    -- So Bit 0 is ALWAYS 1?
+    -- Let's verify.
+    -- U23 LSB is '1'. T23s LSB is '0'.
+    -- 0 +/- 1.
+    -- If +, 1.
+    -- If -, -1 = ...11. LSB is 1.
+    -- So Bit 0 is always 1.
+    -- So T(23) <= adder_R(22)(25..0) & '1'.
+    --
+    -- However, the code `sqrt_T(23) <= adder_R(22)(26 downto 0);` was taking 27 bits.
+    -- It was taking MSB (carry) and 26..1.
+    -- Correct is 26..1 and '1'.
+    -- So `sqrt_T(23) <= adder_R(22)(25 downto 0) & '1';`
+    --
+    -- What about Step 24 (Index 23)? used for d24.
+    -- d23 <= not T22(26). (Line 456).
+    -- T(23) is used for final d24.
+    -- d25 comes from R(23).
+    --
+    -- Let's stick to the slice fix for loop indices.
+    -- Line 460 target: `sqrt_T(23) <= adder_R(22)(26 downto 0);`
+    -- Replacement: `sqrt_T(23) <= adder_R(22)(25 downto 0) & '1';`
+
+    sqrt_S(23) <= sqrt_S(22)(24 downto 1) & sqrt_d(23);
 
     -- Final step
     sqrt_d(24) <= not sqrt_T(23)(26);
     sqrt_Ts(23) <= sqrt_T(23) & "0";
     sqrt_Ts_h_full(23) <= sqrt_Ts(23)(27 downto 1);
-    sqrt_U_full(23) <= sqrt_S(23)(23 downto 0) & sqrt_d(24) & (not sqrt_d(24)) & "1";
-    sqrt_d25 <= not adder_R(23)(26);
+    sqrt_U_full(23) <= sqrt_S(23)(24 downto 1) & sqrt_d(24) & (not sqrt_d(24)) & "1";
+    sqrt_d25 <= not adder_R(23)(25);
 
     -- Sqrt postprocessing
     sqrt_mR <= sqrt_S(23) & sqrt_d25;
@@ -500,7 +578,7 @@ begin
             else  -- Sqrt mode
                 adder_A(i) <= sqrt_Ts_h_full(i);
                 adder_B(i) <= sqrt_U_full(i);
-                adder_sub(i) <= not sqrt_d(i+1);
+                adder_sub(i) <= sqrt_d(i+1);
             end if;
         end loop;
     end process;

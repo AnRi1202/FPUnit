@@ -186,87 +186,159 @@ proc run_synth_common {entity_name label} {
 
 set rtl_dir "../rtl/src"
 
-# Task 1: Baseline FPAdd
-puts "--- Task 1: FPAdd ---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd"
+# # Task 1: Baseline FPAdd
+# puts "--- Task 1: FPAdd ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
+# run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd"
 
-# # Task 2: Baseline FPMult
-puts "--- Task 2: FPMult ---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
+# # # Task 2: Baseline FPMult
+# puts "--- Task 2: FPMult ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
+# run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
 
-# # Task 3: Baseline FPDiv
-puts "--- Task 3: FPDiv ---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-run_synth_common "FPDiv_8_23_Freq1_uid2" "FPDiv"
+# # # Task 3: Baseline FPDiv
+# puts "--- Task 3: FPDiv ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
+# run_synth_common "FPDiv_8_23_Freq1_uid2" "FPDiv"
 
-# # Task 4: Baseline FPSqrt
-puts "--- Task 4: FPSqrt ---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
-run_synth_common "FPSqrt_8_23" "FPSqrt"
+# # # Task 4: Baseline FPSqrt
+# puts "--- Task 4: FPSqrt ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
+# run_synth_common "FPSqrt_8_23" "FPSqrt"
 
+# # # Task 4': Baseline FPSqrt
+# puts "--- Task 4': FPSqrt ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/src_divsqrt/FPSqrt_Kin_f1_minor_change.vhdl"
+# run_synth_common "FPSqrt_8_23" "FPSqrt"
+
+# # Task 5: Shared FPAddMul
+# puts "--- Task 5: Shared ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAdd_NoRA.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPMult_NoRA.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAddMul_Shared.vhdl"
+# run_synth_common "FPAddMul_Shared" "FPAddMul_Shared"
+
+# # Task 6: Mux34
+# puts "--- Task 6: Mux34 ---"
+# remove_design -all
+# # Use absolute path to stay safe
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/Mux34.vhdl"
+# run_synth_common "Mux34" "SHARE"
+
+# # Task 6': Mux34
+# puts "--- Task 6': Mux34 ---"
+# remove_design -all
+# # Use absolute path to stay safe
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/IntAdder_8.vhdl"
+# run_synth_common "IntAdder_8" "int8"
+
+# # # Task 7: Baseline FPFMA
+# puts "--- Task 4: FPFMA ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPFMA_Kin_f1_origin.vhdl"
+# run_synth_common "IEEEFPFMA_8_23_Freq1_uid2" "FPFMA"
 # Task 5: Shared FPAddMul
-puts "--- Task 5: Shared ---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAdd_NoRA.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPMult_NoRA.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAddMul_Shared.vhdl"
-run_synth_common "FPAddMul_Shared" "FPAddMul_Shared"
 
-# Task 6: Mux34
-puts "--- Task 6: Mux34 ---"
+# puts "--- Task 8: Shared ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
+
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAdd_NoRA.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPMult_NoRA.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPDiv_NoRA.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPSqrt_NoRA.vhdl"
+
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPALL_Shared.vhdl"
+# run_synth_common "FPALL_Shared" "FPALL_Shared"
+
+# puts "--- Task 9: Shared-divsq ---"
+# remove_design -all
+# # Original FP modules (for IntAdder components)
+# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
+
+# # Shared modules (Add and Mul use these)
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAdd_NoRA.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPMult_NoRA.vhdl"
+
+# # New DivSqrt shared module (replaces FPDiv_NoRA and FPSqrt_NoRA)
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared_divsq/FPDivSqrt_Shared.vhdl"
+
+# # Top-level integration
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared_divsq/FPALL_Shared_divsq.vhdl"
+# run_synth_common "FPALL_Shared_divsq" "FPALL_Shared_divsq"
+
+# # Task 10: Shared FPAddMul
+# puts "--- Task 10: Shared ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPAdd_f100.vhdl"
+# run_synth_common "FPAdd_8_23_Freq100_uid2" "FPAdd_f100"
+
+# # Task 11: Shared FPAddMul
+# puts "--- Task 11: Shared ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPMult_f100.vhdl"
+# run_synth_common "FPMult_8_23_uid2_Freq100_uid3" "FPDiv_f100"
+
+# # Task 12: Shared FPAddMul
+# puts "--- Task 12: Shared ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPDiv_f100.vhdl"
+# run_synth_common "FPDiv_8_23_Freq100_uid2" "FPDiv_f100"
+
+# # Task 13: Shared FPAddMul
+# puts "--- Task 13: Shared ---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPSqrt_f100.vhdl"
+# run_synth_common "FPSqrt_8_23" "FPSqrt_f100"
+
+
+
+# # Task 14: Shared FPAddMul
+# puts "--- Task 14: Pipe Shared ---"
+# remove_design -all
+# # Dependency for Shared Adders (IntAdder_34, IntAdder_27)
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPAdd_f100.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPMult_f100.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPDiv_f100.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPSqrt_f100.vhdl"
+
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe_shared/FPAdd_Pipe_NoRA.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe_shared/FPMult_Pipe_NoRA.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe_shared/FPDiv_Pipe_NoRA.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe_shared/FPSqrt_Pipe_NoRA.vhdl"
+
+# analyze -library WORK -format vhdl "$rtl_dir/src_pipe_shared/FPALL_Pipe_Shared.vhdl"
+# run_synth_common "FPALL_Pipe_Shared" "FPALL_Pipe_Shared"
+
+# Task 14'': bit_ff
+puts "--- Task 14': bit_ff ---"
 remove_design -all
 # Use absolute path to stay safe
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/Mux34.vhdl"
-run_synth_common "Mux34" "SHARE"
+analyze -library WORK -format vhdl "$rtl_dir/src_shared/experiment/bit_ff.vhdl"
+run_synth_common "bit_ff" "bit_ff"
 
 
-# # Task 7: Baseline FPFMA
-puts "--- Task 4: FPFMA ---"
+# Task 14'': bit_ff
+puts "--- Task 14': bit_mux ---"
 remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPFMA_Kin_f1_origin.vhdl"
-run_synth_common "IEEEFPFMA_8_23_Freq1_uid2" "FPFMA"
-Task 5: Shared FPAddMul
+# Use absolute path to stay safe
+analyze -library WORK -format vhdl "$rtl_dir/src_shared/experiment/bit_mux.vhdl"
+run_synth_common "bit_mux" "bit_mux"
 
-puts "--- Task 8: Shared ---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
-
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAdd_NoRA.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPMult_NoRA.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPDiv_NoRA.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPSqrt_NoRA.vhdl"
-
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPALL_Shared.vhdl"
-run_synth_common "FPALL_Shared" "FPALL_Shared"
-
-puts "--- Task 9: Shared-divsq ---"
-remove_design -all
-# Original FP modules (for IntAdder components)
-analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-
-# Shared modules (Add and Mul use these)
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAdd_NoRA.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPMult_NoRA.vhdl"
-
-# New DivSqrt shared module (replaces FPDiv_NoRA and FPSqrt_NoRA)
-analyze -library WORK -format vhdl "$rtl_dir/src_shared_divsq/FPDivSqrt_Shared.vhdl"
-
-# Top-level integration
-analyze -library WORK -format vhdl "$rtl_dir/src_shared_divsq/FPALL_Shared_divsq.vhdl"
-run_synth_common "FPALL_Shared_divsq" "FPALL_Shared_divsq"
 
 exit
+
 

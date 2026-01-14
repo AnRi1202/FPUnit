@@ -63,30 +63,16 @@ signal sigY :  std_logic_vector(23 downto 0);
    -- timing of sigY: (c0, 0.000000ns)
 signal sigProd :  std_logic_vector(47 downto 0);
    -- timing of sigProd: (c0, 4.870000ns)
-signal excSel :  std_logic_vector(3 downto 0);
-   -- timing of excSel: (c0, 0.000000ns)
-signal exc :  std_logic_vector(1 downto 0);
-   -- timing of exc: (c0, 0.043000ns)
-signal norm :  std_logic;
-   -- timing of norm: (c0, 4.870000ns)
-signal expPostNorm :  std_logic_vector(9 downto 0);
-   -- timing of expPostNorm: (c0, 4.870000ns)
-signal sigProdExt :  std_logic_vector(47 downto 0);
-   -- timing of sigProdExt: (c0, 5.413000ns)
-signal expSig :  std_logic_vector(32 downto 0);
-   -- timing of expSig: (c0, 5.413000ns)
-signal sticky :  std_logic;
-   -- timing of sticky: (c0, 5.413000ns)
-signal guard :  std_logic;
-   -- timing of guard: (c0, 6.017250ns)
-signal round :  std_logic;
-   -- timing of round: (c0, 6.560250ns)
-signal expSigPostRound :  std_logic_vector(32 downto 0);
-   -- timing of expSigPostRound: (c0, 7.946250ns)
-signal excPostNorm :  std_logic_vector(1 downto 0);
-   -- timing of excPostNorm: (c0, 7.946250ns)
-signal finalExc :  std_logic_vector(1 downto 0);
-   -- timing of finalExc: (c0, 7.946250ns)
+   -- signals removed for shared exception handling (excSel, exc, excPostNorm, finalExc)
+   -- Restoring arithmetic signals
+   signal norm :  std_logic;
+   signal expPostNorm :  std_logic_vector(9 downto 0);
+   signal sigProdExt :  std_logic_vector(47 downto 0);
+   signal expSig :  std_logic_vector(32 downto 0);
+   signal sticky :  std_logic;
+   signal guard :  std_logic;
+   signal round :  std_logic;
+   signal expSigPostRound :  std_logic_vector(32 downto 0);
 begin
    sign <= X(31) xor Y(31);
    expX <= X(30 downto 23);
@@ -108,12 +94,9 @@ begin
                  X => sigX,
                  Y => sigY,
                  R => sigProd); -- 48bit
-   excSel <= X(33 downto 32) & Y(33 downto 32);
-   with excSel  select  
-   exc <= "00" when  "0000" | "0001" | "0100", 
-          "01" when "0101",
-          "10" when "0110" | "1001" | "1010" ,
-          "11" when others;
+   -- excSel logic removed
+
+
    norm <= sigProd(47); -- 最大桁
    -- exponent update
    expPostNorm <= expSum + ("000000000" & norm); -- 最上位が1ならexpを1つ挙げる. [1,2)同士の掛け算は[2,4), 11ならnormが1になるからexpを上げる
@@ -133,14 +116,7 @@ begin
    round_out <= round;
    expSig_out <= expSig;
    expSigPostRound <= expSigPostRound_in;
-   with expSigPostRound(32 downto 31)  select 
-   excPostNorm <=  "01"  when  "00",
-                               "10"             when "01", 
-                               "00"             when "11"|"10",
-                               "11"             when others;
-   with exc  select  
-   finalExc <= exc when  "11"|"10"|"00",
-                       excPostNorm when others; 
-   R <= finalExc & sign & expSigPostRound(30 downto 0);
-end architecture;
+   -- Final result construction removed
+   R <= (others => '0');
 
+end architecture;
