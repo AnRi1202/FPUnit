@@ -216,15 +216,15 @@ set rtl_dir "../rtl/src"
 # analyze -library WORK -format vhdl "$rtl_dir/src_divsqrt/FPSqrt_Kin_f1_minor_change.vhdl"
 # run_synth_common "FPSqrt_8_23" "FPSqrt"
 
-# # Task 5: Shared FPAddMul
-# puts "--- Task 5: Shared ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAdd_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPMult_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAddMul_Shared.vhdl"
-# run_synth_common "FPAddMul_Shared" "FPAddMul_Shared"
+# Task 5: Shared FPAddMul
+puts "--- Task 5: Shared ---"
+remove_design -all
+analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
+analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
+analyze -library WORK -format vhdl "$rtl_dir/src_addmul_shared/FPAdd_NoRA.vhdl"
+analyze -library WORK -format vhdl "$rtl_dir/src_addmul_shared/FPMult_NoRA.vhdl"
+analyze -library WORK -format vhdl "$rtl_dir/src_addmul_shared/FPAddMul_Shared.vhdl"
+run_synth_common "FPAddMul_Shared" "FPAddMul_Shared"
 
 # # Task 6: Mux34
 # puts "--- Task 6: Mux34 ---"
@@ -323,20 +323,22 @@ set rtl_dir "../rtl/src"
 # analyze -library WORK -format vhdl "$rtl_dir/src_pipe_shared/FPALL_Pipe_Shared.vhdl"
 # run_synth_common "FPALL_Pipe_Shared" "FPALL_Pipe_Shared"
 
-# Task 14'': bit_ff
-puts "--- Task 14': bit_ff ---"
-remove_design -all
-# Use absolute path to stay safe
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/experiment/bit_ff.vhdl"
-run_synth_common "bit_ff" "bit_ff"
+# # Task 14'': bit_ff
+# puts "--- Task 14': bit_ff ---"
+# remove_design -all
+# # Use absolute path to stay safe
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/experiment/bit_ff.vhdl"
+# run_synth_common "bit_ff" "bit_ff"
 
 
-# Task 14'': bit_ff
-puts "--- Task 14': bit_mux ---"
-remove_design -all
-# Use absolute path to stay safe
-analyze -library WORK -format vhdl "$rtl_dir/src_shared/experiment/bit_mux.vhdl"
-run_synth_common "bit_mux" "bit_mux"
+# # Task 14'': bit_ff
+# puts "--- Task 14': bit_mux ---"
+# remove_design -all
+# # Use absolute path to stay safe
+# analyze -library WORK -format vhdl "$rtl_dir/src_shared/experiment/bit_mux.vhdl"
+# run_synth_common "bit_mux" "bit_mux"
+
+
 
 
 exit
