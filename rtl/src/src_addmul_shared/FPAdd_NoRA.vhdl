@@ -26,12 +26,12 @@ entity FPAdd_NoRA is
     port (clk : in std_logic;
           X : in  std_logic_vector(8+23+2 downto 0);
           Y : in  std_logic_vector(8+23+2 downto 0);
-          R : out  std_logic_vector(8+23+2 downto 0);
+          R : out  std_logic_vector(8+23+2 downto 0));
           -- Shared IntAdder_27 ports
-          fracAdder_X_out : out std_logic_vector(26 downto 0);
-          fracAdder_Y_out : out std_logic_vector(26 downto 0);
-          fracAdder_Cin_out : out std_logic;
-          fracAdder_R_in : in std_logic_vector(26 downto 0));
+         --  fracAdder_X_out : out std_logic_vector(26 downto 0);
+         --  fracAdder_Y_out : out std_logic_vector(26 downto 0);
+         --  fracAdder_Cin_out : out std_logic;
+         --  fracAdder_R_in : in std_logic_vector(26 downto 0));
 end entity;
 
 architecture arch of FPAdd_NoRA is
@@ -44,7 +44,14 @@ architecture arch of FPAdd_NoRA is
    end component;
 
    -- IntAdder_27_Freq1_uid6 is now shared in FPALL_Shared
-
+   component IntAdder_27_Freq1_uid6 is
+      port ( clk : in std_logic;
+             X : in  std_logic_vector(26 downto 0);
+             Y : in  std_logic_vector(26 downto 0);
+             Cin : in  std_logic;
+             R : out  std_logic_vector(26 downto 0)   );
+   end component;
+   
    component Normalizer_Z_28_28_28_Freq1_uid8 is
       port ( clk : in std_logic;
              X : in  std_logic_vector(27 downto 0);
@@ -200,10 +207,16 @@ begin
    fracXpad <= "01" & (newX(22 downto 0)) & "00"; --27bit
    cInSigAdd <= EffSub and not sticky; -- if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
    -- Connect to shared IntAdder_27 via ports
-   fracAdder_X_out <= fracXpad;
-   fracAdder_Y_out <= fracYpadXorOp;
-   fracAdder_Cin_out <= cInSigAdd;
-   fracAddResult <= fracAdder_R_in;
+   -- fracAdder_X_out <= fracXpad;
+   -- fracAdder_Y_out <= fracYpadXorOp;
+   -- fracAdder_Cin_out <= cInSigAdd;
+   -- fracAddResult <= fracAdder_R_in;
+   fracAdder: IntAdder_27_Freq1_uid6
+      port map ( clk  => clk,
+                 Cin => cInSigAdd, -- X- Y でYにstickyが存在しない時だけ、補数として1を足す
+                 X => fracXpad,
+                 Y => fracYpadXorOp,
+                 R => fracAddResult);
    fracSticky<= fracAddResult & sticky; -- stickyありの計算結果
    LZCAndShifter: Normalizer_Z_28_28_28_Freq1_uid8 --オーバーフローを考えて28桁なってる
       port map ( clk  => clk,
