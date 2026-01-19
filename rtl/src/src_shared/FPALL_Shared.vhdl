@@ -42,8 +42,8 @@ architecture arch of FPALL_Shared is
             expSig_out : out std_logic_vector(32 downto 0);
             round_out : out std_logic;
             expSigPostRound_in : in std_logic_vector(32 downto 0);
-            expAdder_X_out : out std_logic_vector(26 downto 0);
-            expAdder_Y_out : out std_logic_vector(26 downto 0);
+            expAdder_X_out : out std_logic_vector(7 downto 0);
+            expAdder_Y_out : out std_logic_vector(7 downto 0);
             expAdder_Cin_out : out std_logic;
             expAdder_R_in : in std_logic_vector(26 downto 0)
         );
@@ -55,8 +55,8 @@ architecture arch of FPALL_Shared is
             X : in  std_logic_vector(33 downto 0);
             R : out  std_logic_vector(33 downto 0);
             round_out : out std_logic;
-            expFrac_out: out std_logic_vector(33 downto 0);
-            RoundedExpFrac_in : in std_logic_vector(33 downto 0)
+            expFrac_out: out std_logic_vector(22 downto 0);
+            RoundedExpFrac_in : in std_logic_vector(22 downto 0)
         );
     end component;
 
@@ -102,9 +102,9 @@ architecture arch of FPALL_Shared is
 
     -- Sqrt signals
     signal sqrt_R : std_logic_vector(33 downto 0);
-    signal sqrt_expFrac : std_logic_vector(33 downto 0);
+    signal sqrt_expFrac : std_logic_vector(22 downto 0);
     signal sqrt_round : std_logic;
-    signal sqrt_ResultBack : std_logic_vector(33 downto 0);
+    signal sqrt_ResultBack : std_logic_vector(22 downto 0);
 
     -- Div signals
     signal div_R : std_logic_vector(33 downto 0);
@@ -123,8 +123,8 @@ architecture arch of FPALL_Shared is
     signal add_fracAdder_Cin : std_logic;
     signal add_fracAdder_R : std_logic_vector(26 downto 0);
     
-    signal mul_expAdder_X : std_logic_vector(26 downto 0);
-    signal mul_expAdder_Y : std_logic_vector(26 downto 0);
+    signal mul_expAdder_X : std_logic_vector(7 downto 0);
+    signal mul_expAdder_Y : std_logic_vector(7 downto 0);
     signal mul_expAdder_Cin : std_logic;
     signal mul_expAdder_R : std_logic_vector(26 downto 0);
     
@@ -192,10 +192,15 @@ begin
     
     -- Multiplex inputs to Shared Rounding Adder
     -- opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
-    ra_X <= add_expFrac when opcode="00" else 
-            ('0' & mul_expSig) when opcode="01" else
+    ra_X(33) <= add_expFrac(33);
+    ra_X(32 downto 23) <= add_expFrac(32 downto 23) when opcode="00" else 
+                        mul_expSig(32 downto 23) when opcode="01" else
+                        div_expfrac(32 downto 23); -- 11 for Div
+
+    ra_X(22 downto 0) <= add_expFrac(22 downto 0) when opcode="00" else 
+            mul_expSig(22 downto 0) when opcode="01" else
             sqrt_expFrac when opcode="10" else
-            ('0' & div_expfrac); -- 11 for Div
+            div_expfrac(22 downto 0); -- 11 for Div
             
     ra_Cin <= add_round when opcode="00" else 
               mul_round when opcode="01" else
@@ -204,10 +209,11 @@ begin
     
     -- Multiplex inputs to Shared IntAdder_27
     -- opcode: 00=Add (fracAdder), 01=Mul (expAdder), others unused
-    ia27_X <= add_fracAdder_X when opcode="00" else
+    ia27_X(26 downto 8) <= add_fracAdder_X(26 downto 8);
+    ia27_X(7 downto 0) <= add_fracAdder_X (7 downto 0) when opcode="00" else
               mul_expAdder_X; -- when opcode="01"
-    
-    ia27_Y <= add_fracAdder_Y when opcode="00" else
+    ia27_Y(26 downto 8) <= add_fracAdder_Y(26 downto 8);
+    ia27_Y(7 downto 0)<= add_fracAdder_Y(7 downto 0) when opcode="00" else
               mul_expAdder_Y; -- when opcode="01"
     
     ia27_Cin <= add_fracAdder_Cin when opcode="00" else
@@ -245,7 +251,7 @@ begin
     mul_ResultBack <= ra_R(32 downto 0);
     
     -- Sqrt expects 34 bits
-    sqrt_ResultBack <= ra_R;
+    sqrt_ResultBack <= ra_R(22 downto 0);
 
     -- Div expects 33 bits
     div_ResultBack <= ra_R(32 downto 0);

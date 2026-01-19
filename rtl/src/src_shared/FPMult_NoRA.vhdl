@@ -23,8 +23,8 @@ entity FPMult_NoRA is
           expSig_out : out std_logic_vector(32 downto 0);
           expSigPostRound_in : in std_logic_vector(32 downto 0);
           -- Shared IntAdder_27 ports for exp calculations
-          expAdder_X_out : out std_logic_vector(26 downto 0);
-          expAdder_Y_out : out std_logic_vector(26 downto 0);
+          expAdder_X_out : out std_logic_vector(7 downto 0);
+          expAdder_Y_out : out std_logic_vector(7 downto 0);
           expAdder_Cin_out : out std_logic;
           expAdder_R_in : in std_logic_vector(26 downto 0) );
 end entity;
@@ -80,8 +80,8 @@ begin
    
    -- Use shared IntAdder_27 for expSumPreSub calculation
    -- Pad 10-bit values to 27-bit
-   expAdder_X_out <= "00000000000000000" & "00" & expX;  -- 27-bit with upper 17 bits zero
-   expAdder_Y_out <= "00000000000000000" & "00" & expY;  -- 27-bit with upper 17 bits zero
+   expAdder_X_out <=expX;  -- 8bit  
+   expAdder_Y_out <=expY;  -- 8bit
    expAdder_Cin_out <= '0';
    expSumPreSub <= expAdder_R_in(9 downto 0);  -- Extract lower 10 bits
    
