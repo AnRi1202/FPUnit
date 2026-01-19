@@ -27,9 +27,6 @@ entity FPAdd_NoRA is
           X : in  std_logic_vector(8+23+2 downto 0);
           Y : in  std_logic_vector(8+23+2 downto 0);
           R : out  std_logic_vector(8+23+2 downto 0);
-          round_out : out std_logic;
-          expFrac_out: out std_logic_vector(33 downto 0);
-          RoundedExpFrac_in : in std_logic_vector(33 downto 0); -- 再び入れるという不気味な形ではあるが、combinationalなので
           -- Shared IntAdder_27 ports
           fracAdder_X_out : out std_logic_vector(26 downto 0);
           fracAdder_Y_out : out std_logic_vector(26 downto 0);
@@ -55,13 +52,13 @@ architecture arch of FPAdd_NoRA is
              R : out  std_logic_vector(27 downto 0)   );
    end component;
 
-   -- component IntAdder_34_Freq1_uid11 is
-   --    port ( clk : in std_logic;
-   --           X : in  std_logic_vector(33 downto 0);
-   --           Y : in  std_logic_vector(33 downto 0);
-   --           Cin : in  std_logic;
-   --           R : out  std_logic_vector(33 downto 0)   );
-   -- end component;
+   component IntAdder_34_Freq1_uid11 is
+      port ( clk : in std_logic;
+             X : in  std_logic_vector(33 downto 0);
+             Y : in  std_logic_vector(33 downto 0);
+             Cin : in  std_logic;
+             R : out  std_logic_vector(33 downto 0)   );
+   end component;
 
 signal excExpFracX :  std_logic_vector(32 downto 0);
    -- timing of excExpFracX: (c0, 0.000000ns)
@@ -223,18 +220,15 @@ begin
    lsb<= shiftedFrac(4);
    round<= '1' when (rnd='1' and stk='1') or (rnd='1' and stk='0' and lsb='1')
   else '0';
-   -- roundingAdder: IntAdder_34_Freq1_uid11
-   --    port map ( clk  => clk,
-   --               Cin => round,
-   --               X => expFrac,
-   --               Y => "0000000000000000000000000000000000",
-   --               R => RoundedExpFrac);
+   roundingAdder: IntAdder_34_Freq1_uid11
+      port map ( clk  => clk,
+                 Cin => round,
+                 X => expFrac,
+                 Y => "0000000000000000000000000000000000",
+                 R => RoundedExpFrac);
    -- possible update to exception bits
-   expFrac_out <=expFrac;
-   round_out <= round;
 
    -- ここまでで一回外にでて、また外から戻ってくる
-   RoundedExpFrac <= RoundedExpFrac_in;
    upExc <= RoundedExpFrac(33 downto 32); -- overflowで01, underflowで11になる
    fracR <= RoundedExpFrac(23 downto 1); --23bit
    expR <= RoundedExpFrac(31 downto 24); --8bit

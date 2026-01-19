@@ -19,9 +19,9 @@ entity FPMult_NoRA is
           X : in  std_logic_vector(8+23+2 downto 0);
           Y : in  std_logic_vector(8+23+2 downto 0);
           R : out  std_logic_vector(8+23+2 downto 0);
-          round_out : out std_logic;
-          expSig_out : out std_logic_vector(32 downto 0);
-          expSigPostRound_in : in std_logic_vector(32 downto 0);
+         --  round_out : out std_logic;
+         --  expSig_out : out std_logic_vector(32 downto 0);
+         --  expSigPostRound_in : in std_logic_vector(32 downto 0);
           -- Shared IntAdder_27 ports for exp calculations
           expAdder_X_out : out std_logic_vector(7 downto 0);
           expAdder_Y_out : out std_logic_vector(7 downto 0);
@@ -37,13 +37,13 @@ architecture arch of FPMult_NoRA is
              R : out  std_logic_vector(47 downto 0)   );
    end component;
 
-   -- component IntAdder_33_Freq1_uid280 is
-   --    port ( clk : in std_logic;
-   --           X : in  std_logic_vector(32 downto 0);
-   --           Y : in  std_logic_vector(32 downto 0);
-   --           Cin : in  std_logic;
-   --           R : out  std_logic_vector(32 downto 0)   );
-   -- end component;
+   component IntAdder_33_Freq1_uid280 is
+      port ( clk : in std_logic;
+             X : in  std_logic_vector(32 downto 0);
+             Y : in  std_logic_vector(32 downto 0);
+             Cin : in  std_logic;
+             R : out  std_logic_vector(32 downto 0)   );
+   end component;
 
 signal sign :  std_logic;
    -- timing of sign: (c0, 0.043000ns)
@@ -113,15 +113,15 @@ begin
    sticky <= sigProdExt(24); -- addとは意味が違う sticky, guardの順番(addはguard, stickyだった)
    guard <= '0' when sigProdExt(23 downto 0)="000000000000000000000000" else '1';
    round <= sticky and ( (guard and not(sigProdExt(25))) or (sigProdExt(25) ))  ;
-   -- RoundingAdder: IntAdder_33_Freq1_uid280
-   --    port map ( clk  => clk,
-   --               Cin => round,
-   --               X => expSig,
-   --               Y => "000000000000000000000000000000000",
-   --               R => expSigPostRound);
-   round_out <= round;
-   expSig_out <= expSig;
-   expSigPostRound <= expSigPostRound_in;
+   RoundingAdder: IntAdder_33_Freq1_uid280
+      port map ( clk  => clk,
+                 Cin => round,
+                 X => expSig,
+                 Y => "000000000000000000000000000000000",
+                 R => expSigPostRound);
+   -- round_out <= round;
+   -- expSig_out <= expSig;
+   -- expSigPostRound <= expSigPostRound_in;
 
    with expSigPostRound(32 downto 31)  select 
    excPostNorm <=  "01"  when  "00",
