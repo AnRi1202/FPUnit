@@ -11,427 +11,427 @@ typedef enum logic [1:0] {
 } fp_op_e;
 
 module FPALL_Shared_combine(
-    input wire clk,
+    input logic clk,
     input fp_op_e opcode, //00: Add, 01: Mul, 10: Sqrt, 11: Div
     input fp_fmt_e fmt, // 
-    input wire [31:0] X,
-    input wire [31:0] Y,
-    output wire [31:0] R
+    input logic [31:0] X,
+    input logic [31:0] Y,
+    output logic [31:0] R
 );
 
     
     // FPAdd signals
-    wire [32:0] excExpFracX, excExpFracY;
-    wire swap;
-    wire [7:0] expDiff;
-    wire [31:0] newX, newY;
-    wire [7:0] add_expX;
-    wire signX, signY, EffSub;
-    wire [1:0] sXsYExnXY;
-    wire [3:0] sdExnXY;
-    wire [23:0] fracY;
-    wire [1:0] excRt;
-    wire signR, shiftedOut;
-    wire [4:0] shiftVal;
-    wire [25:0] shiftedFracY;
-    wire add_sticky;
-    wire [26:0] fracYpad, EffSubVector, fracYpadXorOp, fracXpad;
-    wire cInSigAdd;
-    wire [26:0] fracAddResult;
-    wire [27:0] fracSticky;
-    wire [4:0] nZerosNew;
-    wire [27:0] shiftedFrac;
-    wire [8:0] extendedExpInc;
-    wire [9:0] updatedExp;
-    wire eqdiffsign;
-    wire stk, rnd, lsb;
-    wire [33:0] RoundedExpFrac;
-    wire [22:0] fracR;
-    wire [7:0] expR;
-    wire [3:0] exExpExc;
-    wire [1:0] excRt2, excR;
-    wire signR2;
-    wire [33:0] computedR;
+    logic [32:0] excExpFracX, excExpFracY;
+    logic swap;
+    logic [7:0] expDiff;
+    logic [31:0] newX, newY;
+    logic [7:0] add_expX;
+    logic signX, signY, EffSub;
+    logic [1:0] sXsYExnXY;
+    logic [3:0] sdExnXY;
+    logic [23:0] fracY;
+    logic [1:0] excRt;
+    logic signR, shiftedOut;
+    logic [4:0] shiftVal;
+    logic [25:0] shiftedFracY;
+    logic add_sticky;
+    logic [26:0] fracYpad, EffSubVector, fracYpadXorOp, fracXpad;
+    logic cInSigAdd;
+    logic [26:0] fracAddResult;
+    logic [27:0] fracSticky;
+    logic [4:0] nZerosNew;
+    logic [27:0] shiftedFrac;
+    logic [8:0] extendedExpInc;
+    logic [9:0] updatedExp;
+    logic eqdiffsign;
+    logic stk, rnd, lsb;
+    logic [33:0] RoundedExpFrac;
+    logic [22:0] fracR;
+    logic [7:0] expR;
+    logic [3:0] exExpExc;
+    logic [1:0] excRt2, excR;
+    logic signR2;
+    logic [33:0] computedR;
 
     // FPMul signals
-    wire sign;
-    wire [7:0] mul_expX, expY;
-    wire [9:0] expSumPreSub, bias, expSum;
-    wire [23:0] sigX, sigY;
-    wire [47:0] sigProd;
-    wire [3:0] excSel;
-    wire [1:0] exc;
-    wire norm;
-    wire [9:0] expPostNorm;
-    wire [47:0] sigProdExt;
-    wire [32:0] expSig;
-    wire mul_sticky, guard, mul_round;
-    wire [30:0] expSigPostRound;
-    wire [1:0] excPostNorm, finalExc;
+    logic sign;
+    logic [7:0] mul_expX, expY;
+    logic [9:0] expSumPreSub, bias, expSum;
+    logic [23:0] sigX, sigY;
+    logic [47:0] sigProd;
+    logic [3:0] excSel;
+    logic [1:0] exc;
+    logic norm;
+    logic [9:0] expPostNorm;
+    logic [47:0] sigProdExt;
+    logic [32:0] expSig;
+    logic mul_sticky, guard, mul_round;
+    logic [30:0] expSigPostRound;
+    logic [1:0] excPostNorm, finalExc;
 
     // FPDiv signals
-    wire [23:0] fX, fY;
-    wire [9:0] expR0;
-    wire sR;
-    wire [3:0] exnXY;
-    wire [1:0] exnR0;
-    wire [23:0] D;
-    wire [24:0] psX;
+    logic [23:0] fX, fY;
+    logic [9:0] expR0;
+    logic sR;
+    logic [3:0] exnXY;
+    logic [1:0] exnR0;
+    logic [23:0] D;
+    logic [24:0] psX;
     
     // Div iterations (unrolled)
-    wire [26:0] betaw14, w13;
-    reg [26:0] absq14D; // reg/logic for always_comb
-    wire [8:0] sel14;
-    wire [2:0] q14, q14_copy5;
+    logic [26:0] betaw14, w13;
+    logic[26:0] absq14D; // reg/logic for always_comb
+    logic [8:0] sel14;
+    logic [2:0] q14, q14_copy5;
     
-    wire [26:0] betaw13, w12;
-    reg [26:0] absq13D;
-    wire [8:0] sel13;
-    wire [2:0] q13, q13_copy6;
+    logic [26:0] betaw13, w12;
+    logic[26:0] absq13D;
+    logic [8:0] sel13;
+    logic [2:0] q13, q13_copy6;
     
-    wire [26:0] betaw12, w11;
-    reg [26:0] absq12D;
-    wire [8:0] sel12;
-    wire [2:0] q12, q12_copy7;
+    logic [26:0] betaw12, w11;
+    logic[26:0] absq12D;
+    logic [8:0] sel12;
+    logic [2:0] q12, q12_copy7;
 
-    wire [26:0] betaw11, w10;
-    reg [26:0] absq11D;
-    wire [8:0] sel11;
-    wire [2:0] q11, q11_copy8;
+    logic [26:0] betaw11, w10;
+    logic[26:0] absq11D;
+    logic [8:0] sel11;
+    logic [2:0] q11, q11_copy8;
     
-    wire [26:0] betaw10, w9;
-    reg [26:0] absq10D;
-    wire [8:0] sel10;
-    wire [2:0] q10, q10_copy9;
+    logic [26:0] betaw10, w9;
+    logic[26:0] absq10D;
+    logic [8:0] sel10;
+    logic [2:0] q10, q10_copy9;
     
-    wire [26:0] betaw9, w8;
-    reg [26:0] absq9D;
-    wire [8:0] sel9;
-    wire [2:0] q9, q9_copy10;
+    logic [26:0] betaw9, w8;
+    logic[26:0] absq9D;
+    logic [8:0] sel9;
+    logic [2:0] q9, q9_copy10;
     
-    wire [26:0] betaw8, w7;
-    reg [26:0] absq8D;
-    wire [8:0] sel8;
-    wire [2:0] q8, q8_copy11;
+    logic [26:0] betaw8, w7;
+    logic[26:0] absq8D;
+    logic [8:0] sel8;
+    logic [2:0] q8, q8_copy11;
     
-    wire [26:0] betaw7, w6;
-    reg [26:0] absq7D;
-    wire [8:0] sel7;
-    wire [2:0] q7, q7_copy12;
+    logic [26:0] betaw7, w6;
+    logic[26:0] absq7D;
+    logic [8:0] sel7;
+    logic [2:0] q7, q7_copy12;
     
-    wire [26:0] betaw6, w5;
-    reg [26:0] absq6D;
-    wire [8:0] sel6;
-    wire [2:0] q6, q6_copy13;
+    logic [26:0] betaw6, w5;
+    logic[26:0] absq6D;
+    logic [8:0] sel6;
+    logic [2:0] q6, q6_copy13;
     
-    wire [26:0] betaw5, w4;
-    reg [26:0] absq5D;
-    wire [8:0] sel5;
-    wire [2:0] q5, q5_copy14;
+    logic [26:0] betaw5, w4;
+    logic[26:0] absq5D;
+    logic [8:0] sel5;
+    logic [2:0] q5, q5_copy14;
     
-    wire [26:0] betaw4, w3;
-    reg [26:0] absq4D;
-    wire [8:0] sel4;
-    wire [2:0] q4, q4_copy15;
+    logic [26:0] betaw4, w3;
+    logic[26:0] absq4D;
+    logic [8:0] sel4;
+    logic [2:0] q4, q4_copy15;
     
-    wire [26:0] betaw3, w2;
-    reg [26:0] absq3D;
-    wire [8:0] sel3;
-    wire [2:0] q3, q3_copy16;
+    logic [26:0] betaw3, w2;
+    logic[26:0] absq3D;
+    logic [8:0] sel3;
+    logic [2:0] q3, q3_copy16;
     
-    wire [26:0] betaw2, w1;
-    reg [26:0] absq2D;
-    wire [8:0] sel2;
-    wire [2:0] q2, q2_copy17;
+    logic [26:0] betaw2, w1;
+    logic[26:0] absq2D;
+    logic [8:0] sel2;
+    logic [2:0] q2, q2_copy17;
     
-    wire [26:0] betaw1, w0;
-    reg [26:0] absq1D;
-    wire [8:0] sel1;
-    wire [2:0] q1, q1_copy18;
+    logic [26:0] betaw1, w0;
+    logic[26:0] absq1D;
+    logic [8:0] sel1;
+    logic [2:0] q1, q1_copy18;
 
-    wire [24:0] wfinal;
-    wire qM0;
-    wire [1:0] qP14, qM14, qP13, qM13, qP12, qM12, qP11, qM11, qP10, qM10;
-    wire [1:0] qP9, qM9, qP8, qM8, qP7, qM7, qP6, qM6, qP5, qM5, qP4, qM4;
-    wire [1:0] qP3, qM3, qP2, qM2, qP1, qM1;
-    wire [27:0] qP, qM, quotient;
-    wire [25:0] div_mR;
-    wire [23:0] fRnorm;
-    wire div_round;
-    wire [9:0] expR1;
-    wire [32:0] div_expfrac, expfracR;
-    wire [1:0] exnR, exnRfinal;
-    wire [31:0] div_R;
+    logic [24:0] wfinal;
+    logic qM0;
+    logic [1:0] qP14, qM14, qP13, qM13, qP12, qM12, qP11, qM11, qP10, qM10;
+    logic [1:0] qP9, qM9, qP8, qM8, qP7, qM7, qP6, qM6, qP5, qM5, qP4, qM4;
+    logic [1:0] qP3, qM3, qP2, qM2, qP1, qM1;
+    logic [27:0] qP, qM, quotient;
+    logic [25:0] div_mR;
+    logic [23:0] fRnorm;
+    logic div_round;
+    logic [9:0] expR1;
+    logic [32:0] div_expfrac, expfracR;
+    logic [1:0] exnR, exnRfinal;
+    logic [31:0] div_R;
 
     // FPSqrt signals
-    wire [22:0] fracX;
-    wire [7:0] eRn0;
-    wire [2:0] xsX;
-    wire [7:0] eRn1;
-    wire [26:0] fracXnorm;
+    logic [22:0] fracX;
+    logic [7:0] eRn0;
+    logic [2:0] xsX;
+    logic [7:0] eRn1;
+    logic [26:0] fracXnorm;
     
-    wire [1:0] S0;
-    wire [26:0] T1;
-    wire d1;
-    wire [27:0] T1s;
-    wire [5:0] T1s_h, U1, T3_h;
-    wire [21:0] T1s_l;
+    logic [1:0] S0;
+    logic [26:0] T1;
+    logic d1;
+    logic [27:0] T1s;
+    logic [5:0] T1s_h, U1, T3_h;
+    logic [21:0] T1s_l;
     
-    wire [26:0] T2;
-    wire [2:0] S1;
-    wire d2;
-    wire [27:0] T2s;
-    wire [6:0] T2s_h, U2, T4_h;
-    wire [20:0] T2s_l;
+    logic [26:0] T2;
+    logic [2:0] S1;
+    logic d2;
+    logic [27:0] T2s;
+    logic [6:0] T2s_h, U2, T4_h;
+    logic [20:0] T2s_l;
 
-    wire [26:0] T3;
-    wire [3:0] S2;
-    wire d3;
-    wire [27:0] T3s;
-    wire [7:0] T3s_h, U3, T5_h;
-    wire [19:0] T3s_l;
+    logic [26:0] T3;
+    logic [3:0] S2;
+    logic d3;
+    logic [27:0] T3s;
+    logic [7:0] T3s_h, U3, T5_h;
+    logic [19:0] T3s_l;
 
-    wire [26:0] T4;
-    wire [4:0] S3;
-    wire d4;
-    wire [27:0] T4s;
-    wire [8:0] T4s_h, U4, T6_h;
-    wire [18:0] T4s_l;
+    logic [26:0] T4;
+    logic [4:0] S3;
+    logic d4;
+    logic [27:0] T4s;
+    logic [8:0] T4s_h, U4, T6_h;
+    logic [18:0] T4s_l;
     
-    wire [26:0] T5;
-    wire [5:0] S4;
-    wire d5;
-    wire [27:0] T5s;
-    wire [9:0] T5s_h, U5, T7_h;
-    wire [17:0] T5s_l;
+    logic [26:0] T5;
+    logic [5:0] S4;
+    logic d5;
+    logic [27:0] T5s;
+    logic [9:0] T5s_h, U5, T7_h;
+    logic [17:0] T5s_l;
 
-    wire [26:0] T6;
-    wire [6:0] S5;
-    wire d6;
-    wire [27:0] T6s;
-    wire [10:0] T6s_h, U6, T8_h;
-    wire [16:0] T6s_l;
+    logic [26:0] T6;
+    logic [6:0] S5;
+    logic d6;
+    logic [27:0] T6s;
+    logic [10:0] T6s_h, U6, T8_h;
+    logic [16:0] T6s_l;
 
-    wire [26:0] T7;
-    wire [7:0] S6;
-    wire d7;
-    wire [27:0] T7s;
-    wire [11:0] T7s_h, U7, T9_h;
-    wire [15:0] T7s_l;
+    logic [26:0] T7;
+    logic [7:0] S6;
+    logic d7;
+    logic [27:0] T7s;
+    logic [11:0] T7s_h, U7, T9_h;
+    logic [15:0] T7s_l;
     
-    wire [26:0] T8;
-    wire [8:0] S7;
-    wire d8;
-    wire [27:0] T8s;
-    wire [12:0] T8s_h, U8, T10_h;
-    wire [14:0] T8s_l;
+    logic [26:0] T8;
+    logic [8:0] S7;
+    logic d8;
+    logic [27:0] T8s;
+    logic [12:0] T8s_h, U8, T10_h;
+    logic [14:0] T8s_l;
 
-    wire [26:0] T9;
-    wire [9:0] S8;
-    wire d9;
-    wire [27:0] T9s;
-    wire [13:0] T9s_h, U9, T11_h;
-    wire [13:0] T9s_l;
+    logic [26:0] T9;
+    logic [9:0] S8;
+    logic d9;
+    logic [27:0] T9s;
+    logic [13:0] T9s_h, U9, T11_h;
+    logic [13:0] T9s_l;
 
-    wire [26:0] T10;
-    wire [10:0] S9;
-    wire d10;
-    wire [27:0] T10s;
-    wire [14:0] T10s_h, U10, T12_h;
-    wire [12:0] T10s_l;
+    logic [26:0] T10;
+    logic [10:0] S9;
+    logic d10;
+    logic [27:0] T10s;
+    logic [14:0] T10s_h, U10, T12_h;
+    logic [12:0] T10s_l;
     
-    wire [26:0] T11;
-    wire [11:0] S10;
-    wire d11;
-    wire [27:0] T11s;
-    wire [15:0] T11s_h, U11, T13_h;
-    wire [11:0] T11s_l;
+    logic [26:0] T11;
+    logic [11:0] S10;
+    logic d11;
+    logic [27:0] T11s;
+    logic [15:0] T11s_h, U11, T13_h;
+    logic [11:0] T11s_l;
     
-    wire [26:0] T12;
-    wire [12:0] S11;
-    wire d12;
-    wire [27:0] T12s;
-    wire [16:0] T12s_h, U12, T14_h;
-    wire [10:0] T12s_l;
+    logic [26:0] T12;
+    logic [12:0] S11;
+    logic d12;
+    logic [27:0] T12s;
+    logic [16:0] T12s_h, U12, T14_h;
+    logic [10:0] T12s_l;
     
-    wire [26:0] T13;
-    wire [13:0] S12;
-    wire d13;
-    wire [27:0] T13s;
-    wire [17:0] T13s_h, U13, T15_h;
-    wire [9:0] T13s_l;
+    logic [26:0] T13;
+    logic [13:0] S12;
+    logic d13;
+    logic [27:0] T13s;
+    logic [17:0] T13s_h, U13, T15_h;
+    logic [9:0] T13s_l;
     
-    wire [26:0] T14;
-    wire [14:0] S13;
-    wire d14;
-    wire [27:0] T14s;
-    wire [18:0] T14s_h, U14, T16_h;
-    wire [8:0] T14s_l;
+    logic [26:0] T14;
+    logic [14:0] S13;
+    logic d14;
+    logic [27:0] T14s;
+    logic [18:0] T14s_h, U14, T16_h;
+    logic [8:0] T14s_l;
     
-    wire [26:0] T15;
-    wire [15:0] S14;
-    wire d15;
-    wire [27:0] T15s;
-    wire [19:0] T15s_h, U15, T17_h;
-    wire [7:0] T15s_l;
+    logic [26:0] T15;
+    logic [15:0] S14;
+    logic d15;
+    logic [27:0] T15s;
+    logic [19:0] T15s_h, U15, T17_h;
+    logic [7:0] T15s_l;
     
-    wire [26:0] T16;
-    wire [16:0] S15;
-    wire d16;
-    wire [27:0] T16s;
-    wire [20:0] T16s_h, U16, T18_h;
-    wire [6:0] T16s_l;
+    logic [26:0] T16;
+    logic [16:0] S15;
+    logic d16;
+    logic [27:0] T16s;
+    logic [20:0] T16s_h, U16, T18_h;
+    logic [6:0] T16s_l;
     
-    wire [26:0] T17;
-    wire [17:0] S16;
-    wire d17;
-    wire [27:0] T17s;
-    wire [21:0] T17s_h, U17, T19_h;
-    wire [5:0] T17s_l;
+    logic [26:0] T17;
+    logic [17:0] S16;
+    logic d17;
+    logic [27:0] T17s;
+    logic [21:0] T17s_h, U17, T19_h;
+    logic [5:0] T17s_l;
     
-    wire [26:0] T18;
-    wire [18:0] S17;
-    wire d18;
-    wire [27:0] T18s;
-    wire [22:0] T18s_h, U18, T20_h;
-    wire [4:0] T18s_l;
+    logic [26:0] T18;
+    logic [18:0] S17;
+    logic d18;
+    logic [27:0] T18s;
+    logic [22:0] T18s_h, U18, T20_h;
+    logic [4:0] T18s_l;
     
-    wire [26:0] T19;
-    wire [19:0] S18;
-    wire d19;
-    wire [27:0] T19s;
-    wire [23:0] T19s_h, U19, T21_h;
-    wire [3:0] T19s_l;
+    logic [26:0] T19;
+    logic [19:0] S18;
+    logic d19;
+    logic [27:0] T19s;
+    logic [23:0] T19s_h, U19, T21_h;
+    logic [3:0] T19s_l;
 
-    wire [26:0] T20;
-    wire [20:0] S19;
-    wire d20;
-    wire [27:0] T20s;
-    wire [24:0] T20s_h, U20, T22_h;
-    wire [2:0] T20s_l;
+    logic [26:0] T20;
+    logic [20:0] S19;
+    logic d20;
+    logic [27:0] T20s;
+    logic [24:0] T20s_h, U20, T22_h;
+    logic [2:0] T20s_l;
     
-    wire [26:0] T21;
-    wire [21:0] S20;
-    wire d21;
-    wire [27:0] T21s;
-    wire [25:0] T21s_h, U21, T23_h;
-    wire [1:0] T21s_l;
+    logic [26:0] T21;
+    logic [21:0] S20;
+    logic d21;
+    logic [27:0] T21s;
+    logic [25:0] T21s_h, U21, T23_h;
+    logic [1:0] T21s_l;
     
-    wire [26:0] T22;
-    wire [22:0] S21;
-    wire d22;
-    wire [27:0] T22s;
-    wire [26:0] T22s_h, U22, T24_h;
-    wire [0:0] T22s_l;
+    logic [26:0] T22;
+    logic [22:0] S21;
+    logic d22;
+    logic [27:0] T22s;
+    logic [26:0] T22s_h, U22, T24_h;
+    logic [0:0] T22s_l;
     
-    wire [26:0] T23;
-    wire [23:0] S22;
-    wire d23;
-    wire [27:0] T23s;
-    wire [27:0] T23s_h, U23, T25_h;
+    logic [26:0] T23;
+    logic [23:0] S22;
+    logic d23;
+    logic [27:0] T23s;
+    logic [27:0] T23s_h, U23, T25_h;
     
-    wire [26:0] T24;
-    wire [24:0] S23;
-    wire d25;
-    wire [25:0] sqrt_mR;
-    wire [22:0] fR;
-    wire sqrt_round;
-    wire [22:0] fRrnd;
-    wire [30:0] Rn2;
-    wire [2:0] xsR;
-    wire [31:0] sqrt_R;
-    wire [22:0] sqrt_expFrac;
+    logic [26:0] T24;
+    logic [24:0] S23;
+    logic d25;
+    logic [25:0] sqrt_mR;
+    logic [22:0] fR;
+    logic sqrt_round;
+    logic [22:0] fRrnd;
+    logic [30:0] Rn2;
+    logic [2:0] xsR;
+    logic [31:0] sqrt_R;
+    logic [22:0] sqrt_expFrac;
 
     // Shared Add/Sub Signals
     // Gen 0
-    wire [27:0] shared_as_x0, shared_as_y0;
-    wire shared_as_sub0;
-    wire [27:0] shared_as_r0, sub_mask0, y_xor0, cin_vec0;
+    logic [27:0] shared_as_x0, shared_as_y0;
+    logic shared_as_sub0;
+    logic [27:0] shared_as_r0, sub_mask0, y_xor0, cin_vec0;
     
     // Gen 1
-    wire [26:0] shared_as_x1, shared_as_y1;
-    wire shared_as_sub1;
-    wire [26:0] shared_as_r1;
+    logic [26:0] shared_as_x1, shared_as_y1;
+    logic shared_as_sub1;
+    logic [26:0] shared_as_r1;
     
     // Gen 2
-    wire [26:0] shared_as_x2, shared_as_y2;
-    wire shared_as_sub2;
-    wire [26:0] shared_as_r2, sub_mask2, y_xor2, cin_vec2;
+    logic [26:0] shared_as_x2, shared_as_y2;
+    logic shared_as_sub2;
+    logic [26:0] shared_as_r2, sub_mask2, y_xor2, cin_vec2;
     
     // Gen 3
-    wire [26:0] shared_as_x3, shared_as_y3;
-    wire shared_as_sub3;
-    wire [26:0] shared_as_r3;
+    logic [26:0] shared_as_x3, shared_as_y3;
+    logic shared_as_sub3;
+    logic [26:0] shared_as_r3;
     
     // Gen 4
-    wire [26:0] shared_as_x4, shared_as_y4;
-    wire shared_as_sub4;
-    wire [26:0] shared_as_r4;
+    logic [26:0] shared_as_x4, shared_as_y4;
+    logic shared_as_sub4;
+    logic [26:0] shared_as_r4;
     
     // Gen 5
-    wire [26:0] shared_as_x5, shared_as_y5;
-    wire shared_as_sub5;
-    wire [26:0] shared_as_r5, sub_mask5, y_xor5, cin_vec5;
+    logic [26:0] shared_as_x5, shared_as_y5;
+    logic shared_as_sub5;
+    logic [26:0] shared_as_r5, sub_mask5, y_xor5, cin_vec5;
     
     // Gen 6
-    wire [26:0] shared_as_x6, shared_as_y6;
-    wire shared_as_sub6;
-    wire [26:0] shared_as_r6;
+    logic [26:0] shared_as_x6, shared_as_y6;
+    logic shared_as_sub6;
+    logic [26:0] shared_as_r6;
     
     // Gen 7
-    wire [26:0] shared_as_x7, shared_as_y7;
-    wire shared_as_sub7;
-    wire [26:0] shared_as_r7;
+    logic [26:0] shared_as_x7, shared_as_y7;
+    logic shared_as_sub7;
+    logic [26:0] shared_as_r7;
     
     // Gen 8
-    wire [26:0] shared_as_x8, shared_as_y8;
-    wire shared_as_sub8;
-    wire [26:0] shared_as_r8;
+    logic [26:0] shared_as_x8, shared_as_y8;
+    logic shared_as_sub8;
+    logic [26:0] shared_as_r8;
     
     // Gen 9
-    wire [26:0] shared_as_x9, shared_as_y9;
-    wire shared_as_sub9;
-    wire [26:0] shared_as_r9;
+    logic [26:0] shared_as_x9, shared_as_y9;
+    logic shared_as_sub9;
+    logic [26:0] shared_as_r9;
     
     // Gen 10
-    wire [26:0] shared_as_x10, shared_as_y10;
-    wire shared_as_sub10;
-    wire [26:0] shared_as_r10;
+    logic [26:0] shared_as_x10, shared_as_y10;
+    logic shared_as_sub10;
+    logic [26:0] shared_as_r10;
     
     // Gen 11
-    wire [26:0] shared_as_x11, shared_as_y11;
-    wire shared_as_sub11;
-    wire [26:0] shared_as_r11;
+    logic [26:0] shared_as_x11, shared_as_y11;
+    logic shared_as_sub11;
+    logic [26:0] shared_as_r11;
     
     // Gen 12
-    wire [26:0] shared_as_x12, shared_as_y12;
-    wire shared_as_sub12;
-    wire [26:0] shared_as_r12;
+    logic [26:0] shared_as_x12, shared_as_y12;
+    logic shared_as_sub12;
+    logic [26:0] shared_as_r12;
     
     // Gen 13
-    wire [26:0] shared_as_x13, shared_as_y13;
-    wire shared_as_sub13;
-    wire [26:0] shared_as_r13, sub_mask13, y_xor13, cin_vec13;
+    logic [26:0] shared_as_x13, shared_as_y13;
+    logic shared_as_sub13;
+    logic [26:0] shared_as_r13, sub_mask13, y_xor13, cin_vec13;
 
     // Shared Output Signals
-    wire [31:0] add_R, mul_R;
-    wire [33:0] add_expFrac;
-    wire add_round;
-    wire [32:0] mul_expSig;
-    // wire mul_round; // already defined
-    wire [33:0] ra_X, ra_R;
-    wire [33:0] add_ra_X, mul_ra_X, div_ra_X, sqrt_ra_X;
-    wire ra_Cin;
+    logic [31:0] add_R, mul_R;
+    logic [33:0] add_expFrac;
+    logic add_round;
+    logic [32:0] mul_expSig;
+    // logic mul_round; // already defined
+    logic [33:0] ra_X, ra_R;
+    logic [33:0] add_ra_X, mul_ra_X, div_ra_X, sqrt_ra_X;
+    logic ra_Cin;
     
-    wire [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
-    wire add_fracAdder_Cin;
+    logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
+    logic add_fracAdder_Cin;
     
-    wire [7:0] mul_expAdder_X, mul_expAdder_Y;
-    wire mul_expAdder_Cin;
-    wire [8:0] mul_expAdder_R; 
+    logic [7:0] mul_expAdder_X, mul_expAdder_Y;
+    logic mul_expAdder_Cin;
+    logic [8:0] mul_expAdder_R; 
     
-    wire [26:0] ia27_X, ia27_Y, ia27_R;
-    wire ia27_Cin;
+    logic [26:0] ia27_X, ia27_Y, ia27_R;
+    logic ia27_Cin;
 
 
     // =================================================================================
@@ -1199,9 +1199,9 @@ module FPALL_Shared_combine(
     // =================================================================================
 
     // Step 0
-    assign shared_as_x0 = (opcode == OP_DIV) ? {1'b0, betaw1} : T23s_h;
-    assign shared_as_y0 = (opcode == OP_DIV) ? {1'b0, absq1D} : U23;
-    assign shared_as_sub0 = (opcode == OP_DIV) ? ~q1[2] : d23;
+    assign shared_as_x0 = (opcode[0] == 1'b1) ? {1'b0, betaw1} : T23s_h; // only use 1 bit of opcode
+    assign shared_as_y0 = (opcode[0] == 1'b1) ? {1'b0, absq1D} : U23;
+    assign shared_as_sub0 = (opcode[0] == 1'b1) ? ~q1[2] : d23;
     
     assign sub_mask0 = {28{shared_as_sub0}};
     assign y_xor0 = shared_as_y0 ^ sub_mask0;
@@ -1209,16 +1209,16 @@ module FPALL_Shared_combine(
     assign shared_as_r0 = shared_as_x0 + y_xor0 + cin_vec0;
 
     // Step 1
-    assign shared_as_x1 = (opcode == OP_DIV) ? betaw2 : T22s_h;
-    assign shared_as_y1 = (opcode == OP_DIV) ? absq2D : U22;
-    assign shared_as_sub1 = (opcode == OP_DIV) ? ~q2[2] : d22;
+    assign shared_as_x1 = (opcode[0] == 1'b1) ? betaw2 : T22s_h;
+    assign shared_as_y1 = (opcode[0] == 1'b1) ? absq2D : U22;
+    assign shared_as_sub1 = (opcode[0] == 1'b1) ? ~q2[2] : d22;
     
     assign shared_as_r1 = (shared_as_sub1 == 1'b1) ? (shared_as_x1 - shared_as_y1) : (shared_as_x1 + shared_as_y1);
 
     // Step 2
-    assign shared_as_x2 = (opcode == OP_DIV) ? betaw3 : {1'b0, T21s_h};
-    assign shared_as_y2 = (opcode == OP_DIV) ? absq3D : {1'b0, U21};
-    assign shared_as_sub2 = (opcode == OP_DIV) ? ~q3[2] : d21;
+    assign shared_as_x2 = (opcode[0] == 1'b1) ? betaw3 : {1'b0, T21s_h};
+    assign shared_as_y2 = (opcode[0] == 1'b1) ? absq3D : {1'b0, U21};
+    assign shared_as_sub2 = (opcode[0] == 1'b1) ? ~q3[2] : d21;
     
     assign sub_mask2 = {27{shared_as_sub2}}; // 26 downto 0 is 27 bits
     assign y_xor2 = shared_as_y2 ^ sub_mask2;
@@ -1226,79 +1226,79 @@ module FPALL_Shared_combine(
     assign shared_as_r2 = shared_as_x2 + y_xor2 + cin_vec2;
 
     // Step 3
-    assign shared_as_x3 = (opcode == OP_DIV) ? betaw4 : {2'b00, T20s_h};
-    assign shared_as_y3 = (opcode == OP_DIV) ? absq4D : {2'b00, U20};
-    assign shared_as_sub3 = (opcode == OP_DIV) ? ~q4[2] : d20;
+    assign shared_as_x3 = (opcode[0] == 1'b1) ? betaw4 : {2'b00, T20s_h};
+    assign shared_as_y3 = (opcode[0] == 1'b1) ? absq4D : {2'b00, U20};
+    assign shared_as_sub3 = (opcode[0] == 1'b1) ? ~q4[2] : d20;
     
     assign shared_as_r3 = (shared_as_sub3 == 1'b1) ? (shared_as_x3 - shared_as_y3) : (shared_as_x3 + shared_as_y3);
 
     // Step 4
-    assign shared_as_x4 = (opcode == OP_DIV) ? betaw5 : {3'b000, T19s_h};
-    assign shared_as_y4 = (opcode == OP_DIV) ? absq5D : {3'b000, U19};
-    assign shared_as_sub4 = (opcode == OP_DIV) ? ~q5[2] : d19;
+    assign shared_as_x4 = (opcode[0] == 1'b1) ? betaw5 : {3'b000, T19s_h};
+    assign shared_as_y4 = (opcode[0] == 1'b1) ? absq5D : {3'b000, U19};
+    assign shared_as_sub4 = (opcode[0] == 1'b1) ? ~q5[2] : d19;
     
     assign shared_as_r4 = (shared_as_sub4 == 1'b1) ? (shared_as_x4 - shared_as_y4) : (shared_as_x4 + shared_as_y4);
 
     // Step 5
-    assign shared_as_x5 = (opcode == OP_DIV) ? betaw6 : {4'd0, T18s_h};
-    assign shared_as_y5 = (opcode == OP_DIV) ? absq6D : {4'd0, U18};
-    assign shared_as_sub5 = (opcode == OP_DIV) ? ~q6[2] : d18;
+    assign shared_as_x5 = (opcode[0] == 1'b1) ? betaw6 : {4'd0, T18s_h};
+    assign shared_as_y5 = (opcode[0] == 1'b1) ? absq6D : {4'd0, U18};
+    assign shared_as_sub5 = (opcode[0] == 1'b1) ? ~q6[2] : d18;
     
     assign shared_as_r5 = (shared_as_sub5 == 1'b1) ? (shared_as_x5 - shared_as_y5) : (shared_as_x5 + shared_as_y5);
 
     // Step 6
-    assign shared_as_x6 = (opcode == OP_DIV) ? betaw7 : {5'd0, T17s_h};
-    assign shared_as_y6 = (opcode == OP_DIV) ? absq7D : {5'd0, U17};
-    assign shared_as_sub6 = (opcode == OP_DIV) ? ~q7[2] : d17;
+    assign shared_as_x6 = (opcode[0] == 1'b1) ? betaw7 : {5'd0, T17s_h};
+    assign shared_as_y6 = (opcode[0] == 1'b1) ? absq7D : {5'd0, U17};
+    assign shared_as_sub6 = (opcode[0] == 1'b1) ? ~q7[2] : d17;
     
     assign shared_as_r6 = (shared_as_sub6 == 1'b1) ? (shared_as_x6 - shared_as_y6) : (shared_as_x6 + shared_as_y6);
 
     // Step 7
-    assign shared_as_x7 = (opcode == OP_DIV) ? betaw8 : {6'd0, T16s_h};
-    assign shared_as_y7 = (opcode == OP_DIV) ? absq8D : {6'd0, U16};
-    assign shared_as_sub7 = (opcode == OP_DIV) ? ~q8[2] : d16;
+    assign shared_as_x7 = (opcode[0] == 1'b1) ? betaw8 : {6'd0, T16s_h};
+    assign shared_as_y7 = (opcode[0] == 1'b1) ? absq8D : {6'd0, U16};
+    assign shared_as_sub7 = (opcode[0] == 1'b1) ? ~q8[2] : d16;
     
     assign shared_as_r7 = (shared_as_sub7 == 1'b1) ? (shared_as_x7 - shared_as_y7) : (shared_as_x7 + shared_as_y7);
 
     // Step 8
-    assign shared_as_x8 = (opcode == OP_DIV) ? betaw9 : {7'd0, T15s_h};
-    assign shared_as_y8 = (opcode == OP_DIV) ? absq9D : {7'd0, U15};
-    assign shared_as_sub8 = (opcode == OP_DIV) ? ~q9[2] : d15;
+    assign shared_as_x8 = (opcode[0] == 1'b1) ? betaw9 : {7'd0, T15s_h};
+    assign shared_as_y8 = (opcode[0] == 1'b1) ? absq9D : {7'd0, U15};
+    assign shared_as_sub8 = (opcode[0] == 1'b1) ? ~q9[2] : d15;
     
     assign shared_as_r8 = (shared_as_sub8 == 1'b1) ? (shared_as_x8 - shared_as_y8) : (shared_as_x8 + shared_as_y8);
 
     // Step 9
-    assign shared_as_x9 = (opcode == OP_DIV) ? betaw10 : {8'd0, T14s_h};
-    assign shared_as_y9 = (opcode == OP_DIV) ? absq10D : {8'd0, U14};
-    assign shared_as_sub9 = (opcode == OP_DIV) ? ~q10[2] : d14;
+    assign shared_as_x9 = (opcode[0] == 1'b1) ? betaw10 : {8'd0, T14s_h};
+    assign shared_as_y9 = (opcode[0] == 1'b1) ? absq10D : {8'd0, U14};
+    assign shared_as_sub9 = (opcode[0] == 1'b1) ? ~q10[2] : d14;
     
     assign shared_as_r9 = (shared_as_sub9 == 1'b1) ? (shared_as_x9 - shared_as_y9) : (shared_as_x9 + shared_as_y9);
 
     // Step 10
-    assign shared_as_x10 = (opcode == OP_DIV) ? betaw11 : {9'd0, T13s_h};
-    assign shared_as_y10 = (opcode == OP_DIV) ? absq11D : {9'd0, U13};
-    assign shared_as_sub10 = (opcode == OP_DIV) ? ~q11[2] : d13;
+    assign shared_as_x10 = (opcode[0] == 1'b1) ? betaw11 : {9'd0, T13s_h};
+    assign shared_as_y10 = (opcode[0] == 1'b1) ? absq11D : {9'd0, U13};
+    assign shared_as_sub10 = (opcode[0] == 1'b1) ? ~q11[2] : d13;
     
     assign shared_as_r10 = (shared_as_sub10 == 1'b1) ? (shared_as_x10 - shared_as_y10) : (shared_as_x10 + shared_as_y10);
 
     // Step 11
-    assign shared_as_x11 = (opcode == OP_DIV) ? betaw12 : {10'd0, T12s_h};
-    assign shared_as_y11 = (opcode == OP_DIV) ? absq12D : {10'd0, U12};
-    assign shared_as_sub11 = (opcode == OP_DIV) ? ~q12[2] : d12;
+    assign shared_as_x11 = (opcode[0] == 1'b1) ? betaw12 : {10'd0, T12s_h};
+    assign shared_as_y11 = (opcode[0] == 1'b1) ? absq12D : {10'd0, U12};
+    assign shared_as_sub11 = (opcode[0] == 1'b1) ? ~q12[2] : d12;
     
     assign shared_as_r11 = (shared_as_sub11 == 1'b1) ? (shared_as_x11 - shared_as_y11) : (shared_as_x11 + shared_as_y11);
 
     // Step 12
-    assign shared_as_x12 = (opcode == OP_DIV) ? betaw13 : {11'd0, T11s_h};
-    assign shared_as_y12 = (opcode == OP_DIV) ? absq13D : {11'd0, U11};
-    assign shared_as_sub12 = (opcode == OP_DIV) ? ~q13[2] : d11;
+    assign shared_as_x12 = (opcode[0] == 1'b1) ? betaw13 : {11'd0, T11s_h};
+    assign shared_as_y12 = (opcode[0] == 1'b1) ? absq13D : {11'd0, U11};
+    assign shared_as_sub12 = (opcode[0] == 1'b1) ? ~q13[2] : d11;
     
     assign shared_as_r12 = (shared_as_sub12 == 1'b1) ? (shared_as_x12 - shared_as_y12) : (shared_as_x12 + shared_as_y12);
 
     // Step 13
-    assign shared_as_x13 = (opcode == OP_DIV) ? betaw14 : {12'd0, T10s_h};
-    assign shared_as_y13 = (opcode == OP_DIV) ? absq14D : {12'd0, U10};
-    assign shared_as_sub13 = (opcode == OP_DIV) ? ~q14[2] : d10;
+    assign shared_as_x13 = (opcode[0] == 1'b1) ? betaw14 : {12'd0, T10s_h};
+    assign shared_as_y13 = (opcode[0] == 1'b1) ? absq14D : {12'd0, U10};
+    assign shared_as_sub13 = (opcode[0] == 1'b1) ? ~q14[2] : d10;
     
     assign sub_mask13 = {27{shared_as_sub13}};
     assign y_xor13 = shared_as_y13 ^ sub_mask13;
