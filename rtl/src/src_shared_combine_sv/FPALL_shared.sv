@@ -9,7 +9,7 @@ module FPALL_Shared_combine(
     // FPAdd signals
     wire [32:0] excExpFracX, excExpFracY;
     wire swap;
-    wire [7:0] eXmeY, eYmeX, expDiff;
+    wire [7:0] expDiff;
     wire [31:0] newX, newY;
     wire [7:0] add_expX;
     wire signX, signY, EffSub;
@@ -406,6 +406,7 @@ module FPALL_Shared_combine(
     wire [32:0] mul_expSig;
     // wire mul_round; // already defined
     wire [33:0] ra_X, ra_R;
+    wire [33:0] add_ra_X, mul_ra_X, div_ra_X, sqrt_ra_X;
     wire ra_Cin;
     
     wire [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
@@ -424,11 +425,12 @@ module FPALL_Shared_combine(
     // =================================================================================
     
     assign swap = (X[30:0] < Y[30:0]) ? 1'b1 : 1'b0; //comparator
-    
-    assign newX = (swap == 1'b0) ? X : Y; // newX >= newY
+    // input swap so that |X|>|Y| 
+    assign newX = (swap == 1'b0) ? X : Y; 
     assign newY = (swap == 1'b0) ? Y : X; 
-    assign expDiff = newX[30:23] - newY[30:23]; //exponent difference
-    
+    // exponent difference
+    assign expDiff = newX[30:23] - newY[30:23]; 
+    // now we decompose the inputs into their sign, exponent, fraction 
     assign add_expX = newX[30:23];
     assign signX = newX[31];
     assign signY = newY[31];
@@ -452,13 +454,13 @@ module FPALL_Shared_combine(
     assign EffSubVector = {27{EffSub}};
     assign fracYpadXorOp = fracYpad ^ EffSubVector;
     assign fracXpad = {2'b01, newX[22:0], 2'b00};
-    assign cInSigAdd = EffSub & (~add_sticky);
+    assign cInSigAdd = EffSub & (~add_sticky); // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
 
-    // Connect to shared IntAdder_27
-    assign add_fracAdder_X = fracXpad;
-    assign add_fracAdder_Y = fracYpadXorOp;
-    assign add_fracAdder_Cin = cInSigAdd;
-    assign fracAddResult = add_fracAdder_R;
+    // Connect to Shared IntAdder_27
+    assign add_fracAdder_X = fracXpad;       // Connect padded X fraction
+    assign add_fracAdder_Y = fracYpadXorOp;  // Connect prepared Y fraction
+    assign add_fracAdder_Cin = cInSigAdd;    // Carry-in accounting for subtraction and sticky bit
+    assign fracAddResult = add_fracAdder_R;  // Get addition result back
     
     assign fracSticky = {fracAddResult, add_sticky};
     
@@ -476,10 +478,10 @@ module FPALL_Shared_combine(
     assign add_expFrac = {updatedExp, shiftedFrac[26:3]};
     assign stk = shiftedFrac[2] | shiftedFrac[1] | shiftedFrac[0];
     assign rnd = shiftedFrac[3];
-    assign lsb = shiftedFrac[4];
-    
+    // Connect to Shared Rounding Adder
+    assign add_ra_X = add_expFrac; 
     assign add_round = ((rnd == 1'b1) && (stk == 1'b1)) || ((rnd == 1'b1) && (stk == 1'b0) && (lsb == 1'b1)) ? 1'b1 : 1'b0;
-
+    // Get result from Shared Rounding Adder
     assign RoundedExpFrac = ra_R;
     assign fracR = RoundedExpFrac[23:1];
     assign expR = RoundedExpFrac[31:24];
@@ -489,17 +491,18 @@ module FPALL_Shared_combine(
 
     
     // =================================================================================
-    // FPMul Logic
+    // FPMult Logic
     // =================================================================================
     
     assign sign = X[31] ^ Y[31];
     assign mul_expX = X[30:23];
     assign expY = Y[30:23];
     
-    assign mul_expAdder_X = mul_expX;
-    assign mul_expAdder_Y = expY;
-    assign mul_expAdder_Cin = 1'b0;
-    assign expSumPreSub = {1'b0, mul_expAdder_R[8:0]};
+    // Connect to Shared IntAdder_27
+    assign mul_expAdder_X = mul_expX;        // Connect exponent X
+    assign mul_expAdder_Y = expY;            // Connect exponent Y
+    assign mul_expAdder_Cin = 1'b0;          // No carry-in needed for simple addition
+    assign expSumPreSub = {1'b0, mul_expAdder_R[8:0]}; // Get addition result
     
     assign bias = 10'd127;
     assign expSum = expSumPreSub - bias;
@@ -508,10 +511,10 @@ module FPALL_Shared_combine(
     assign sigY = {1'b1, Y[22:0]};
     
     assign sigProd = sigX * sigY;
-    
+    // exponent update 
     assign norm = sigProd[47];
     assign expPostNorm = expSum + {9'd0, norm};
-    
+    // significand normalization shift 
     assign sigProdExt = (norm == 1'b1) ? {sigProd[46:0], 1'b0} : {sigProd[45:0], 2'b00};
     assign expSig = {expPostNorm, sigProdExt[47:25]};
     assign mul_sticky = sigProdExt[24];
@@ -519,6 +522,10 @@ module FPALL_Shared_combine(
     assign mul_round = mul_sticky & ((guard & (~sigProdExt[25])) | sigProdExt[25]);
     
     assign mul_expSig = expSig;
+    // Connect to Shared Rounding Adder
+    assign mul_ra_X = {1'b0, mul_expSig}; 
+    
+    // Get result from Shared Rounding Adder
     assign expSigPostRound = ra_R[30:0];
     assign mul_R = {sign, expSigPostRound};
 
@@ -529,8 +536,11 @@ module FPALL_Shared_combine(
 
     assign fX = {1'b1, X[22:0]};
     assign fY = {1'b1, Y[22:0]};
+    // exponent difference, sign and exception combination computed early, to have fewer bits to pipeline
     assign expR0 = {2'b00, X[30:23]} - {2'b00, Y[30:23]};
     assign sR = X[31] ^ Y[31];
+    
+    // early exception handling (not fully implemented in this SV version as per previous code, but keeping structure)
     
     assign D = fY;
     assign psX = {1'b0, fX};
@@ -541,33 +551,34 @@ module FPALL_Shared_combine(
         .X(sel14),
         .Y(q14_copy5)
     );
-    assign q14 = q14_copy5;
+    assign q14 = q14_copy5; // output copy to hold a pipeline register if needed
     
     always_comb begin
         case(q14)
-            3'b001, 3'b111: absq14D = {3'b000, D};
-            3'b010, 3'b110: absq14D = {2'b00, D, 1'b0};
-            default: absq14D = 27'd0;
+            3'b001, 3'b111: absq14D = {3'b000, D};       // mult by 1
+            3'b010, 3'b110: absq14D = {2'b00, D, 1'b0};  // mult by 2
+            default: absq14D = 27'd0;                    // mult by 0
         endcase
     end
     
     // Shared Logic Connection for w13
-    assign w13 = shared_as_r13;
+    // Shared Logic Connection for w13
+    assign w13 = shared_as_r13; // Connect result from Shared Add/Sub Logic Step 13 (Divider Step 13)
 
-    assign betaw13 = {w13[24:0], 2'b00};
+    assign betaw13 = {w13[24:0], 2'b00}; // multiplication by the radix
     assign sel13 = {betaw13[26:21], D[22:20]};
     
     selFunction_Freq1_uid4 SelFunctionTable13 (
         .X(sel13),
         .Y(q13_copy6)
     );
-    assign q13 = q13_copy6;
+    assign q13 = q13_copy6; // output copy to hold a pipeline register if needed
     
     always_comb begin
         case(q13)
-            3'b001, 3'b111: absq13D = {3'b000, D};
-            3'b010, 3'b110: absq13D = {2'b00, D, 1'b0};
-            default: absq13D = 27'd0;
+            3'b001, 3'b111: absq13D = {3'b000, D};       // mult by 1
+            3'b010, 3'b110: absq13D = {2'b00, D, 1'b0};  // mult by 2
+            default: absq13D = 27'd0;                    // mult by 0
         endcase
     end
 
@@ -815,7 +826,7 @@ module FPALL_Shared_combine(
     assign w0 = shared_as_r0[26:0];
     
     assign wfinal = w0[24:0];
-    assign qM0 = wfinal[24];
+    assign qM0 = wfinal[24]; // rounding bit is the sign of the remainder
     
     assign qP14 = q14[1:0]; assign qM14 = {q14[2], 1'b0};
     assign qP13 = q13[1:0]; assign qM13 = {q13[2], 1'b0};
@@ -836,14 +847,21 @@ module FPALL_Shared_combine(
     assign qM = {qM14[0], qM13, qM12, qM11, qM10, qM9, qM8, qM7, qM6, qM5, qM4, qM3, qM2, qM1, qM0};
     
     assign quotient = qP - qM;
+    // We need a mR in (0, -wf-2) format: 1+wF fraction bits, 1 round bit, and 1 guard bit for the normalisation,
+    // quotient is the truncation of the exact quotient to at least 2^(-wF-2) bits
+    // now discarding its possible known MSB zeroes, and dropping the possible extra LSB bit (due to radix 4)
     assign div_mR = quotient[26:1];
     
-    assign fRnorm = (div_mR[25] == 1'b1) ? div_mR[24:1] : div_mR[23:0];
+    // normalisation
+    assign fRnorm = (div_mR[25] == 1'b1) ? div_mR[24:1] : div_mR[23:0]; // now fRnorm is a (-1, -wF-1) fraction
     assign div_round = fRnorm[0];
     
-    assign expR1 = expR0 + {3'b000, 6'b111111, div_mR[25]};
+    assign expR1 = expR0 + {3'b000, 6'b111111, div_mR[25]}; // add back bias
+    // final rounding
     assign div_expfrac = {expR1, fRnorm[23:1]};
-    
+    // Connect to Shared Rounding Adder
+    assign div_ra_X = {1'b0, div_expfrac}; 
+    // Get result from Shared Rounding Adder
     assign expfracR = ra_R[32:0];
     assign div_R = {sR, expfracR[30:0]};
 
@@ -852,18 +870,22 @@ module FPALL_Shared_combine(
     // FPSqrt Logic
     // =================================================================================
 
-    assign fracX = X[22:0];
-    assign eRn0 = {1'b0, X[30:24]}; 
+    assign fracX = X[22:0]; // fraction
+    assign eRn0 = {1'b0, X[30:24]}; // exponent
+    // xsX <= X(33 downto 31); -- exception and sign (handled differently in this SV)
     
     assign eRn1 = eRn0 + {2'b00, 6'b111111} + {7'd0, X[23]}; 
     
-    assign fracXnorm = (X[23] == 1'b0) ? {1'b1, fracX, 3'b000} : {2'b01, fracX, 2'b00};
+    assign fracXnorm = (X[23] == 1'b0) ? {1'b1, fracX, 3'b000} : {2'b01, fracX, 2'b00}; // pre-normalization
     
     assign S0 = 2'b01;
     assign T1 = {4'b0111 + {1'b0, fracXnorm[26:23]}, fracXnorm[22:0]};
+    // now implementing the recurrence 
+    //  this is a binary non-restoring algorithm, see ASA book
+    // Step 2
     
     // Step 2
-    assign d1 = ~T1[26];
+    assign d1 = ~T1[26]; //  bit of weight -1
     assign T1s = {T1, 1'b0};
     assign T1s_h = T1s[27:22];
     assign T1s_l = T1s[21:0];
@@ -871,10 +893,10 @@ module FPALL_Shared_combine(
     
     assign T3_h = (d1 == 1'b1) ? (T1s_h - U1) : (T1s_h + U1);
     assign T2 = {T3_h[4:0], T1s_l};
-    assign S1 = {S0, d1};
+    assign S1 = {S0, d1}; // here -1 becomes 0 and 1 becomes 1
     
     // Step 3
-    assign d2 = ~T2[26];
+    assign d2 = ~T2[26]; //  bit of weight -2
     assign T2s = {T2, 1'b0};
     assign T2s_h = T2s[27:21];
     assign T2s_l = T2s[20:0];
@@ -961,8 +983,6 @@ module FPALL_Shared_combine(
     assign T11_h = (d9 == 1'b1) ? (T9s_h - U9) : (T9s_h + U9);
     assign T10 = {T11_h[12:0], T9s_l};
     assign S9 = {S8, d9};
-
-   
     
     // Step 11
     assign d10 = ~T10[26];
@@ -1129,21 +1149,35 @@ module FPALL_Shared_combine(
     // Shared Logic Connection for T25_h
     assign T25_h = shared_as_r0;
     assign T24 = T25_h[26:0];
-    assign S23 = {S22, d23};
-    assign d25 = ~T24[26];
+    assign S23 = {S22, d23}; // here -1 becomes 0 and 1 becomes 1
+    assign d25 = ~T24[26]; // the sign of the remainder will become the round bit
     
-    assign sqrt_mR = {S23, d25};
-    assign fR = sqrt_mR[23:1];
-    assign sqrt_round = sqrt_mR[0];
+    assign sqrt_mR = {S23, d25}; // result significand
+    assign fR = sqrt_mR[23:1]; // removing leading 1
+    assign sqrt_round = sqrt_mR[0]; // round bit
     assign sqrt_expFrac = fR;
-    
-    assign fRrnd = ra_R[22:0];
+    // Connect to Shared Rounding Adder
+    assign sqrt_ra_X = {11'd0, sqrt_expFrac}; 
+    // Get result from Shared Rounding Adder
+    assign fRrnd = ra_R[22:0]; // rounding sqrt never changes exponents (handled in shared adder) 
     assign Rn2 = {eRn1, fRrnd};
+    // sign and exception processing
+    assign xsR = (xsX == 3'b010) ? 3'b010 : // normal
+                 (xsX == 3'b100) ? 3'b100 : // +infty
+                 (xsX == 3'b000) ? 3'b000 : // +0
+                 (xsX == 3'b001) ? 3'b001 : // sqrt(-0)=-0
+                                   3'b110;  // return NaN
     assign sqrt_R = {X[31], Rn2};
 
 
     // =================================================================================
     // Shared Add/Sub Logic (Steps 0 to 13)
+    // - Used by Divider (Iterative Steps) and Sqrt (Iterative Steps)
+    // - Mapping:
+    //   Shared Step 0  <-> Div Step 1  | Sqrt Step 24
+    //   Shared Step 1  <-> Div Step 2  | Sqrt Step 23
+    //   ...
+    //   Shared Step 13 <-> Div Step 14 | Sqrt Step 11
     // =================================================================================
 
     // Step 0
@@ -1260,11 +1294,12 @@ module FPALL_Shared_combine(
 
     // Multiplex inputs to Shared Rounding Adder
     // opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
-    assign ra_X = (opcode == 2'b00) ? add_expFrac :
-                  (opcode == 2'b01) ? {1'b0, mul_expSig} :
-                  (opcode == 2'b11) ? {1'b0, div_expfrac} :
-                                      {11'd0, sqrt_expFrac};
-                                      
+    // Multiplex inputs to Shared Rounding Adder
+    // opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
+    assign ra_X = (opcode == 2'b00) ? add_ra_X :
+                  (opcode == 2'b01) ? mul_ra_X :
+                  (opcode == 2'b11) ? div_ra_X :
+                                      sqrt_ra_X;                                   
     assign ra_Cin = (opcode == 2'b00) ? add_round :
                     (opcode == 2'b01) ? mul_round :
                     (opcode == 2'b11) ? div_round :
@@ -1273,10 +1308,10 @@ module FPALL_Shared_combine(
     // Multiplex inputs to Shared IntAdder_27
     // opcode: 00=Add (fracAdder), 01=Mul (expAdder), others unused
     assign ia27_X[26:9] = add_fracAdder_X[26:9];
-    assign ia27_X[8:0] = (opcode == 2'b00) ? add_fracAdder_X[8:0] : {1'b0, mul_expAdder_X};
+    assign ia27_X[8:0] = (opcode == 2'b00) ? add_fracAdder_X[8:0] : {1'b0, mul_expAdder_X}; // Lower bits shared: Add(8:0) vs Mul(Exp)
     
     assign ia27_Y[26:9] = add_fracAdder_Y[26:9];
-    assign ia27_Y[8:0] = (opcode == 2'b00) ? add_fracAdder_Y[8:0] : {1'b0, mul_expAdder_Y};
+    assign ia27_Y[8:0] = (opcode == 2'b00) ? add_fracAdder_Y[8:0] : {1'b0, mul_expAdder_Y}; // Lower bits shared
     
     assign ia27_Cin = (opcode == 2'b00) ? add_fracAdder_Cin : mul_expAdder_Cin;
     
@@ -1299,10 +1334,10 @@ module FPALL_Shared_combine(
         .R(ra_R)
     );
 
-    assign R = (opcode == 2'b00) ? add_R :
-               (opcode == 2'b01) ? mul_R :
-               (opcode == 2'b10) ? sqrt_R :
-                                   div_R;
+    assign R = (opcode == 2'b00) ? add_R :  // Add Result
+               (opcode == 2'b01) ? mul_R :  // Mul Result
+               (opcode == 2'b10) ? sqrt_R : // Sqrt Result
+                                   div_R;   // Div Result
 
 
 endmodule
