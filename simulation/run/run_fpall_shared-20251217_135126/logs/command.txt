@@ -1,4 +1,0 @@
-Started : Wed 17 Dec 2025 01:51:26 PM EST
-ROOT    : /autofs/fs1.ece/fs1.eecg.janders/iderikut/dev/research/flopoco_synth/simulation/..
-RUN_DIR : /autofs/fs1.ece/fs1.eecg.janders/iderikut/dev/research/flopoco_synth/simulation/run/run_fpall_shared-20251217_135126
-xrun -v200x -64bit -f /autofs/fs1.ece/fs1.eecg.janders/iderikut/dev/research/flopoco_synth/simulation/../simulation/filelist/compile_fpall_shared.f -top tb_fpall_shared -access +rwc -timescale 1ns/1ps
