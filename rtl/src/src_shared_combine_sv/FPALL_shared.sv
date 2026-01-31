@@ -1,6 +1,6 @@
 module FPALL_Shared_combine(
     input wire clk,
-    input wire [1:0] opcode,
+    input wire [1:0] opcode, //00: Add, 01: Mul, 10: Sqrt, 11: Div
     input wire [31:0] X,
     input wire [31:0] Y,
     output wire [31:0] R
@@ -423,14 +423,11 @@ module FPALL_Shared_combine(
     // FPAdd Logic
     // =================================================================================
     
-    assign swap = (X[30:0] < Y[30:0]) ? 1'b1 : 1'b0;
+    assign swap = (X[30:0] < Y[30:0]) ? 1'b1 : 1'b0; //comparator
     
-    assign eXmeY = X[30:23] - Y[30:23];
-    assign eYmeX = Y[30:23] - X[30:23];
-    assign expDiff = (swap == 1'b0) ? eXmeY : eYmeX;
-    
-    assign newX = (swap == 1'b0) ? X : Y;
-    assign newY = (swap == 1'b0) ? Y : X;
+    assign newX = (swap == 1'b0) ? X : Y; // newX >= newY
+    assign newY = (swap == 1'b0) ? Y : X; 
+    assign expDiff = newX[30:23] - newY[30:23]; //exponent difference
     
     assign add_expX = newX[30:23];
     assign signX = newX[31];
@@ -510,12 +507,7 @@ module FPALL_Shared_combine(
     assign sigX = {1'b1, X[22:0]};
     assign sigY = {1'b1, Y[22:0]};
     
-    IntMultiplier_24x24_48_Freq1_uid5 SignificandMultiplication (
-        .clk(clk),
-        .X(sigX),
-        .Y(sigY),
-        .R(sigProd)
-    );
+    assign sigProd = sigX * sigY;
     
     assign norm = sigProd[47];
     assign expPostNorm = expSum + {9'd0, norm};
@@ -956,11 +948,12 @@ module FPALL_Shared_combine(
     
     assign T10_h = (d8 == 1'b1) ? (T8s_h - U8) : (T8s_h + U8);
     assign T9 = {T10_h[11:0], T8s_l};
-    assign S7 = {S6, d7};
+    assign S8 = {S7, d8};
     
     // Step 10
     assign d9 = ~T9[26];
     assign T9s = {T9, 1'b0};
+
     assign T9s_h = T9s[27:14];
     assign T9s_l = T9s[13:0];
     assign U9 = {1'b0, S8, d9, ~d9, 1'b1};
@@ -968,6 +961,8 @@ module FPALL_Shared_combine(
     assign T11_h = (d9 == 1'b1) ? (T9s_h - U9) : (T9s_h + U9);
     assign T10 = {T11_h[12:0], T9s_l};
     assign S9 = {S8, d9};
+
+   
     
     // Step 11
     assign d10 = ~T10[26];
@@ -1309,5 +1304,7 @@ module FPALL_Shared_combine(
                (opcode == 2'b10) ? sqrt_R :
                                    div_R;
 
+
 endmodule
+
 
