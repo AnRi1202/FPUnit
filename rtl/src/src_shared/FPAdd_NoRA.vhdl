@@ -183,12 +183,12 @@ begin
    sdExnXY <= excX & excY; -- not used
    fracY <= "000000000000000000000000" when excY="00" else ('1' & newY(22 downto 0));
    -- Exception management logic
-   with sXsYExnXY  select  
-   excRt <= "00" when "000000"|"010000"|"100000"|"110000",
-      "01" when "000101"|"010101"|"100101"|"110101"|"000100"|"010100"|"100100"|"110100"|"000001"|"010001"|"100001"|"110001",
-      "10" when "111010"|"001010"|"001000"|"011000"|"101000"|"111000"|"000010"|"010010"|"100010"|"110010"|"001001"|"011001"|"101001"|"111001"|"000110"|"010110"|"100110"|"110110", 
+   with sXsYExnXY(3 downto 0)  select  
+   excRt <= "00" when "0000",
+      "01" when "0101"|"0100"|"0001",
+      "10" when "1010"|"1000"|"0010"|"1001"|"0110", 
       "11" when others;
-   signR<= '0' when (sXsYExnXY="100000" or sXsYExnXY="010000") else signX;
+   signR<= '0' when (sXsYExnXY(3 downto 0)="0000") else signX;
    shiftedOut <= '1' when (expDiff > 25) else '0';
    shiftVal <= expDiff(4 downto 0) when shiftedOut='0' else CONV_STD_LOGIC_VECTOR(26,5);
    RightShifterComponent: RightShifterSticky24_by_max_26_Freq1_uid4

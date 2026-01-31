@@ -9,7 +9,8 @@ srcに入ったvhdlをsynthする仕組み
  diff -u run-20251216-145000/report/original/power_f1_add.rpt run-20251216-150839/report/new/FPAdd_power.rpt
 
 
-
+### lef
+/autofs/fs1.ece/fs1.eecg.janders/bhilareo/form_files/NanGate_45nm_OCL_v2010_12/pdk_v1.3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12/Back_End/lef
 
 ## 結果
 ### FPAdd_Kin_f1_origin

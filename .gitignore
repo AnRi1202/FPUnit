@@ -15,6 +15,9 @@
 *.rpx
 *.lck
 
+
+archive
+
 # Synopsys Design Compiler
 synopsysDC/WORK/
 synopsysDC/alib-*/

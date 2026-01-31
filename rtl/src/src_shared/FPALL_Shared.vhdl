@@ -45,7 +45,7 @@ architecture arch of FPALL_Shared is
             expAdder_X_out : out std_logic_vector(7 downto 0);
             expAdder_Y_out : out std_logic_vector(7 downto 0);
             expAdder_Cin_out : out std_logic;
-            expAdder_R_in : in std_logic_vector(26 downto 0)
+            expAdder_R_in : in std_logic_vector(8 downto 0)
         );
     end component;
 
@@ -126,7 +126,7 @@ architecture arch of FPALL_Shared is
     signal mul_expAdder_X : std_logic_vector(7 downto 0);
     signal mul_expAdder_Y : std_logic_vector(7 downto 0);
     signal mul_expAdder_Cin : std_logic;
-    signal mul_expAdder_R : std_logic_vector(26 downto 0);
+    signal mul_expAdder_R : std_logic_vector(8 downto 0);
     
     signal ia27_X : std_logic_vector(26 downto 0);
     signal ia27_Y : std_logic_vector(26 downto 0);
@@ -192,20 +192,15 @@ begin
     
     -- Multiplex inputs to Shared Rounding Adder
     -- opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
-    ra_X(33) <= add_expFrac(33);
-    ra_X(32 downto 23) <= add_expFrac(32 downto 23) when opcode="00" else 
-                        mul_expSig(32 downto 23) when opcode="01" else
-                        div_expfrac(32 downto 23); -- 11 for Div
-
-    ra_X(22 downto 0) <= add_expFrac(22 downto 0) when opcode="00" else 
-            mul_expSig(22 downto 0) when opcode="01" else
-            sqrt_expFrac when opcode="10" else
-            div_expfrac(22 downto 0); -- 11 for Div
+    ra_X <= add_expFrac when opcode="00" else 
+            ('0' & mul_expSig) when opcode="01" else
+            ('0' & div_expfrac) when opcode="11" else
+             "00000000000" & sqrt_expfrac; -- For both Sqrt and Div
             
     ra_Cin <= add_round when opcode="00" else 
               mul_round when opcode="01" else
-              sqrt_round when opcode="10" else
-              div_round;
+              div_round when opcode="11" else
+              sqrt_round;
     
     -- Multiplex inputs to Shared IntAdder_27
     -- opcode: 00=Add (fracAdder), 01=Mul (expAdder), others unused
@@ -231,7 +226,7 @@ begin
     
     -- Route IntAdder_27 outputs back
     add_fracAdder_R <= ia27_R;
-    mul_expAdder_R <= ia27_R;
+    mul_expAdder_R <= ia27_R(8 downto 0);
     
     -- Shared Rounding Adder (34 bits)
     U_SHARED_RA: IntAdder_34_Freq1_uid11

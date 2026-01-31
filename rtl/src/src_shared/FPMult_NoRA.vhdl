@@ -26,7 +26,7 @@ entity FPMult_NoRA is
           expAdder_X_out : out std_logic_vector(7 downto 0);
           expAdder_Y_out : out std_logic_vector(7 downto 0);
           expAdder_Cin_out : out std_logic;
-          expAdder_R_in : in std_logic_vector(26 downto 0) );
+          expAdder_R_in : in std_logic_vector(8 downto 0) );
 end entity;
 
 architecture arch of FPMult_NoRA is 

@@ -23,9 +23,9 @@ entity FPALL_Shared_combine is
     port (
         clk : in std_logic;
         opcode : in std_logic_vector(1 downto 0); -- 00: Add, 01: Mul, 10: Sqrt, 11: Div
-        X : in std_logic_vector(31 downto 0);
-        Y : in std_logic_vector(31 downto 0);
-        R : out std_logic_vector(31 downto 0)
+        X : in std_logic_vector(33 downto 0);
+        Y : in std_logic_vector(33 downto 0);
+        R : out std_logic_vector(33 downto 0)
     );
 end entity;
 
@@ -78,11 +78,19 @@ architecture arch of FPALL_Shared_combine is
               R : out  std_logic_vector(26 downto 0)   );
     end component;
 
+   --  component IntAdder_33_Freq1_uid280 is
+   --     port ( clk : in std_logic;
+   --            X : in  std_logic_vector(32 downto 0);
+   --            Y : in  std_logic_vector(32 downto 0);
+   --            Cin : in  std_logic;
+   --            R : out  std_logic_vector(32 downto 0)   );
+   --  end component;
+
 -- FPAdd --
 
--- signal excExpFracX :  std_logic_vector(32 downto 0);
+signal excExpFracX :  std_logic_vector(32 downto 0);
    -- timing of excExpFracX: (c0, 0.000000ns)
--- signal excExpFracY :  std_logic_vector(32 downto 0);
+signal excExpFracY :  std_logic_vector(32 downto 0);
    -- timing of excExpFracY: (c0, 0.000000ns)
 signal swap :  std_logic;
    -- timing of swap: (c0, 1.190000ns)
@@ -92,29 +100,29 @@ signal eYmeX :  std_logic_vector(7 downto 0);
    -- timing of eYmeX: (c0, 1.092000ns)
 signal expDiff :  std_logic_vector(7 downto 0);
    -- timing of expDiff: (c0, 1.733000ns)
-signal newX :  std_logic_vector(31 downto 0);
+signal newX :  std_logic_vector(33 downto 0);
    -- timing of newX: (c0, 1.733000ns)
-signal newY :  std_logic_vector(31 downto 0);
+signal newY :  std_logic_vector(33 downto 0);
    -- timing of newY: (c0, 1.733000ns)
 signal add_expX :  std_logic_vector(7 downto 0);
    -- timing of add_expX: (c0, 1.733000ns)
--- signal excX :  std_logic_vector(1 downto 0);
---    -- timing of excX: (c0, 1.733000ns)
--- signal excY :  std_logic_vector(1 downto 0);
---    -- timing of excY: (c0, 1.733000ns)
+signal excX :  std_logic_vector(1 downto 0);
+   -- timing of excX: (c0, 1.733000ns)
+signal excY :  std_logic_vector(1 downto 0);
+   -- timing of excY: (c0, 1.733000ns)
 signal signX :  std_logic;
    -- timing of signX: (c0, 1.733000ns)
 signal signY :  std_logic;
    -- timing of signY: (c0, 1.733000ns)
 signal EffSub :  std_logic;
    -- timing of EffSub: (c0, 2.276000ns)
--- signal sXsYExnXY :  std_logic_vector(1 downto 0);
+signal sXsYExnXY :  std_logic_vector(5 downto 0);
    -- timing of sXsYExnXY: (c0, 1.733000ns)
--- signal sdExnXY :  std_logic_vector(3 downto 0);
+signal sdExnXY :  std_logic_vector(3 downto 0);
    -- timing of sdExnXY: (c0, 1.733000ns)
 signal fracY :  std_logic_vector(23 downto 0);
    -- timing of fracY: (c0, 2.276000ns)
--- signal excRt :  std_logic_vector(1 downto 0);
+signal excRt :  std_logic_vector(1 downto 0);
    -- timing of excRt: (c0, 2.352000ns)
 signal signR :  std_logic;
    -- timing of signR: (c0, 2.276000ns)
@@ -162,21 +170,21 @@ signal lsb :  std_logic;
    -- timing of round: (c0, 14.126000ns)
 signal RoundedExpFrac :  std_logic_vector(33 downto 0);
    -- timing of RoundedExpFrac: (c0, 15.518000ns)
--- signal upExc :  std_logic_vector(1 downto 0);
---    -- timing of upExc: (c0, 15.518000ns)
+signal upExc :  std_logic_vector(1 downto 0);
+   -- timing of upExc: (c0, 15.518000ns)
 signal fracR :  std_logic_vector(22 downto 0);
    -- timing of fracR: (c0, 15.518000ns)
 signal expR :  std_logic_vector(7 downto 0);
    -- timing of expR: (c0, 15.518000ns)
--- signal exExpExc :  std_logic_vector(3 downto 0);
+signal exExpExc :  std_logic_vector(3 downto 0);
    -- timing of exExpExc: (c0, 15.518000ns)
--- signal excRt2 :  std_logic_vector(1 downto 0);
+signal excRt2 :  std_logic_vector(1 downto 0);
    -- timing of excRt2: (c0, 16.061000ns)
--- signal excR :  std_logic_vector(1 downto 0);
+signal excR :  std_logic_vector(1 downto 0);
    -- timing of excR: (c0, 16.604000ns)
 signal signR2 :  std_logic;
    -- timing of signR2: (c0, 13.583000ns)
--- signal computedR :  std_logic_vector(33 downto 0);
+signal computedR :  std_logic_vector(33 downto 0);
    -- timing of computedR: (c0, 16.604000ns)
 -- signal add_R: std_logic_vector(33 downto 0);
 
@@ -200,8 +208,8 @@ signal sigY :  std_logic_vector(23 downto 0);
    -- timing of sigY: (c0, 0.000000ns)
 signal sigProd :  std_logic_vector(47 downto 0);
    -- timing of sigProd: (c0, 4.870000ns)
-   -- signal excSel :  std_logic_vector(3 downto 0);
-   -- signal exc :  std_logic_vector(1 downto 0);
+   signal excSel :  std_logic_vector(3 downto 0);
+   signal exc :  std_logic_vector(1 downto 0);
    signal norm :  std_logic;
    signal expPostNorm :  std_logic_vector(9 downto 0);
    signal sigProdExt :  std_logic_vector(47 downto 0);
@@ -209,17 +217,17 @@ signal sigProd :  std_logic_vector(47 downto 0);
    signal mul_sticky :  std_logic;
    signal guard :  std_logic;
    -- signal round :  std_logic;
-   signal expSigPostRound :  std_logic_vector(30 downto 0);
-   -- signal excPostNorm :  std_logic_vector(1 downto 0);
-   -- signal finalExc :  std_logic_vector(1 downto 0);
+   signal expSigPostRound :  std_logic_vector(32 downto 0);
+   signal excPostNorm :  std_logic_vector(1 downto 0);
+   signal finalExc :  std_logic_vector(1 downto 0);
 -- signal mul_R: std_logic_vector(33 downto 0); --new
 -- FPDiv --
 signal fX :  std_logic_vector(23 downto 0);
 signal fY :  std_logic_vector(23 downto 0);
 signal expR0 :  std_logic_vector(9 downto 0);
 signal sR :  std_logic;
--- signal exnXY :  std_logic_vector(3 downto 0);
--- signal exnR0 :  std_logic_vector(1 downto 0);
+signal exnXY :  std_logic_vector(3 downto 0);
+signal exnR0 :  std_logic_vector(1 downto 0);
 signal D :  std_logic_vector(23 downto 0);
 signal psX :  std_logic_vector(24 downto 0);
 signal betaw14 :  std_logic_vector(26 downto 0);
@@ -345,8 +353,8 @@ signal fRnorm :  std_logic_vector(23 downto 0);
 signal expR1 :  std_logic_vector(9 downto 0);
 -- signal expfrac :  std_logic_vector(32 downto 0);
 signal expfracR :  std_logic_vector(32 downto 0);
--- signal exnR :  std_logic_vector(1 downto 0);
--- signal exnRfinal :  std_logic_vector(1 downto 0);
+signal exnR :  std_logic_vector(1 downto 0);
+signal exnRfinal :  std_logic_vector(1 downto 0);
 -- signal div_R :std_logic_vector(33 downto 0); --new
 
 
@@ -356,7 +364,7 @@ signal fracX :  std_logic_vector(22 downto 0);
    -- timing of fracX: (c0, 0.000000ns)
 signal eRn0 :  std_logic_vector(7 downto 0);
    -- timing of eRn0: (c0, 0.000000ns)
--- signal xsX :  std_logic_vector(2 downto 0);
+signal xsX :  std_logic_vector(2 downto 0);
    -- timing of xsX: (c0, 0.000000ns)
 signal eRn1 :  std_logic_vector(7 downto 0);
    -- timing of eRn1: (c0, 0.000000ns)
@@ -744,41 +752,37 @@ signal fRrnd :  std_logic_vector(22 downto 0);
    -- timing of fRrnd: (c0, 28.715000ns)
 signal Rn2 :  std_logic_vector(30 downto 0);
    -- timing of Rn2: (c0, 28.715000ns)
--- signal xsR :  std_logic_vector(2 downto 0);
+signal xsR :  std_logic_vector(2 downto 0);
    -- timing of xsR: (c0, 0.043000ns)
 -- signal sqrt_R :std_logic_vector(33 downto 0); -- new
 
 
 -- FPShared --
     -- Add signals
-    signal add_R : std_logic_vector(31 downto 0);
+    signal add_R : std_logic_vector(33 downto 0);
     signal add_expFrac : std_logic_vector(33 downto 0);
     signal add_round : std_logic;
-    -- signal add_ResultBack : std_logic_vector(33 downto 0);
     
     -- Mul signals
-    signal mul_R : std_logic_vector(31 downto 0);
+    signal mul_R : std_logic_vector(33 downto 0);
     signal mul_expSig : std_logic_vector(32 downto 0);
     signal mul_round : std_logic;
-    -- signal mul_ResultBack : std_logic_vector(32 downto 0);
 
     -- Sqrt signals
-    signal sqrt_R : std_logic_vector(31 downto 0);
+    signal sqrt_R : std_logic_vector(33 downto 0);
     signal sqrt_expFrac : std_logic_vector(22 downto 0);
     signal sqrt_round : std_logic;
-    -- signal sqrt_ResultBack : std_logic_vector(22 downto 0);
 
     -- Div signals
-    signal div_R : std_logic_vector(31 downto 0);
+    signal div_R : std_logic_vector(33 downto 0);
     signal div_expfrac : std_logic_vector(32 downto 0);
     signal div_round : std_logic;
-    -- signal div_ResultBack : std_logic_vector(32 downto 0);
-    
+
     -- Shared Adder signals
     signal ra_X : std_logic_vector(33 downto 0);
     signal ra_Cin : std_logic;
     signal ra_R : std_logic_vector(33 downto 0);
-    
+
     -- Shared IntAdder_27 signals
     signal add_fracAdder_X : std_logic_vector(26 downto 0);
     signal add_fracAdder_Y : std_logic_vector(26 downto 0);
@@ -795,134 +799,39 @@ signal Rn2 :  std_logic_vector(30 downto 0);
     signal ia27_Cin : std_logic;
     signal ia27_R : std_logic_vector(26 downto 0);
 
-    -- Shared Add/Sub Gen 0 signals
-    signal shared_as_x0 : std_logic_vector(27 downto 0);
-    signal shared_as_y0 : std_logic_vector(27 downto 0);
-    signal shared_as_sub0 : std_logic;
-    signal shared_as_r0 : std_logic_vector(27 downto 0);
-    signal sub_mask0 : std_logic_vector(27 downto 0);
-    signal y_xor0 : std_logic_vector(27 downto 0);
-    signal cin_vec0 : std_logic_vector(27 downto 0);
-
-    -- Shared Add/Sub Gen 1 signals
-    signal shared_as_x1 : std_logic_vector(26 downto 0);
-    signal shared_as_y1 : std_logic_vector(26 downto 0);
-    signal shared_as_sub1 : std_logic;
-    signal shared_as_r1 : std_logic_vector(26 downto 0);
-    
-    -- Shared Add/Sub Gen 2 signals
-    signal shared_as_x2 : std_logic_vector(26 downto 0);
-    signal shared_as_y2 : std_logic_vector(26 downto 0);
-    signal shared_as_sub2 : std_logic;
-    signal shared_as_r2 : std_logic_vector(26 downto 0);
-      signal sub_mask2 : std_logic_vector(26 downto 0); 
-      signal y_xor2 : std_logic_vector(26 downto 0); 
-      signal cin_vec2 : std_logic_vector(26 downto 0);     
-    -- Shared Add/Sub Gen 3 signals
-    signal shared_as_x3 : std_logic_vector(26 downto 0);
-    signal shared_as_y3 : std_logic_vector(26 downto 0);
-    signal shared_as_sub3 : std_logic;
-    signal shared_as_r3 : std_logic_vector(26 downto 0);
-    
-    -- Shared Add/Sub Gen 4 signals
-    signal shared_as_x4 : std_logic_vector(26 downto 0);
-    signal shared_as_y4 : std_logic_vector(26 downto 0);
-    signal shared_as_sub4 : std_logic;
-    signal shared_as_r4 : std_logic_vector(26 downto 0);
-    
-    -- Shared Add/Sub Gen 5 signals
-    signal shared_as_x5 : std_logic_vector(26 downto 0);
-    signal shared_as_y5 : std_logic_vector(26 downto 0);
-    signal shared_as_sub5 : std_logic;
-    signal shared_as_r5 : std_logic_vector(26 downto 0);
-      signal sub_mask5 : std_logic_vector(26 downto 0); 
-      signal y_xor5 : std_logic_vector(26 downto 0); 
-      signal cin_vec5 : std_logic_vector(26 downto 0);
-    
-    -- Shared Add/Sub Gen 6 signals
-    signal shared_as_x6 : std_logic_vector(26 downto 0);
-    signal shared_as_y6 : std_logic_vector(26 downto 0);
-    signal shared_as_sub6 : std_logic;
-    signal shared_as_r6 : std_logic_vector(26 downto 0);
-    
-    -- Shared Add/Sub Gen 7 signals
-    signal shared_as_x7 : std_logic_vector(26 downto 0);
-    signal shared_as_y7 : std_logic_vector(26 downto 0);
-    signal shared_as_sub7 : std_logic;
-    signal shared_as_r7 : std_logic_vector(26 downto 0);
-    
-    -- Shared Add/Sub Gen 8 signals
-    signal shared_as_x8 : std_logic_vector(26 downto 0);
-    signal shared_as_y8 : std_logic_vector(26 downto 0);
-    signal shared_as_sub8 : std_logic;
-    signal shared_as_r8 : std_logic_vector(26 downto 0);
-
-    -- Shared Add/Sub Gen 9 signals
-    signal shared_as_x9 : std_logic_vector(26 downto 0);
-    signal shared_as_y9 : std_logic_vector(26 downto 0);
-    signal shared_as_sub9 : std_logic;
-    signal shared_as_r9 : std_logic_vector(26 downto 0);
-    
-    -- Shared Add/Sub Gen 10 signals
-    signal shared_as_x10 : std_logic_vector(26 downto 0);
-    signal shared_as_y10 : std_logic_vector(26 downto 0);
-    signal shared_as_sub10 : std_logic;
-    signal shared_as_r10 : std_logic_vector(26 downto 0);
-    
-    -- Shared Add/Sub Gen 11 signals
-    signal shared_as_x11 : std_logic_vector(26 downto 0);
-    signal shared_as_y11 : std_logic_vector(26 downto 0);
-    signal shared_as_sub11 : std_logic;
-    signal shared_as_r11 : std_logic_vector(26 downto 0);
-    
-    -- Shared Add/Sub Gen 12 signals
-    signal shared_as_x12 : std_logic_vector(26 downto 0);
-    signal shared_as_y12 : std_logic_vector(26 downto 0);
-    signal shared_as_sub12 : std_logic;
-    signal shared_as_r12 : std_logic_vector(26 downto 0);
-
-    -- Shared Add/Sub Gen 13 signals
-    signal shared_as_x13 : std_logic_vector(26 downto 0);
-    signal shared_as_y13 : std_logic_vector(26 downto 0);
-    signal shared_as_sub13 : std_logic;
-    signal shared_as_r13 : std_logic_vector(26 downto 0);
-      signal sub_mask13 : std_logic_vector(26 downto 0); 
-      signal y_xor13 : std_logic_vector(26 downto 0); 
-      signal cin_vec13 : std_logic_vector(26 downto 0);
-
 
 
 begin
 
 
 -- FPAdd --
-   -- excExpFracX <= "01" & X(30 downto 0);
-   -- excExpFracY <= "01" & Y(30 downto 0);
-   swap <= '1' when X(30 downto 0) < Y(30 downto 0) else '0'; -- x is lager then y
+   excExpFracX <= X(33 downto 32) & X(30 downto 0);
+   excExpFracY <= Y(33 downto 32) & Y(30 downto 0);
+   swap <= '1' when excExpFracX < excExpFracY else '0'; -- x is lager then y
    -- exponent difference
    eXmeY <= (X(30 downto 23)) - (Y(30 downto 23));
    eYmeX <= (Y(30 downto 23)) - (X(30 downto 23));
    expDiff <= eXmeY when swap = '0' else eYmeX;
    -- input swap so that |X|>|Y|
-   newX <=  X when swap = '0' else Y;
+   newX <= X when swap = '0' else Y;
    newY <= Y when swap = '0' else X;
    -- now we decompose the inputs into their sign, exponent, fraction
    add_expX<= newX(30 downto 23);
-   -- excX<= newX(33 downto 32); -- normal などの表示
-   -- excY<= newY(33 downto 32);
+   excX<= newX(33 downto 32); -- normal などの表示
+   excY<= newY(33 downto 32);
    signX<= newX(31);
    signY<= newY(31);
    EffSub <= signX xor signY;
-   -- sXsYExnXY <= signX & signY; -- !!!!!!!!!!!! can't distingish +0 and -0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-   -- fracY <= "000000000000000000000000" when excY="00" else ('1' & newY(22 downto 0));
-   fracY <= '1' & newY(22 downto 0);
+   sXsYExnXY <= signX & signY & excX & excY;
+   sdExnXY <= excX & excY; -- not used
+   fracY <= "000000000000000000000000" when excY="00" else ('1' & newY(22 downto 0));
    -- Exception management logic
-   -- with sXsYExnXY  select  
-   -- excRt <= "00" when "000000"|"010000"|"100000"|"110000",
-   --    "01" when "000101"|"010101"|"100101"|"110101"|"000100"|"010100"|"100100"|"110100"|"000001"|"010001"|"100001"|"110001",
-   --    "10" when "111010"|"001010"|"001000"|"011000"|"101000"|"111000"|"000010"|"010010"|"100010"|"110010"|"001001"|"011001"|"101001"|"111001"|"000110"|"010110"|"100110"|"110110", 
-   --    "11" when others;
-   signR<= signX;
+   with sXsYExnXY  select  
+   excRt <= "00" when "000000"|"010000"|"100000"|"110000",
+      "01" when "000101"|"010101"|"100101"|"110101"|"000100"|"010100"|"100100"|"110100"|"000001"|"010001"|"100001"|"110001",
+      "10" when "111010"|"001010"|"001000"|"011000"|"101000"|"111000"|"000010"|"010010"|"100010"|"110010"|"001001"|"011001"|"101001"|"111001"|"000110"|"010110"|"100110"|"110110", 
+      "11" when others;
+   signR<= '0' when (sXsYExnXY="100000" or sXsYExnXY="010000") else signX;
    shiftedOut <= '1' when (expDiff > 25) else '0';
    shiftVal <= expDiff(4 downto 0) when shiftedOut='0' else CONV_STD_LOGIC_VECTOR(26,5);
    RightShifterComponent: RightShifterSticky24_by_max_26_Freq1_uid4
@@ -937,10 +846,17 @@ begin
    fracXpad <= "01" & (newX(22 downto 0)) & "00"; --27bit
    cInSigAdd <= EffSub and not add_sticky; -- if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
    -- Connect to shared IntAdder_27 via ports
+   -- fracAdder: IntAdder_27_Freq1_uid6
+   --    port map ( clk  => clk,
+   --               Cin => cInSigAdd, -- X- Y でYにstickyが存在しない時だけ、補数として1を足す
+   --               X => fracXpad,
+   --               Y => fracYpadXorOp,
+   --               R => fracAddResult);
    add_fracAdder_X <= fracXpad;
    add_fracAdder_Y<= fracYpadXorOp;
    add_fracAdder_Cin<= cInSigAdd;
    fracAddResult <= add_fracAdder_R;
+
    fracSticky<= fracAddResult & add_sticky; -- stickyありの計算結果
    LZCAndShifter: Normalizer_Z_28_28_28_Freq1_uid8 --オーバーフローを考えて28桁なってる
       port map ( clk  => clk,
@@ -957,59 +873,55 @@ begin
    lsb<= shiftedFrac(4);
    add_round<= '1' when (rnd='1' and stk='1') or (rnd='1' and stk='0' and lsb='1')
   else '0';
-   -- roundingAdder: IntAdder_34_Freq1_uid11
+   -- add_roundingAdder: IntAdder_34_Freq1_uid11
    --    port map ( clk  => clk,
-   --               Cin => round,
-   --               X => expFrac,
+   --               Cin => add_round,
+   --               X => add_expFrac,
    --               Y => "0000000000000000000000000000000000",
    --               R => RoundedExpFrac);
    -- possible update to exception bits
-
-   -- ここまでで一回外にでて、また外から戻ってくる
    RoundedExpFrac <= ra_R;
-   -- upExc <= RoundedExpFrac(33 downto 32); -- overflowで01, underflowで11になる
+   upExc <= RoundedExpFrac(33 downto 32); -- overflowで01, underflowで11になる
    fracR <= RoundedExpFrac(23 downto 1); --23bit
    expR <= RoundedExpFrac(31 downto 24); --8bit
-   -- exExpExc <= upExc & excRt;
-   -- with exExpExc  select  
-   -- -- upExc は00で正常。 01でover, 11でunder
-   -- -- excRtは00がzero, 01が正常、10が無限(overflow), 11がNan
-   -- excRt2<= "00" when "0000"|"0100"|"1000"|"1100"|"1001"|"1101",
-   --    "01" when "0001",
-   --    "10" when "0010"|"0110"|"1010"|"1110"|"0101",
-   --    "11" when others;
-   -- excR <= "00" when (eqdiffsign='1' and EffSub='1'  and not(excRt="11")) else excRt2;
+   exExpExc <= upExc & excRt;
+   with exExpExc  select  
+   -- upExc は00で正常。 01でover, 11でunder
+   -- excRtは00がzero, 01が正常、10が無限(overflow), 11がNan
+   excRt2<= "00" when "0000"|"0100"|"1000"|"1100"|"1001"|"1101",
+      "01" when "0001",
+      "10" when "0010"|"0110"|"1010"|"1110"|"0101",
+      "11" when others;
+   excR <= "00" when (eqdiffsign='1' and EffSub='1'  and not(excRt="11")) else excRt2;
    signR2 <= '0' when (eqdiffsign='1' and EffSub='1') else signR;
-   add_R <=  signR2 & expR & fracR;
+   computedR <= excR & signR2 & expR & fracR;
+   add_R <= computedR;
 
 -- FPMul --
    sign <= X(31) xor Y(31);
    mul_expX <= X(30 downto 23);
    expY <= Y(30 downto 23);
    
-   -- Use shared IntAdder_27 for expSumPreSub calculation
-   -- Pad 10-bit values to 27-bit
    mul_expAdder_X<=mul_expX;  -- 8bit  
    mul_expAdder_Y<=expY;  -- 8bit
    mul_expAdder_Cin<= '0';
    expSumPreSub <= '0' & mul_expAdder_R(8 downto 0);  -- Extract lower 10 bits
-   
+
    bias <= CONV_STD_LOGIC_VECTOR(127,10);
    expSum <= expSumPreSub - bias;
    sigX <= "1" & X(22 downto 0);
    sigY <= "1" & Y(22 downto 0);
-   -- SignificandMultiplication: IntMultiplier_24x24_48_Freq1_uid5
-   --    port map ( clk  => clk,
-   --               X => sigX,
-   --               Y => sigY,
-   --               R => sigProd); -- 48bit
-   sigProd <= sigX * sigY;
-   -- excSel <= X(33 downto 32) & Y(33 downto 32);
-   -- with excSel  select  
-   -- exc <= "00" when  "0000" | "0001" | "0100", 
-   --        "01" when "0101",
-   --        "10" when "0110" | "1001" | "1010" ,
-   --        "11" when others;
+   SignificandMultiplication: IntMultiplier_24x24_48_Freq1_uid5
+      port map ( clk  => clk,
+                 X => sigX,
+                 Y => sigY,
+                 R => sigProd); -- 48bit
+   excSel <= X(33 downto 32) & Y(33 downto 32);
+   with excSel  select  
+   exc <= "00" when  "0000" | "0001" | "0100", 
+          "01" when "0101",
+          "10" when "0110" | "1001" | "1010" ,
+          "11" when others;
 
    norm <= sigProd(47); -- 最大桁
    -- exponent update
@@ -1021,39 +933,36 @@ begin
    mul_sticky <= sigProdExt(24); -- addとは意味が違う sticky, guardの順番(addはguard, stickyだった)
    guard <= '0' when sigProdExt(23 downto 0)="000000000000000000000000" else '1';
    mul_round <= mul_sticky and ( (guard and not(sigProdExt(25))) or (sigProdExt(25) ))  ;
-   -- RoundingAdder: IntAdder_33_Freq1_uid280
+   -- mul_RoundingAdder: IntAdder_33_Freq1_uid280
    --    port map ( clk  => clk,
-   --               Cin => round,
+   --               Cin => mul_round,
    --               X => expSig,
    --               Y => "000000000000000000000000000000000",
    --               R => expSigPostRound);
    mul_expSig <= expSig;
-   expSigPostRound <= ra_R(30 downto 0);
+   expSigPostRound <= ra_R(32 downto 0);
 
-   -- with expSigPostRound(32 downto 31)  select 
-   -- excPostNorm <=  "01"  when  "00",
-   --                             "10"             when "01", 
-   --                             "00"             when "11"|"10",
-   --                             "11"             when others;
-   -- with exc  select  
-   -- finalExc <= exc when  "11"|"10"|"00",
-   --                     excPostNorm when others; 
-   mul_R <= sign & expSigPostRound(30 downto 0);
-
-
-
+   with expSigPostRound(32 downto 31)  select 
+   excPostNorm <=  "01"  when  "00",
+                               "10"             when "01", 
+                               "00"             when "11"|"10",
+                               "11"             when others;
+   with exc  select  
+   finalExc <= exc when  "11"|"10"|"00",
+                       excPostNorm when others; 
+   mul_R <= finalExc & sign & expSigPostRound(30 downto 0);
 -- FPDiv --
    fX <= "1" & X(22 downto 0);
    fY <= "1" & Y(22 downto 0);
    expR0 <= ("00" & X(30 downto 23)) - ("00" & Y(30 downto 23));
    sR <= X(31) xor Y(31);
-   -- exnXY <= X(33 downto 32) & Y(33 downto 32);
-   -- with exnXY  select 
-   --    exnR0 <= 
-   --       "01"	 when "0101",
-   --       "00"	 when "0001" | "0010" | "0110",
-   --       "10"	 when "0100" | "1000" | "1001",
-   --       "11"	 when others;
+   exnXY <= X(33 downto 32) & Y(33 downto 32);
+   with exnXY  select 
+      exnR0 <= 
+         "01"	 when "0101",
+         "00"	 when "0001" | "0010" | "0110",
+         "10"	 when "0100" | "1000" | "1001",
+         "11"	 when others;
 
    D <= fY ;
    psX <= "0" & fX ;
@@ -1070,8 +979,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w13
-   w13 <= shared_as_r13;
+   with q14(2)  select
+   w13<= betaw14 - absq14D when '0',
+         betaw14 + absq14D when others;
 
    betaw13 <= w13(24 downto 0) & "00";
    sel13 <= betaw13(26 downto 21) & D(22 downto 20);
@@ -1086,8 +996,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w12
-   w12 <= shared_as_r12;
+   with q13(2)  select 
+   w12<= betaw13 - absq13D when '0',
+         betaw13 + absq13D when others;
 
    betaw12 <= w12(24 downto 0) & "00";
    sel12 <= betaw12(26 downto 21) & D(22 downto 20);
@@ -1102,8 +1013,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w11
-   w11 <= shared_as_r11;
+   with q12(2)  select 
+   w11<= betaw12 - absq12D when '0',
+         betaw12 + absq12D when others;
 
    betaw11 <= w11(24 downto 0) & "00";
    sel11 <= betaw11(26 downto 21) & D(22 downto 20);
@@ -1118,8 +1030,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w10
-   w10 <= shared_as_r10;
+   with q11(2)  select 
+   w10<= betaw11 - absq11D when '0',
+         betaw11 + absq11D when others;
 
    betaw10 <= w10(24 downto 0) & "00";
    sel10 <= betaw10(26 downto 21) & D(22 downto 20);
@@ -1134,8 +1047,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w9
-   w9 <= shared_as_r9;
+   with q10(2)  select 
+   w9<= betaw10 - absq10D when '0',
+         betaw10 + absq10D when others;
 
    betaw9 <= w9(24 downto 0) & "00";
    sel9 <= betaw9(26 downto 21) & D(22 downto 20);
@@ -1150,8 +1064,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w8
-   w8 <= shared_as_r8;
+   with q9(2)  select 
+   w8<= betaw9 - absq9D when '0',
+         betaw9 + absq9D when others;
 
    betaw8 <= w8(24 downto 0) & "00";
    sel8 <= betaw8(26 downto 21) & D(22 downto 20);
@@ -1166,8 +1081,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w7
-   w7 <= shared_as_r7;
+   with q8(2)  select 
+   w7<= betaw8 - absq8D when '0',
+         betaw8 + absq8D when others;
 
    betaw7 <= w7(24 downto 0) & "00";
    sel7 <= betaw7(26 downto 21) & D(22 downto 20);
@@ -1182,8 +1098,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w6
-   w6 <= shared_as_r6;
+   with q7(2)  select 
+   w6<= betaw7 - absq7D when '0',
+         betaw7 + absq7D when others;
 
    betaw6 <= w6(24 downto 0) & "00";
    sel6 <= betaw6(26 downto 21) & D(22 downto 20);
@@ -1198,8 +1115,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w5
-   w5 <= shared_as_r5;
+   with q6(2)  select 
+   w5<= betaw6 - absq6D when '0',
+         betaw6 + absq6D when others;
 
    betaw5 <= w5(24 downto 0) & "00";
    sel5 <= betaw5(26 downto 21) & D(22 downto 20);
@@ -1214,8 +1132,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w4
-   w4 <= shared_as_r4;
+   with q5(2)  select 
+   w4<= betaw5 - absq5D when '0',
+         betaw5 + absq5D when others;
 
    betaw4 <= w4(24 downto 0) & "00";
    sel4 <= betaw4(26 downto 21) & D(22 downto 20);
@@ -1230,8 +1149,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w3
-   w3 <= shared_as_r3;
+   with q4(2)  select 
+   w3<= betaw4 - absq4D when '0',
+         betaw4 + absq4D when others;
 
    betaw3 <= w3(24 downto 0) & "00";
    sel3 <= betaw3(26 downto 21) & D(22 downto 20);
@@ -1246,8 +1166,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w2
-   w2 <= shared_as_r2;
+   with q3(2)  select 
+   w2<= betaw3 - absq3D when '0',
+         betaw3 + absq3D when others;
 
    betaw2 <= w2(24 downto 0) & "00";
    sel2 <= betaw2(26 downto 21) & D(22 downto 20);
@@ -1262,8 +1183,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-   -- Shared Logic Connection for w1
-   w1 <= shared_as_r1;
+   with q2(2)  select 
+   w1<= betaw2 - absq2D when '0',
+         betaw2 + absq2D when others;
 
    betaw1 <= w1(24 downto 0) & "00";
    sel1 <= betaw1(26 downto 21) & D(22 downto 20);
@@ -1278,9 +1200,9 @@ begin
          "00" & D & "0"		   when "010" | "110",
          (26 downto 0 => '0')	 when others;
 
-
-   -- Shared Logic Connection for w0
-   w0 <= shared_as_r0(26 downto 0);
+   with q1(2)  select 
+   w0<= betaw1 - absq1D when '0',
+         betaw1 + absq1D when others;
 
    wfinal <= w0(24 downto 0);
    qM0 <= wfinal(24);
@@ -1320,17 +1242,20 @@ begin
            else div_mR(23 downto 0);
    div_round <= fRnorm(0); 
    expR1 <= expR0 + ("000" & (6 downto 1 => '1') & div_mR(25));
-   div_expfrac <= expR1 & fRnorm(23 downto 1) ;
    
+   -- expfracR <= div_expfrac + ((32 downto 1 => '0') & div_round);
+   div_expfrac <= expR1 & fRnorm(23 downto 1) ;
    expfracR <= ra_R(32 downto 0);
-   -- exnR <=      "00"  when expfracR(32) = '1'
-   --         else "10"  when   expfracR(32 downto 31) =  "01"
-   --         else "01";
-   -- with exnR0  select 
-   --    exnRfinal <= 
-   --       exnR   when "01",
-   --       exnR0  when others;
-   div_R <= sR &  expfracR(30 downto 0);
+
+
+   exnR <=      "00"  when expfracR(32) = '1'
+           else "10"  when   expfracR(32 downto 31) =  "01"
+           else "01";
+   with exnR0  select 
+      exnRfinal <= 
+         exnR   when "01",
+         exnR0  when others;
+   div_R <= exnRfinal & sR &  expfracR(30 downto 0);
 
 
 --------------------------------------------------------------------------------
@@ -1351,7 +1276,7 @@ begin
 
    fracX <= X(22 downto 0); -- fraction
    eRn0 <= "0" & X(30 downto 24); -- exponent 最上位切り捨てなので　/2をしている
-   -- xsX <= "01" & X(31); -- exception and sign
+   xsX <= X(33 downto 31); -- exception and sign
    eRn1 <= eRn0 + ("00" & (5 downto 0 => '1')) + X(23); --63のバイアスを足す。奇数の場合X(23)の場合はさらに1足して偶数にする
    fracXnorm <= "1" & fracX & "000" when X(23) = '0' else
          "01" & fracX&"00"; -- pre-normalization　eRn1で奇数の場合は1つ桁を挙げたから0.1的な形になってる
@@ -1455,8 +1380,8 @@ begin
    T10s_h <= T10s(27 downto 13);
    T10s_l <= T10s(12 downto 0);
    U10 <=  "0" & S9 & d10 & (not d10) & "1"; 
-   -- Shared Logic Connection for T12_h (Index 11, Step 11)
-   T12_h <= shared_as_r13(14 downto 0);
+   T12_h <=   T10s_h - U10 when d10='1'
+        else T10s_h + U10;
    T11 <= T12_h(13 downto 0) & T10s_l;
    S10 <= S9 & d10; -- here -1 becomes 0 and 1 becomes 1
    -- Step 12
@@ -1465,8 +1390,8 @@ begin
    T11s_h <= T11s(27 downto 12);
    T11s_l <= T11s(11 downto 0);
    U11 <=  "0" & S10 & d11 & (not d11) & "1"; 
-   -- Shared Logic Connection for T13_h (Index 12)
-   T13_h <= shared_as_r12(15 downto 0);
+   T13_h <=   T11s_h - U11 when d11='1'
+        else T11s_h + U11;
    T12 <= T13_h(14 downto 0) & T11s_l;
    S11 <= S10 & d11; -- here -1 becomes 0 and 1 becomes 1
    -- Step 13
@@ -1475,8 +1400,8 @@ begin
    T12s_h <= T12s(27 downto 11);
    T12s_l <= T12s(10 downto 0);
    U12 <=  "0" & S11 & d12 & (not d12) & "1"; 
-   -- Shared Logic Connection for T14_h (Index 11)
-   T14_h <= shared_as_r11(16 downto 0);
+   T14_h <=   T12s_h - U12 when d12='1'
+        else T12s_h + U12;
    T13 <= T14_h(15 downto 0) & T12s_l;
    S12 <= S11 & d12; -- here -1 becomes 0 and 1 becomes 1
    -- Step 14
@@ -1485,8 +1410,8 @@ begin
    T13s_h <= T13s(27 downto 10);
    T13s_l <= T13s(9 downto 0);
    U13 <=  "0" & S12 & d13 & (not d13) & "1"; 
-   -- Shared Logic Connection for T15_h (Index 10)
-   T15_h <= shared_as_r10(17 downto 0);
+   T15_h <=   T13s_h - U13 when d13='1'
+        else T13s_h + U13;
    T14 <= T15_h(16 downto 0) & T13s_l;
    S13 <= S12 & d13; -- here -1 becomes 0 and 1 becomes 1
    -- Step 15
@@ -1495,8 +1420,8 @@ begin
    T14s_h <= T14s(27 downto 9);
    T14s_l <= T14s(8 downto 0);
    U14 <=  "0" & S13 & d14 & (not d14) & "1"; 
-   -- Shared Logic Connection for T16_h (Index 9)
-   T16_h <= shared_as_r9(18 downto 0);
+   T16_h <=   T14s_h - U14 when d14='1'
+        else T14s_h + U14;
    T15 <= T16_h(17 downto 0) & T14s_l;
    S14 <= S13 & d14; -- here -1 becomes 0 and 1 becomes 1
    -- Step 16
@@ -1505,8 +1430,8 @@ begin
    T15s_h <= T15s(27 downto 8);
    T15s_l <= T15s(7 downto 0);
    U15 <=  "0" & S14 & d15 & (not d15) & "1"; 
-   -- Shared Logic Connection for T17_h
-   T17_h <= shared_as_r8(19 downto 0);
+   T17_h <=   T15s_h - U15 when d15='1'
+        else T15s_h + U15;
    T16 <= T17_h(18 downto 0) & T15s_l;
    S15 <= S14 & d15; -- here -1 becomes 0 and 1 becomes 1
    -- Step 17
@@ -1515,8 +1440,8 @@ begin
    T16s_h <= T16s(27 downto 7);
    T16s_l <= T16s(6 downto 0);
    U16 <=  "0" & S15 & d16 & (not d16) & "1"; 
-   -- Shared Logic Connection for T18_h
-   T18_h <= shared_as_r7(20 downto 0);
+   T18_h <=   T16s_h - U16 when d16='1'
+        else T16s_h + U16;
    T17 <= T18_h(19 downto 0) & T16s_l;
    S16 <= S15 & d16; -- here -1 becomes 0 and 1 becomes 1
    -- Step 18
@@ -1525,8 +1450,8 @@ begin
    T17s_h <= T17s(27 downto 6);
    T17s_l <= T17s(5 downto 0);
    U17 <=  "0" & S16 & d17 & (not d17) & "1"; 
-   -- Shared Logic Connection for T19_h
-   T19_h <= shared_as_r6(21 downto 0);
+   T19_h <=   T17s_h - U17 when d17='1'
+        else T17s_h + U17;
    T18 <= T19_h(20 downto 0) & T17s_l;
    S17 <= S16 & d17; -- here -1 becomes 0 and 1 becomes 1
    -- Step 19
@@ -1535,8 +1460,8 @@ begin
    T18s_h <= T18s(27 downto 5);
    T18s_l <= T18s(4 downto 0);
    U18 <=  "0" & S17 & d18 & (not d18) & "1"; 
-   -- Shared Logic Connection for T20_h
-   T20_h <= shared_as_r5(22 downto 0);
+   T20_h <=   T18s_h - U18 when d18='1'
+        else T18s_h + U18;
    T19 <= T20_h(21 downto 0) & T18s_l;
    S18 <= S17 & d18; -- here -1 becomes 0 and 1 becomes 1
    -- Step 20
@@ -1545,8 +1470,8 @@ begin
    T19s_h <= T19s(27 downto 4);
    T19s_l <= T19s(3 downto 0);
    U19 <=  "0" & S18 & d19 & (not d19) & "1"; 
-   -- Shared Logic Connection for T21_h
-   T21_h <= shared_as_r4(23 downto 0);
+   T21_h <=   T19s_h - U19 when d19='1'
+        else T19s_h + U19;
    T20 <= T21_h(22 downto 0) & T19s_l;
    S19 <= S18 & d19; -- here -1 becomes 0 and 1 becomes 1
    -- Step 21
@@ -1555,8 +1480,8 @@ begin
    T20s_h <= T20s(27 downto 3);
    T20s_l <= T20s(2 downto 0);
    U20 <=  "0" & S19 & d20 & (not d20) & "1"; 
-   -- Shared Logic Connection for T22_h
-   T22_h <= shared_as_r3(24 downto 0);
+   T22_h <=   T20s_h - U20 when d20='1'
+        else T20s_h + U20;
    T21 <= T22_h(23 downto 0) & T20s_l;
    S20 <= S19 & d20; -- here -1 becomes 0 and 1 becomes 1
    -- Step 22
@@ -1565,8 +1490,8 @@ begin
    T21s_h <= T21s(27 downto 2);
    T21s_l <= T21s(1 downto 0);
    U21 <=  "0" & S20 & d21 & (not d21) & "1"; 
-   -- Shared Logic Connection for T23_h
-   T23_h <= shared_as_r2(25 downto 0);
+   T23_h <=   T21s_h - U21 when d21='1'
+        else T21s_h + U21;
    T22 <= T23_h(24 downto 0) & T21s_l;
    S21 <= S20 & d21; -- here -1 becomes 0 and 1 becomes 1
    -- Step 23
@@ -1575,8 +1500,8 @@ begin
    T22s_h <= T22s(27 downto 1);
    T22s_l <= T22s(0 downto 0);
    U22 <=  "0" & S21 & d22 & (not d22) & "1"; 
-   -- Shared Logic Connection for T24_h
-   T24_h <= shared_as_r1;
+   T24_h <=   T22s_h - U22 when d22='1'
+        else T22s_h + U22;
    T23 <= T24_h(25 downto 0) & T22s_l;
    S22 <= S21 & d22; -- here -1 becomes 0 and 1 becomes 1
    -- Step 24
@@ -1584,9 +1509,8 @@ begin
    T23s <= T23 & "0";
    T23s_h <= T23s(27 downto 0);
    U23 <=  "0" & S22 & d23 & (not d23) & "1"; 
-
-   -- Shared Logic Connection for T25_h
-   T25_h <= shared_as_r0;
+   T25_h <=   T23s_h - U23 when d23='1'
+        else T23s_h + U23;
    T24 <= T25_h(26 downto 0);
    S23 <= S22 & d23; -- here -1 becomes 0 and 1 becomes 1
    d25 <= not T24(26) ; -- the sign of the remainder will become the round bit
@@ -1595,172 +1519,29 @@ begin
    sqrt_round <= sqrt_mR(0); -- round bit
 
    sqrt_expfrac <= fR;
-   -- fRrnd <= fR + ((22 downto 1 => '0') & round); -- rounding sqrt never changes exponents 
-   
-   -- Output to shared rounding adder
-   -- fR is 23 bits. We pad it to 34 bits.
---    expFrac_out <= fR; 
---    round_out <= sqrt_round;
-   
-   -- Input from shared rounding adder
-   -- It returns 34 bits, but we only used the lower bits appropriately.
+   -- fRrnd <= fR + ((22 downto 1 => '0') & sqrt_round); -- rounding sqrt never changes exponents 
    fRrnd <= ra_R(22 downto 0); 
    
    Rn2 <= eRn1 & fRrnd;
    -- sign and exception processing
-   -- with xsX  select 
-   --    xsR <= "010"  when "010",  -- normal case
-   --           "100"  when "100",  -- +infty
-   --           "000"  when "000",  -- +0
-   --           "001"  when "001",  -- the infamous sqrt(-0)=-0
-   --           "110"  when others; -- return NaN
-   sqrt_R <= X(31) & Rn2; 
+   with xsX  select 
+      xsR <= "010"  when "010",  -- normal case
+             "100"  when "100",  -- +infty
+             "000"  when "000",  -- +0
+             "001"  when "001",  -- the infamous sqrt(-0)=-0
+             "110"  when others; -- return NaN
+   sqrt_R <= xsR & Rn2; 
 
 
--- Shared Add/Sub Logic Step 0
--- Combined w0 (DIV) and T25_h (SQRT)
--- DIV: opcode="11", sub when q1(2)='0' (active low)
--- SQRT: opcode="10", sub when d23='1' (active high)
-    shared_as_x0 <= "0" & betaw1 when opcode(0)='1' else T23s_h;
-    shared_as_y0 <= "0" & absq1D when opcode(0)='1' else U23;
-    shared_as_sub0 <= not q1(2)  when opcode(0)='1' else d23;
+    ra_X(33) <= add_expFrac(33);
+    ra_X(32 downto 23) <= add_expFrac(32 downto 23) when opcode="00" else 
+                        mul_expSig(32 downto 23) when opcode="01" else
+                        div_expfrac(32 downto 23); -- 11 for Div
 
-   --  shared_as_r0 <= shared_as_x0 - shared_as_y0 when shared_as_sub0 = '1'
-   --             else shared_as_x0 + shared_as_y0;
-   sub_mask0 <= (others => shared_as_sub0);
-   y_xor0 <= shared_as_y0 xor sub_mask0;
-
-   cin_vec0(27 downto 1) <= (others => '0');
-   cin_vec0(0) <= shared_as_sub0;
-
-   shared_as_r0 <= shared_as_x0 + y_xor0 + cin_vec0;
-
-
--- Shared Add/Sub Logic Step 1
-    shared_as_x1 <= betaw2 when opcode(0)='1' else T22s_h;
-    shared_as_y1 <= absq2D when opcode(0)='1' else U22;
-    shared_as_sub1 <= not q2(2)  when opcode(0)='1' else d22;
-
-    shared_as_r1 <= shared_as_x1 - shared_as_y1 when shared_as_sub1 = '1'
-               else shared_as_x1 + shared_as_y1;
-
--- Shared Add/Sub Logic Step 2
-    shared_as_x2 <= betaw3 when opcode(0)='1' else '0' & T21s_h;
-    shared_as_y2 <= absq3D when opcode(0)='1' else '0' & U21;
-    shared_as_sub2 <= not q3(2)  when opcode(0)='1' else d21;
-
-   --  shared_as_r2 <= shared_as_x2 - shared_as_y2 when shared_as_sub2 = '1'
-   --             else shared_as_x2 + shared_as_y2;
-
-   sub_mask2 <= (others => shared_as_sub2);
-   y_xor2 <= shared_as_y2 xor sub_mask2;
-
-   cin_vec2(26 downto 1) <= (others => '0');
-   cin_vec2(0) <= shared_as_sub2;
-   shared_as_r2 <= shared_as_x2 + y_xor2 + cin_vec2;
-
--- Shared Add/Sub Logic Step 3
-    shared_as_x3 <= betaw4 when opcode(0)='1' else "00" & T20s_h;
-    shared_as_y3 <= absq4D when opcode(0)='1' else "00" & U20;
-    shared_as_sub3 <= not q4(2)  when opcode(0)='1' else d20;
-
-    shared_as_r3 <= shared_as_x3 - shared_as_y3 when shared_as_sub3 = '1'
-               else shared_as_x3 + shared_as_y3;
-
--- Shared Add/Sub Logic Step 4
-    shared_as_x4 <= betaw5 when opcode(0)='1' else "000" & T19s_h;
-    shared_as_y4 <= absq5D when opcode(0)='1' else "000" & U19;
-    shared_as_sub4 <= not q5(2)  when opcode(0)='1' else d19;
-
-    shared_as_r4 <= shared_as_x4 - shared_as_y4 when shared_as_sub4 = '1'
-               else shared_as_x4 + shared_as_y4;
-
--- Shared Add/Sub Logic Step 5
-    shared_as_x5 <= betaw6 when opcode(0)='1' else "0000" & T18s_h;
-    shared_as_y5 <= absq6D when opcode(0)='1' else "0000" & U18;
-    shared_as_sub5 <= not q6(2)  when opcode(0)='1' else d18;
-
-    shared_as_r5 <= shared_as_x5 - shared_as_y5 when shared_as_sub5 = '1'
-               else shared_as_x5 + shared_as_y5;
-
--- Shared Add/Sub Logic Step 6
-    shared_as_x6 <= betaw7 when opcode(0)='1' else "00000" & T17s_h;
-    shared_as_y6 <= absq7D when opcode(0)='1' else "00000" & U17;
-    shared_as_sub6 <= not q7(2)  when opcode(0)='1' else d17;
-
-    shared_as_r6 <= shared_as_x6 - shared_as_y6 when shared_as_sub6 = '1'
-               else shared_as_x6 + shared_as_y6;
-
--- Shared Add/Sub Logic Step 7
-    shared_as_x7 <= betaw8 when opcode(0)='1' else "000000" & T16s_h;
-    shared_as_y7 <= absq8D when opcode(0)='1' else "000000" & U16;
-    shared_as_sub7 <= not q8(2)  when opcode(0)='1' else d16;
-
-    shared_as_r7 <= shared_as_x7 - shared_as_y7 when shared_as_sub7 = '1'
-               else shared_as_x7 + shared_as_y7;
-
--- Shared Add/Sub Logic Step 8
-    shared_as_x8 <= betaw9 when opcode(0)='1' else "0000000" & T15s_h;
-    shared_as_y8 <= absq9D when opcode(0)='1' else "0000000" & U15;
-    shared_as_sub8 <= not q9(2)  when opcode(0)='1' else d15;
-
-    shared_as_r8 <= shared_as_x8 - shared_as_y8 when shared_as_sub8 = '1'
-               else shared_as_x8 + shared_as_y8;
-
--- Shared Add/Sub Logic Step 9
-    shared_as_x9 <= betaw10 when opcode(0)='1' else "00000000" & T14s_h;
-    shared_as_y9 <= absq10D when opcode(0)='1' else "00000000" & U14;
-    shared_as_sub9 <= not q10(2)  when opcode(0)='1' else d14;
-
-    shared_as_r9 <= shared_as_x9 - shared_as_y9 when shared_as_sub9 = '1'
-               else shared_as_x9 + shared_as_y9;
-
--- Shared Add/Sub Logic Step 10
-    shared_as_x10 <= betaw11 when opcode(0)='1' else "000000000" & T13s_h;
-    shared_as_y10 <= absq11D when opcode(0)='1' else "000000000" & U13;
-    shared_as_sub10 <= not q11(2)  when opcode(0)='1' else d13;
-
-    shared_as_r10 <= shared_as_x10 - shared_as_y10 when shared_as_sub10 = '1'
-               else shared_as_x10 + shared_as_y10;
-
--- Shared Add/Sub Logic Step 11
-    shared_as_x11 <= betaw12 when opcode(0)='1' else "0000000000" & T12s_h;
-    shared_as_y11 <= absq12D when opcode(0)='1' else "0000000000" & U12;
-    shared_as_sub11 <= not q12(2)  when opcode(0)='1' else d12;
-
-    shared_as_r11 <= shared_as_x11 - shared_as_y11 when shared_as_sub11 = '1'
-               else shared_as_x11 + shared_as_y11;
-
--- Shared Add/Sub Logic Step 12
-    shared_as_x12 <= betaw13 when opcode(0)='1' else "00000000000" & T11s_h;
-    shared_as_y12 <= absq13D when opcode(0)='1' else "00000000000" & U11;
-    shared_as_sub12 <= not q13(2)  when opcode(0)='1' else d11;
-
-    shared_as_r12 <= shared_as_x12 - shared_as_y12 when shared_as_sub12 = '1'
-               else shared_as_x12 + shared_as_y12;
-
--- Shared Add/Sub Logic Step 13
-    -- DIV: w13 <= betaw14 +/- absq14D. sub when q14(2)=0.
-    -- SQRT: T12_h <= T10s_h +/- U10. sub when d10=1.
-    shared_as_x13 <= betaw14 when opcode(0)='1' else "000000000000" & T10s_h; -- T10s_h is 15 bits (27..13), pad 12
-    shared_as_y13 <= absq14D when opcode(0)='1' else "000000000000" & U10;
-    shared_as_sub13 <= not q14(2)  when opcode(0)='1' else d10;
-
-   sub_mask13 <= (others => shared_as_sub13);
-   y_xor13 <= shared_as_y13 xor sub_mask13;
-
-   cin_vec13(26 downto 1) <= (others => '0');
-   cin_vec13(0) <= shared_as_sub13;
-   shared_as_r13 <= shared_as_x13 + y_xor13 + cin_vec13;
-
--- Shared
-   -- Output to shared div_rounding adder
-    -- Multiplex inputs to Shared Rounding Adder
-    -- opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
-    ra_X <= add_expFrac when opcode="00" else 
-            ('0' & mul_expSig) when opcode="01" else
-            ('0' & div_expfrac) when opcode="11" else
-             "00000000000" & sqrt_expfrac; -- For both Sqrt and Div
+    ra_X(22 downto 0) <= add_expFrac(22 downto 0) when opcode="00" else 
+            mul_expSig(22 downto 0) when opcode="01" else
+            sqrt_expFrac when opcode="10" else
+            div_expfrac(22 downto 0); -- 11 for Div
             
     ra_Cin <= add_round when opcode="00" else 
               mul_round when opcode="01" else
@@ -1775,14 +1556,12 @@ begin
     ia27_Y(26 downto 9) <= add_fracAdder_Y(26 downto 9);
     ia27_Y(8 downto 0)<= add_fracAdder_Y(8 downto 0) when opcode="00" else
               '0' & mul_expAdder_Y; -- when opcode="01"
-    
+
     ia27_Cin <= add_fracAdder_Cin when opcode="00" else
                 mul_expAdder_Cin; -- when opcode="01"
 
     add_fracAdder_R <= ia27_R;
     mul_expAdder_R <= ia27_R(8 downto 0);   
-
-
 
     U_SHARED_IA27: IntAdder_27_Freq1_uid6
     port map (
@@ -1801,6 +1580,8 @@ begin
         Cin => ra_Cin,
         R => ra_R
     );
+
+   
 
     R <= add_R when opcode="00" else 
          mul_R when opcode="01" else
