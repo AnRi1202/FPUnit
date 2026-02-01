@@ -189,20 +189,44 @@ proc run_synth_common {entity_name label} {
 set rtl_dir "../rtl/src/src_shared_combine_sv/utils"
 set rtl_pkg "../rtl/src/src_shared_combine_sv/FPALL_pkg.sv"
 
-puts "--- Task 1: abs_comparator---"
+# puts "--- Task 1: abs_comparator---"
+# remove_design -all
+
+# analyze -library WORK -format sverilog $rtl_pkg
+# analyze -library WORK -format sverilog "$rtl_dir/abs_comparator.sv"
+# run_synth_common "abs_comparator" "abs_comparator"
+
+
+# puts "--- Task 2: abs_comparator_origin---"
+# remove_design -all
+
+# analyze -library WORK -format sverilog $rtl_pkg
+# analyze -library WORK -format sverilog "$rtl_dir/abs_comparator.sv"
+# run_synth_common "abs_comparator_origin" "abs_comparator_origin"
+
+# puts "--- Task 3: abs_comparator_only---"
+# remove_design -all
+
+# analyze -library WORK -format sverilog $rtl_pkg
+# analyze -library WORK -format sverilog "$rtl_dir/abs_comparator.sv"
+# run_synth_common "abs_comparator_only" "abs_comparator_only"
+
+puts "--- Task 4: barrel_shifter---"
 remove_design -all
 
 analyze -library WORK -format sverilog $rtl_pkg
-analyze -library WORK -format sverilog "$rtl_dir/abs_comparator.sv"
-run_synth_common "abs_comparator" "abs_comparator"
+analyze -library WORK -format sverilog "$rtl_dir/barrel_shifter.sv"
+run_synth_common "barrel_shifter" "barrel_shifter"
 
 
-puts "--- Task 2: abs_comparator_origin---"
+puts "--- Task 5: barrerl_shifter_origin---"
 remove_design -all
 
 analyze -library WORK -format sverilog $rtl_pkg
-analyze -library WORK -format sverilog "$rtl_dir/abs_comparator.sv"
-run_synth_common "abs_comparator_origin" "abs_comparator_origin"
+analyze -library WORK -format sverilog "$rtl_dir/barrel_shifter.sv"
+run_synth_common "barrel_shifter_separate" "barrel_shifter_separate"
+
+
 exit
 
 

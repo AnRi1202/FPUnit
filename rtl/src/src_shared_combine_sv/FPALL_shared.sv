@@ -1,3 +1,4 @@
+`timescale 1ns/1ps
 import FPALL_pkg::*;
 
 
@@ -24,7 +25,7 @@ module FPALL_Shared_combine(
     logic [32:0] excExpFracX, excExpFracY;
     logic swap;
     logic [7:0] expDiff_h;
-    logic [7:0] expDiff_h1;
+    logic [7:0] expDiff_l;
     fp_vec_u newX, newY;
     // logic [31:0] newX, newY;
     logic [7:0] add_expX;
@@ -34,10 +35,11 @@ module FPALL_Shared_combine(
     logic [3:0] sdExnXY;
     logic [23:0] fracY;
     logic [1:0] excRt;
-    logic signR, shiftedOut;
-    logic [4:0] shiftVal;
+    logic signR, shiftedOut_h, shiftedOut_l;
+    logic [4:0] shiftVal_h, shiftVal_l;
+    logic [7:0] shiftVal;
     logic [25:0] shiftedFracY;
-    logic add_sticky;
+    logic add_sticky_h, add_sticky_l;
     logic [26:0] fracYpad, EffSub_hVector, fracYpadXorOp, fracXpad;
     logic cInSigAdd;
     logic [26:0] fracAddResult;
@@ -483,26 +485,44 @@ module FPALL_Shared_combine(
     assign signY_l = newY.lanes.lo[15];
     assign EffSub_l = signX_l ^ signY_l;
 
-    
-    assign fracY = {1'b1, newY[22:0]};
-    assign signR = signX_h;
-    
-    assign shiftedOut = (expDiff_h > 25) ? 1'b1 : 1'b0;
-    assign shiftVal = (shiftedOut == 1'b0) ? expDiff_h[4:0] : 5'd26;
 
-    RightShifterSticky24_by_max_26_Freq1_uid4 RightShifterComponent (
+
+    always_comb begin
+        begin
+            logic[6:0] fracY_h, fracY_l;
+            fracY_h = {1'b1, newY.lanes.hi[6:0]};
+            fracY_l = {1'b1, newY.lanes.lo[6:0]};
+
+            shiftedOut_h = (expDiff_h > 25) ? 1'b1 : 1'b0;
+            shiftVal_h = (shiftedOut_h == 1'b0)? expDiff_h[4:0] : 5'd26;
+            fracY = {1'b1, newY[22:0]};
+            if (fmt == FP16) begin 
+                shiftedOut_h =(expDiff_h > 9) ? 1'b1 : 1'b0; 
+                shiftedOut_l = (expDiff_l > 9) ? 1'b1 : 1'b0;
+                shiftVal_h = (shiftedOut_h == 1'b0)? expDiff_h[3:0] : 4'd10;
+                shiftVal_l = (shiftedOut_l == 1'b0)? expDiff_l[3:0] : 4'd10;
+                fracY = {fracY_h, 4'b0, fracY_l, 4'b0};
+            end
+        end
+    end
+
+
+    assign shiftVal = (fmt ==FP32) ? {3'b0, shiftVal_h} : {shiftVal_h[3:0],shiftVal_l[3:0]};
+    barrel_shifter RightShifterComponent (
         .clk(clk),
+        .fmt(fmt),
         .S(shiftVal),
         .X(fracY),
         .R(shiftedFracY),
-        .Sticky(add_sticky)
+        .Sticky_h(add_sticky_h),
+        .Sticky_l(add_sticky_l)
     );
     
     assign fracYpad = {1'b0, shiftedFracY};
     assign EffSub_hVector = {27{EffSub_h}};
     assign fracYpadXorOp = fracYpad ^ EffSub_hVector;
     assign fracXpad = {2'b01, newX[22:0], 2'b00};
-    assign cInSigAdd = EffSub_h & (~add_sticky); // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
+    assign cInSigAdd = EffSub_h & (~add_sticky_l); // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
 
     // Connect to Shared IntAdder_27
     assign add_fracAdder_X = fracXpad;       // Connect padded X fraction
@@ -510,7 +530,7 @@ module FPALL_Shared_combine(
     assign add_fracAdder_Cin = cInSigAdd;    // Carry-in accounting for subtraction and sticky bit
     assign fracAddResult = add_fracAdder_R;  // Get addition result back
     
-    assign fracSticky = {fracAddResult, add_sticky};
+    assign fracSticky = {fracAddResult, add_sticky_l};
     
     Normalizer_Z_28_28_28_Freq1_uid8 LZCAndShifter (
         .clk(clk),
@@ -535,7 +555,7 @@ module FPALL_Shared_combine(
     assign fracR = RoundedExpFrac[23:1];
     assign expR = RoundedExpFrac[31:24];
     
-    assign signR2 = ((eqdiffsign == 1'b1) && (EffSub_h == 1'b1)) ? 1'b0 : signR;
+    assign signR2 = ((eqdiffsign == 1'b1) && (EffSub_h == 1'b1)) ? 1'b0 : signX_h;
     assign add_R = {signR2, expR, fracR};
 
     
