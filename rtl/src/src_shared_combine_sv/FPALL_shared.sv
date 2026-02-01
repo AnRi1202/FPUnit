@@ -28,7 +28,7 @@ module FPALL_Shared_combine(
     logic [7:0] expDiff_l;
     fp_vec_u newX, newY;
     // logic [31:0] newX, newY;
-    logic [7:0] add_expX;
+    logic [7:0] add_expX_h,add_expX_l;
     logic signX_h, signY_h, EffSub_h;
     logic signX_l, signY_l, EffSub_l;
     logic [1:0] sXsYExnXY;
@@ -44,18 +44,18 @@ module FPALL_Shared_combine(
     logic cInSigAdd;
     logic [26:0] fracAddResult;
     logic [27:0] fracSticky;
-    logic [4:0] nZerosNew, nZerosNew_h;
+    logic [4:0] nZerosNew_l, nZerosNew_h;
     logic [27:0] shiftedFrac;
-    logic [8:0] extendedExpInc;
-    logic [9:0] updatedExp;
-    logic eqdiffsign;
+    logic [8:0] extendedExpInc_h, extendedExpInc_l;
+    logic [9:0] updatedExp_h, updatedExp_l;
+    logic eqdiffsign_h, eqdiffsign_l;
     logic stk, rnd, lsb;
     logic [33:0] RoundedExpFrac;
     logic [22:0] fracR;
     logic [7:0] expR;
     logic [3:0] exExpExc;
     logic [1:0] excRt2, excR;
-    logic signR2;
+    logic signR2_h;
     logic [33:0] computedR;
 
     // FPMul signals
@@ -476,7 +476,8 @@ module FPALL_Shared_combine(
     assign expDiff_h = newX.fp32.exp - newY.fp32.exp; 
     assign expDiff_l = newX.lanes.lo[14:7] - newY.lanes.lo[14:7]; //lo expDiff
     // now we decompose the inputs into their sign, exponent, fraction 
-    assign add_expX = newX.fp32.exp;
+    assign add_expX_h = newX.fp32.exp; // == newX.lanes.hi[14:8];
+    assign add_expX_l = newX.lanes.lo[14:8];
     assign signX_h = newX.fp32.sign;
     assign signY_h = newY.fp32.sign;
     assign EffSub_h = signX_h ^ signY_h;
@@ -540,15 +541,19 @@ module FPALL_Shared_combine(
         .fmt(fmt),
         .X(fracSticky),
         .Count_h(nZerosNew_h),
-        .Count_l(nZerosNew),
+        .Count_l(nZerosNew_l),
         .R(shiftedFrac)
     );
     
-    assign extendedExpInc = {1'b0, add_expX} + 9'd1;
-    assign updatedExp = {1'b0, extendedExpInc} - {5'b00000, nZerosNew};
-    assign eqdiffsign = (nZerosNew == 5'b11111) ? 1'b1 : 1'b0;
+    assign extendedExpInc_h = {1'b0, add_expX_h} + 9'd1;
+    assign extendedExpInc_l = {1'b0, add_expX_l} + 9'd1;
+    assign updatedExp_h = (fmt == FP32) ? {1'b0, extendedExpInc_h} - {5'b00000, nZerosNew_l} : {1'b0, extendedExpInc_h} - {5'b00000, nZerosNew_h};
+    assign updatedExp_l = (fmt == FP32) ? '0 :  {1'b0, extendedExpInc_l} - {5'b00000, nZerosNew_l};
+    assign eqdiffsign_h = (fmt == FP32) ? ((nZerosNew_l == 5'b11111) ? 1'b1 : 1'b0) :(nZerosNew_h == 5'b11111) ? 1'b1 : 1'b0 ;
+    assign eqdiffsign_l = (fmt == FP32) ? '0 : (nZerosNew_h == 5'b11111) ? 1'b1 : 1'b0 ;
     
-    assign add_expFrac = {updatedExp, shiftedFrac[26:3]};
+     
+    assign add_expFrac = {updatedExp_h, shiftedFrac[26:3]};
     assign stk = shiftedFrac[2] | shiftedFrac[1] | shiftedFrac[0];
     assign rnd = shiftedFrac[3];
     assign lsb = shiftedFrac[4];
@@ -560,8 +565,8 @@ module FPALL_Shared_combine(
     assign fracR = RoundedExpFrac[23:1];
     assign expR = RoundedExpFrac[31:24];
     
-    assign signR2 = ((eqdiffsign == 1'b1) && (EffSub_h == 1'b1)) ? 1'b0 : signX_h;
-    assign add_R = {signR2, expR, fracR};
+    assign signR2_h = ((eqdiffsign_h == 1'b1) && (EffSub_h == 1'b1)) ? 1'b0 : signX_h;
+    assign add_R = {signR2_h, expR, fracR};
 
     
     // =================================================================================
