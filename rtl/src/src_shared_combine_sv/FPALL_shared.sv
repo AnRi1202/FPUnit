@@ -46,11 +46,13 @@ module FPALL_Shared_combine(
     logic [27:0] fracSticky;
     logic [4:0] nZerosNew_l, nZerosNew_h;
     logic [27:0] shiftedFrac;
+    logic [13:0] shiftedFrac_h, shiftedFrac_l;
     logic [8:0] extendedExpInc_h, extendedExpInc_l;
     logic [9:0] updatedExp_h, updatedExp_l;
     logic eqdiffsign_h, eqdiffsign_l;
-    logic stk, rnd, lsb;
-    logic [33:0] RoundedExpFrac;
+    logic stk_h, rnd_h, lsb_h;
+    logic stk_l, rnd_l, lsb_l;
+    logic [33:0] add_RoundedExpFrac;
     logic [22:0] fracR;
     logic [7:0] expR;
     logic [3:0] exExpExc;
@@ -420,12 +422,12 @@ module FPALL_Shared_combine(
 
     // Shared Output Signals
     logic [31:0] add_R, mul_R;
-    logic [33:0] add_expFrac;
-    logic add_round;
+    logic [35:0] add_expFrac;
+    logic add_round_h, add_round_l, add_round;
     logic [32:0] mul_expSig;
     // logic mul_round; // already defined
     logic [33:0] ra_X, ra_R;
-    logic [33:0] add_ra_X, mul_ra_X, div_ra_X, sqrt_ra_X;
+    logic [33:0] add_ra_X, add_ra_R, mul_ra_X, div_ra_X, sqrt_ra_X;
     logic ra_Cin;
     
     logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
@@ -553,17 +555,32 @@ module FPALL_Shared_combine(
     assign eqdiffsign_l = (fmt == FP32) ? '0 : (nZerosNew_h == 5'b11111) ? 1'b1 : 1'b0 ;
     
      
-    assign add_expFrac = {updatedExp_h, shiftedFrac[26:3]};
-    assign stk = shiftedFrac[2] | shiftedFrac[1] | shiftedFrac[0];
-    assign rnd = shiftedFrac[3];
-    assign lsb = shiftedFrac[4];
-    // Connect to Shared Rounding Adder
+    assign shiftedFrac_h = shiftedFrac[27:14];
+    assign shiftedFrac_l = shiftedFrac[13:0];
+
+    // FP32: exponent uses high lane, rounding uses low lane
+    always_comb begin
+        if (fmt ==FP32) begin
+            add_expFrac = {2'b0, updatedExp_h, shiftedFrac_h[12:0], shiftedFrac_l[13:3]};
+        end else begin
+            add_expFrac = {updatedExp_h, shiftedFrac_h[12:5], updatedExp_l, shiftedFrac_l[12:5]}; //36bit
+        end
+    end
+    assign stk_h = shiftedFrac_h[4] | shiftedFrac_h[3] | shiftedFrac_h[2];
+    assign rnd_h = shiftedFrac_h[5];
+    assign lsb_h = shiftedFrac_h[6];
+    assign stk_l = shiftedFrac_l[2] | shiftedFrac_l[1] | shiftedFrac_l[0];
+    assign rnd_l = shiftedFrac_l[3];
+    assign lsb_l = shiftedFrac_l[4];
+    assign add_round_h = ((rnd_h == 1'b1) && (stk_h == 1'b1)) || ((rnd_h == 1'b1) && (stk_h == 1'b0) && (lsb_h == 1'b1)) ? 1'b1 : 1'b0;
+    assign add_round_l = ((rnd_l == 1'b1) && (stk_l == 1'b1)) || ((rnd_l == 1'b1) && (stk_l == 1'b0) && (lsb_l == 1'b1)) ? 1'b1 : 1'b0;
+    assign add_round = (fmt == FP32) ? add_round_l : add_round_h;
+    // Connect to Add Rounding Adder (not shared)
     assign add_ra_X = add_expFrac; 
-    assign add_round = ((rnd == 1'b1) && (stk == 1'b1)) || ((rnd == 1'b1) && (stk == 1'b0) && (lsb == 1'b1)) ? 1'b1 : 1'b0;
-    // Get result from Shared Rounding Adder
-    assign RoundedExpFrac = ra_R;
-    assign fracR = RoundedExpFrac[23:1];
-    assign expR = RoundedExpFrac[31:24];
+    // Get result from Add Rounding Adder
+    assign add_RoundedExpFrac = add_ra_R;
+    assign fracR = add_RoundedExpFrac[23:1];
+    assign expR = add_RoundedExpFrac[31:24];
     
     assign signR2_h = ((eqdiffsign_h == 1'b1) && (EffSub_h == 1'b1)) ? 1'b0 : signX_h;
     assign add_R = {signR2_h, expR, fracR};
@@ -1371,15 +1388,15 @@ module FPALL_Shared_combine(
     // Shared Resources & Output Mux
     // =================================================================================
 
-    // Multiplex inputs to Shared Rounding Adder
+    // Multiplex inputs to Shared Rounding Adder (Add uses its own adder)
     // opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
     // Multiplex inputs to Shared Rounding Adder
     // opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
-    assign ra_X = (opcode == OP_ADD) ? add_ra_X :
+    assign ra_X = 
                   (opcode == OP_MUL) ? mul_ra_X :
                   (opcode == OP_DIV) ? div_ra_X :
                                       sqrt_ra_X;                                   
-    assign ra_Cin = (opcode == OP_ADD) ? add_round :
+    assign ra_Cin = 
                     (opcode == OP_MUL) ? mul_round :
                     (opcode == OP_DIV) ? div_round :
                                         sqrt_round;
@@ -1411,6 +1428,14 @@ module FPALL_Shared_combine(
         .Y(34'd0),
         .Cin(ra_Cin),
         .R(ra_R)
+    );
+
+    IntAdder_34_Freq1_uid11 U_ADD_RA (
+        .clk(clk),
+        .X(add_ra_X),
+        .Y(34'd0),
+        .Cin(add_round),
+        .R(add_ra_R)
     );
 
     assign R = (opcode == OP_ADD) ? add_R :  // Add Result
