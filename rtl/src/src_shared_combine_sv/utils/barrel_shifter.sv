@@ -102,9 +102,10 @@ module barrel_shifter(
         end
 
         R        = {level0_h, level0_l};
-        Sticky_h = stk0_h;
+        Sticky_h = stk0_h || level0_h[2] || level0_h[1] || level0_h[0];
         Sticky_l = stk0_l;
-
+        
+        if(fmt ==FP16) level0_h[2:0] = 3'b0; 
     end
 
 endmodule
@@ -121,53 +122,68 @@ module normalizer_z_28_28_28_multi(
         R = 28'b0;
         Count_l = 5'b0;
         Count_h = 5'b0;
+        begin
+            logic [13:0] level4_h, level3_h, level2_h, level1_h, level0_h;
+            logic [13:0] level4_l, level3_l, level2_l, level1_l, level0_l;
+            logic count4;
+            logic count4_h, count3_h, count2_h, count1_h, count0_h;
+            logic count4_l, count3_l, count2_l, count1_l, count0_l;
+            // Stage 4: shift by 16 (FP32 lane only)
 
-        if (fmt == FP32) begin
-            logic [27:0] level5, level4, level3, level2, level1, level0;
-            logic count4, count3, count2, count1, count0;
-            level5 = X;
-            count4 = ~(|level5[27:12]);
-            level4 = count4 ? {level5[11:0], 16'b0} : level5;
-            count3 = ~(|level4[27:20]);
-            level3 = count3 ? {level4[19:0], 8'b0} : level4;
-            count2 = ~(|level3[27:24]);
-            level2 = count2 ? {level3[23:0], 4'b0} : level3;
-            count1 = ~(|level2[27:26]);
-            level1 = count1 ? {level2[25:0], 2'b0} : level2;
-            count0 = ~level1[27];
-            level0 = count0 ? {level1[26:0], 1'b0} : level1;
-            R = level0;
-            Count_l = {count4, count3, count2, count1, count0};
-            Count_h = 5'b0;
-        end else begin
-            logic [13:0] level5_h, level4_h, level3_h, level2_h, level1_h;
-            logic [13:0] level5_l, level4_l, level3_l, level2_l, level1_l;
-            logic count3_h, count2_h, count1_h, count0_h;
-            logic count3_l, count2_l, count1_l, count0_l;
-            level5_h = X[27:14];
-            level5_l = X[13:0];
+            count4 = ~(|X[27:12]);
+            
+            if (fmt ==FP32) begin
+                {level4_h,level4_l} = count4 ? {X[11:0], 16'b0}: X;
+                count4_h = count4;
+                count4_l = count4;
+            end else begin
+                level4_h = X[27:14]; // no meaning 2 LSB bits
+                level4_l = X[13:0];
+                count4_h =1'b0;
+                count4_l =1'b0;
+            end
+            // Stage 3: shift by 8
+            count3_h = ~(|level4_h[13:6]);
+            count3_l = (fmt ==FP32) ? count3_h :~(|level4_l[13:6]);
+            if (fmt == FP32) begin
+                level3_h = count3_h ? {level4_h[5:0],  level4_l[13:6]}: level4_h;
+            end else begin 
+                level3_h = count3_h ? {level4_h[5:2], 8'b0, 2'b0} : level4_h;
+            end
+            level3_l = count3_l ? {level4_l[5:0], 8'b0} : level4_l;
 
-            count3_h = ~(|level5_h[13:6]);
-            level4_h = count3_h ? {level5_h[5:0], 8'b0} : level5_h;
-            count2_h = ~(|level4_h[13:10]);
-            level3_h = count2_h ? {level4_h[9:0], 4'b0} : level4_h;
-            count1_h = ~(|level3_h[13:12]);
-            level2_h = count1_h ? {level3_h[11:0], 2'b0} : level3_h;
-            count0_h = ~level2_h[13];
-            level1_h = count0_h ? {level2_h[12:0], 1'b0} : level2_h;
+            // Stage 2: shift by 4            
+            count2_h = ~(|level3_h[13:10]);
+            count2_l = (fmt ==FP32) ? count2_h : ~(|level3_l[13:10]);
+            if (fmt == FP32) begin
+                level2_h = count2_h ? {level3_h[9:0],  level3_l[13:10]} :level3_h;
+            end else begin 
+                level2_h = count2_h ? {level3_h[9:2], 4'b0, 2'b0} : level3_h;
+            end
+            level2_l = count2_l ? {level3_l[9:0], 4'b0} : level3_l;
+            // Stage 1: shift by 2
+            count1_h = ~(|level2_h[13:12]);
+            count1_l = (fmt ==FP32) ? count1_h :~(|level2_l[13:12]);
+            if (fmt == FP32) begin
+                level1_h = count1_h ? {level2_h[11:0],  level2_l[13:12]} : level2_h;
+            end else begin 
+                level1_h = count1_h ? {level2_h[11:2], 2'b0, 2'b0} : level2_h;
+            end
+            level1_l = count1_l ? {level2_l[11:0], 2'b0} : level2_l;
+            // Stage 0: shift by 1
+            count0_h = ~(|level1_h[13]);
+            count0_l = (fmt ==FP32) ? count0_h : ~(|level1_l[13]);
+            if (fmt == FP32) begin
+                level0_h = count0_h ? {level1_h[12:0],  level1_l[13]}: level1_h;
+            end else begin 
+                level0_h = count0_h ? {level1_h[12:2], 1'b0, 2'b0} : level1_h;
+            end
+            level0_l = count0_l ? {level1_l[12:0], 1'b0} : level1_l;
 
-            count3_l = ~(|level5_l[13:6]);
-            level4_l = count3_l ? {level5_l[5:0], 8'b0} : level5_l;
-            count2_l = ~(|level4_l[13:10]);
-            level3_l = count2_l ? {level4_l[9:0], 4'b0} : level4_l;
-            count1_l = ~(|level3_l[13:12]);
-            level2_l = count1_l ? {level3_l[11:0], 2'b0} : level3_l;
-            count0_l = ~level2_l[13];
-            level1_l = count0_l ? {level2_l[12:0], 1'b0} : level2_l;
 
-            R = {level1_h, level1_l};
-            Count_h = {1'b0, count3_h, count2_h, count1_h, count0_h};
-            Count_l = {1'b0, count3_l, count2_l, count1_l, count0_l};
+            R = {level0_h, level0_l};
+            Count_h = {count4_h, count3_h, count2_h, count1_h, count0_h};
+            Count_l = {count4_l, count3_l, count2_l, count1_l, count0_l};
         end
     end
 endmodule

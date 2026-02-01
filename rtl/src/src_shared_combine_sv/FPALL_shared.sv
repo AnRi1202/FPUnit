@@ -533,7 +533,7 @@ module FPALL_Shared_combine(
 
     always_comb begin
         fracSticky = {fracAddResult, add_sticky_l};
-        if(fmt ==FP16) fracSticky[12] = add_sticky_h; // TODO: 　latchみたいになってるから書き方として改良する必要あり
+        if(fmt ==FP16) fracSticky[13] = add_sticky_h; // TODO: 　latchみたいになってるから書き方として改良する必要あり
     end
     normalizer_z_28_28_28_multi LZCAndShifter (
         .clk(clk),
