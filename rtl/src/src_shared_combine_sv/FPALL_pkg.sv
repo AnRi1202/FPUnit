@@ -13,9 +13,28 @@ package FPALL_pkg;
         OP_DIV  = 2'b11
     } fp_op_e;
 
+
     typedef union packed {
-        logic [31:0]        u32;
-        logic [1:0][15:0]   u16; // u16[0]=lower16, u16[1]=upper16
+    logic [15:0] raw;
+    struct packed {
+        logic       sign;
+        logic [7:0] exp;
+        logic [6:0] frac;
+    } bf16;
+    } bf16_u;
+
+    typedef union packed {
+        logic [31:0]  raw;
+        struct packed {
+            logic [15:0] hi; // Upper 16 bits 
+            logic [15:0] lo; // Lower 16 bits
+        } lanes;
+
+          struct packed {
+            logic       sign;
+            logic [7:0] exp;
+            logic [22:0] frac;
+        } fp32;
     } fp_vec_u;
 
 endpackage

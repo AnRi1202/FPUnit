@@ -13,20 +13,23 @@ module FPALL_Shared_combine(
     // for multiprecision
     // Design Policy:
     // When in FP32 mode, prioritize using the logic/resources associated with 
-    // the high-order 16-bit lane (FP16 high part) to maximize sharing.
+    // the high-order 16-bit lanes (FP16 high part) to maximize sharing.
     // ========================================================================
-    // fp_vec_u x, y, r;
-    // assign x.u32 = X;
-    // assign y.u32 = Y;
-    // assign R     = r.u32;
+    fp_vec_u x, y;
+    assign x.raw = X;
+    assign y.raw = Y;
+    // assign R     = r.raw;
         
     // FPAdd signals
     logic [32:0] excExpFracX, excExpFracY;
     logic swap;
-    logic [7:0] expDiff;
-    logic [31:0] newX, newY;
+    logic [7:0] expDiff_h;
+    logic [7:0] expDiff_h1;
+    fp_vec_u newX, newY;
+    // logic [31:0] newX, newY;
     logic [7:0] add_expX;
-    logic signX, signY, EffSub;
+    logic signX_h, signY_h, EffSub_h;
+    logic signX_l, signY_l, EffSub_l;
     logic [1:0] sXsYExnXY;
     logic [3:0] sdExnXY;
     logic [23:0] fracY;
@@ -35,7 +38,7 @@ module FPALL_Shared_combine(
     logic [4:0] shiftVal;
     logic [25:0] shiftedFracY;
     logic add_sticky;
-    logic [26:0] fracYpad, EffSubVector, fracYpadXorOp, fracXpad;
+    logic [26:0] fracYpad, EffSub_hVector, fracYpadXorOp, fracXpad;
     logic cInSigAdd;
     logic [26:0] fracAddResult;
     logic [27:0] fracSticky;
@@ -445,28 +448,47 @@ module FPALL_Shared_combine(
 
     abs_comparator u_abs_cmp (
         .fmt(fmt),
-        .X(X),
-        .Y(Y),
+        .x(x),
+        .y(y),
         .swaps(swaps)
     );
 
-    assign swap = swaps[1]; // Currently forcing FP32 behavior for swap as the rest of the logic isn't updated yet.
+    // assign swap = swaps[1]; // Currently forcing FP32 behavior for swap as the rest of the logic isn't updated yet.
     // input swap so that |X|>|Y| 
-    assign newX = (swap == 1'b0) ? X : Y; 
-    assign newY = (swap == 1'b0) ? Y : X; 
+    always_comb begin
+        newX.lanes.hi = (swaps[1] ==1'b0) ? x.lanes.hi : y.lanes.hi;
+        newY.lanes.hi = (swaps[1] ==1'b0) ? y.lanes.hi : x.lanes.hi;
+
+    if(fmt ==FP32) begin
+            newX.lanes.lo = (swaps[1] ==1'b0) ? x.lanes.lo : y.lanes.lo;
+            newY.lanes.lo = (swaps[1] ==1'b0) ? y.lanes.lo : x.lanes.lo;
+    end else begin
+        newX.lanes.lo = (swaps[0] ==1'b0) ? x.lanes.lo : y.lanes.lo;
+        newY.lanes.lo = (swaps[0] ==1'b0) ? y.lanes.lo : x.lanes.lo;
+        end
+    end
+    // assign newX = (swap == 1'b0) ? X : Y; 
+    // assign newY = (swap == 1'b0) ? Y : X; 
+    
     // exponent difference
-    assign expDiff = newX[30:23] - newY[30:23]; 
+    assign expDiff_h = newX.fp32.exp - newY.fp32.exp; 
+    assign expDiff_l = newX.lanes.lo[14:7] - newY.lanes.lo[14:7]; //lo expDiff
     // now we decompose the inputs into their sign, exponent, fraction 
-    assign add_expX = newX[30:23];
-    assign signX = newX[31];
-    assign signY = newY[31];
-    assign EffSub = signX ^ signY;
+    assign add_expX = newX.fp32.exp;
+    assign signX_h = newX.fp32.sign;
+    assign signY_h = newY.fp32.sign;
+    assign EffSub_h = signX_h ^ signY_h;
+
+    assign signX_l = newX.lanes.lo[15];
+    assign signY_l = newY.lanes.lo[15];
+    assign EffSub_l = signX_l ^ signY_l;
+
     
     assign fracY = {1'b1, newY[22:0]};
-    assign signR = signX;
+    assign signR = signX_h;
     
-    assign shiftedOut = (expDiff > 25) ? 1'b1 : 1'b0;
-    assign shiftVal = (shiftedOut == 1'b0) ? expDiff[4:0] : 5'd26;
+    assign shiftedOut = (expDiff_h > 25) ? 1'b1 : 1'b0;
+    assign shiftVal = (shiftedOut == 1'b0) ? expDiff_h[4:0] : 5'd26;
 
     RightShifterSticky24_by_max_26_Freq1_uid4 RightShifterComponent (
         .clk(clk),
@@ -477,10 +499,10 @@ module FPALL_Shared_combine(
     );
     
     assign fracYpad = {1'b0, shiftedFracY};
-    assign EffSubVector = {27{EffSub}};
-    assign fracYpadXorOp = fracYpad ^ EffSubVector;
+    assign EffSub_hVector = {27{EffSub_h}};
+    assign fracYpadXorOp = fracYpad ^ EffSub_hVector;
     assign fracXpad = {2'b01, newX[22:0], 2'b00};
-    assign cInSigAdd = EffSub & (~add_sticky); // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
+    assign cInSigAdd = EffSub_h & (~add_sticky); // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
 
     // Connect to Shared IntAdder_27
     assign add_fracAdder_X = fracXpad;       // Connect padded X fraction
@@ -513,7 +535,7 @@ module FPALL_Shared_combine(
     assign fracR = RoundedExpFrac[23:1];
     assign expR = RoundedExpFrac[31:24];
     
-    assign signR2 = ((eqdiffsign == 1'b1) && (EffSub == 1'b1)) ? 1'b0 : signR;
+    assign signR2 = ((eqdiffsign == 1'b1) && (EffSub_h == 1'b1)) ? 1'b0 : signR;
     assign add_R = {signR2, expR, fracR};
 
     
@@ -1371,58 +1393,4 @@ endmodule
 
 
 
-
-module abs_comparator (
-    input  fp_fmt_e     fmt,
-    input  logic [31:0] X,
-    input  logic [31:0] Y,
-    output logic [1:0]  swaps// FP16x2: lane-wise |X| < |Y|. [1] is also |X|<|Y| for FP32.
-);
-    fp_vec_u x, y;
-    assign x.u32 = X;
-    assign y.u32 = Y;
-
-
-
-    // Pack "magnitude to compare" into a, b
-    // FP32: {0, X[30:0]} vs {0, Y[30:0]}
-    // FP16: Pack {0, lane[14:0]} into upper/lower 16 bits for each lane
-    fp_vec_u a, b;
-
-    always_comb begin
-        if (fmt == FP32) begin
-            a.u32 = {1'b0, X[30:0]};
-            b.u32 = {1'b0, Y[30:0]};
-        end else begin
-            a.u16[0] = {1'b0, x.u16[0][14:0]}; // lane0 magnitude
-            b.u16[0] = {1'b0, y.u16[0][14:0]};
-            a.u16[1] = {1'b0, x.u16[1][14:0]}; // lane1 magnitude
-            b.u16[1] = {1'b0, y.u16[1][14:0]};
-        end
-    end
-
-    // -----------------------
-    // segmented subtraction: a - b (unsigned)
-    // a - b = a + ~b + 1
-    // A<B  <=> carry_out == 0  <=> ~carry_out
-    // -----------------------
-    logic [16:0] sub_lo;
-    logic        c16;
-
-    assign sub_lo = {1'b0, a.u16[0]} + {1'b0, ~b.u16[0]} + 17'd1;
-    assign c16    = sub_lo[16];
-
-    logic cin_hi;
-    assign cin_hi = (fmt == FP16) ? 1'b1 : c16; // Key shared logic: carry propagation control
-
-    logic [16:0] sub_hi;
-    logic        c32;
-
-    assign sub_hi = {1'b0, a.u16[1]} + {1'b0, ~b.u16[1]} + {16'd0, cin_hi};
-    assign c32    = sub_hi[16];
-
-    // borrow = ~carry_out
-    assign swaps[0] = ~c16; // lane0: a_lo < b_lo
-    assign swaps[1] = ~c32; // lane1 (FP16) or entire 32-bit (FP32)
-endmodule
 
