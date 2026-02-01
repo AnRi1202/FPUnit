@@ -1,18 +1,7 @@
-typedef enum logic [1:0] {
-    OP_ADD  = 2'b00,
-    OP_MUL  = 2'b01,
-    OP_SQRT = 2'b10,
-    OP_DIV  = 2'b11
-} fp_op_e;
-
-typedef enum logic {
-        FP32 = 1'b0,
-        FP16 = 1'b1
-    } fp_fmt_e;
-
 module FPALL_Shared_combine(
     input logic clk,
-    input fp_op_e opcode, //00: Add, 01: Mul, 10: Sqrt, 11: Div
+    input logic [1:0] opcode, //00: Add, 01: Mul, 10: Sqrt, 11: Div
+    input logic fmt, // 0: FP32, 1: FP16
     input logic [31:0] X,
     input logic [31:0] Y,
     output logic [31:0] R
@@ -71,8 +60,9 @@ module FPALL_Shared_combine(
     logic [24:0] psX;
     
     // Div iterations (unrolled)
-    logic is_div;
-    assign is_div = (opcode == OP_DIV); // for div, sqrt HW share
+    // Div iterations (unrolled)
+    // is_div removed as per request
+
 
     logic [26:0] betaw14, w13;
     logic[26:0] absq14D; // reg/logic for always_comb
@@ -1191,9 +1181,9 @@ module FPALL_Shared_combine(
     // =================================================================================
 
     // Step 0
-    assign shared_as_x0 = (is_div == 1'b1) ? {1'b0, betaw1} : T23s_h; // only use 1 bit of opcode
-    assign shared_as_y0 = (is_div == 1'b1) ? {1'b0, absq1D} : U23;
-    assign shared_as_sub0 = (is_div == 1'b1) ? ~q1[2] : d23;
+    assign shared_as_x0 = (opcode[0] == 1'b1) ? {1'b0, betaw1} : T23s_h; // only use 1 bit of opcode
+    assign shared_as_y0 = (opcode[0] == 1'b1) ? {1'b0, absq1D} : U23;
+    assign shared_as_sub0 = (opcode[0] == 1'b1) ? ~q1[2] : d23;
     
     assign sub_mask0 = {28{shared_as_sub0}};
     assign y_xor0 = shared_as_y0 ^ sub_mask0;
@@ -1201,16 +1191,16 @@ module FPALL_Shared_combine(
     assign shared_as_r0 = shared_as_x0 + y_xor0 + cin_vec0;
 
     // Step 1
-    assign shared_as_x1 = (is_div == 1'b1) ? betaw2 : T22s_h;
-    assign shared_as_y1 = (is_div == 1'b1) ? absq2D : U22;
-    assign shared_as_sub1 = (is_div == 1'b1) ? ~q2[2] : d22;
+    assign shared_as_x1 = (opcode[0] == 1'b1) ? betaw2 : T22s_h;
+    assign shared_as_y1 = (opcode[0] == 1'b1) ? absq2D : U22;
+    assign shared_as_sub1 = (opcode[0] == 1'b1) ? ~q2[2] : d22;
     
     assign shared_as_r1 = (shared_as_sub1 == 1'b1) ? (shared_as_x1 - shared_as_y1) : (shared_as_x1 + shared_as_y1);
 
     // Step 2
-    assign shared_as_x2 = (is_div == 1'b1) ? betaw3 : {1'b0, T21s_h};
-    assign shared_as_y2 = (is_div == 1'b1) ? absq3D : {1'b0, U21};
-    assign shared_as_sub2 = (is_div == 1'b1) ? ~q3[2] : d21;
+    assign shared_as_x2 = (opcode[0] == 1'b1) ? betaw3 : {1'b0, T21s_h};
+    assign shared_as_y2 = (opcode[0] == 1'b1) ? absq3D : {1'b0, U21};
+    assign shared_as_sub2 = (opcode[0] == 1'b1) ? ~q3[2] : d21;
     
     assign sub_mask2 = {27{shared_as_sub2}}; // 26 downto 0 is 27 bits
     assign y_xor2 = shared_as_y2 ^ sub_mask2;
@@ -1218,79 +1208,79 @@ module FPALL_Shared_combine(
     assign shared_as_r2 = shared_as_x2 + y_xor2 + cin_vec2;
 
     // Step 3
-    assign shared_as_x3 = (is_div == 1'b1) ? betaw4 : {2'b00, T20s_h};
-    assign shared_as_y3 = (is_div == 1'b1) ? absq4D : {2'b00, U20};
-    assign shared_as_sub3 = (is_div == 1'b1) ? ~q4[2] : d20;
+    assign shared_as_x3 = (opcode[0] == 1'b1) ? betaw4 : {2'b00, T20s_h};
+    assign shared_as_y3 = (opcode[0] == 1'b1) ? absq4D : {2'b00, U20};
+    assign shared_as_sub3 = (opcode[0] == 1'b1) ? ~q4[2] : d20;
     
     assign shared_as_r3 = (shared_as_sub3 == 1'b1) ? (shared_as_x3 - shared_as_y3) : (shared_as_x3 + shared_as_y3);
 
     // Step 4
-    assign shared_as_x4 = (is_div == 1'b1) ? betaw5 : {3'b000, T19s_h};
-    assign shared_as_y4 = (is_div == 1'b1) ? absq5D : {3'b000, U19};
-    assign shared_as_sub4 = (is_div == 1'b1) ? ~q5[2] : d19;
+    assign shared_as_x4 = (opcode[0] == 1'b1) ? betaw5 : {3'b000, T19s_h};
+    assign shared_as_y4 = (opcode[0] == 1'b1) ? absq5D : {3'b000, U19};
+    assign shared_as_sub4 = (opcode[0] == 1'b1) ? ~q5[2] : d19;
     
     assign shared_as_r4 = (shared_as_sub4 == 1'b1) ? (shared_as_x4 - shared_as_y4) : (shared_as_x4 + shared_as_y4);
 
     // Step 5
-    assign shared_as_x5 = (is_div == 1'b1) ? betaw6 : {4'd0, T18s_h};
-    assign shared_as_y5 = (is_div == 1'b1) ? absq6D : {4'd0, U18};
-    assign shared_as_sub5 = (is_div == 1'b1) ? ~q6[2] : d18;
+    assign shared_as_x5 = (opcode[0] == 1'b1) ? betaw6 : {4'd0, T18s_h};
+    assign shared_as_y5 = (opcode[0] == 1'b1) ? absq6D : {4'd0, U18};
+    assign shared_as_sub5 = (opcode[0] == 1'b1) ? ~q6[2] : d18;
     
     assign shared_as_r5 = (shared_as_sub5 == 1'b1) ? (shared_as_x5 - shared_as_y5) : (shared_as_x5 + shared_as_y5);
 
     // Step 6
-    assign shared_as_x6 = (is_div == 1'b1) ? betaw7 : {5'd0, T17s_h};
-    assign shared_as_y6 = (is_div == 1'b1) ? absq7D : {5'd0, U17};
-    assign shared_as_sub6 = (is_div == 1'b1) ? ~q7[2] : d17;
+    assign shared_as_x6 = (opcode[0] == 1'b1) ? betaw7 : {5'd0, T17s_h};
+    assign shared_as_y6 = (opcode[0] == 1'b1) ? absq7D : {5'd0, U17};
+    assign shared_as_sub6 = (opcode[0] == 1'b1) ? ~q7[2] : d17;
     
     assign shared_as_r6 = (shared_as_sub6 == 1'b1) ? (shared_as_x6 - shared_as_y6) : (shared_as_x6 + shared_as_y6);
 
     // Step 7
-    assign shared_as_x7 = (is_div == 1'b1) ? betaw8 : {6'd0, T16s_h};
-    assign shared_as_y7 = (is_div == 1'b1) ? absq8D : {6'd0, U16};
-    assign shared_as_sub7 = (is_div == 1'b1) ? ~q8[2] : d16;
+    assign shared_as_x7 = (opcode[0] == 1'b1) ? betaw8 : {6'd0, T16s_h};
+    assign shared_as_y7 = (opcode[0] == 1'b1) ? absq8D : {6'd0, U16};
+    assign shared_as_sub7 = (opcode[0] == 1'b1) ? ~q8[2] : d16;
     
     assign shared_as_r7 = (shared_as_sub7 == 1'b1) ? (shared_as_x7 - shared_as_y7) : (shared_as_x7 + shared_as_y7);
 
     // Step 8
-    assign shared_as_x8 = (is_div == 1'b1) ? betaw9 : {7'd0, T15s_h};
-    assign shared_as_y8 = (is_div == 1'b1) ? absq9D : {7'd0, U15};
-    assign shared_as_sub8 = (is_div == 1'b1) ? ~q9[2] : d15;
+    assign shared_as_x8 = (opcode[0] == 1'b1) ? betaw9 : {7'd0, T15s_h};
+    assign shared_as_y8 = (opcode[0] == 1'b1) ? absq9D : {7'd0, U15};
+    assign shared_as_sub8 = (opcode[0] == 1'b1) ? ~q9[2] : d15;
     
     assign shared_as_r8 = (shared_as_sub8 == 1'b1) ? (shared_as_x8 - shared_as_y8) : (shared_as_x8 + shared_as_y8);
 
     // Step 9
-    assign shared_as_x9 = (is_div == 1'b1) ? betaw10 : {8'd0, T14s_h};
-    assign shared_as_y9 = (is_div == 1'b1) ? absq10D : {8'd0, U14};
-    assign shared_as_sub9 = (is_div == 1'b1) ? ~q10[2] : d14;
+    assign shared_as_x9 = (opcode[0] == 1'b1) ? betaw10 : {8'd0, T14s_h};
+    assign shared_as_y9 = (opcode[0] == 1'b1) ? absq10D : {8'd0, U14};
+    assign shared_as_sub9 = (opcode[0] == 1'b1) ? ~q10[2] : d14;
     
     assign shared_as_r9 = (shared_as_sub9 == 1'b1) ? (shared_as_x9 - shared_as_y9) : (shared_as_x9 + shared_as_y9);
 
     // Step 10
-    assign shared_as_x10 = (is_div == 1'b1) ? betaw11 : {9'd0, T13s_h};
-    assign shared_as_y10 = (is_div == 1'b1) ? absq11D : {9'd0, U13};
-    assign shared_as_sub10 = (is_div == 1'b1) ? ~q11[2] : d13;
+    assign shared_as_x10 = (opcode[0] == 1'b1) ? betaw11 : {9'd0, T13s_h};
+    assign shared_as_y10 = (opcode[0] == 1'b1) ? absq11D : {9'd0, U13};
+    assign shared_as_sub10 = (opcode[0] == 1'b1) ? ~q11[2] : d13;
     
     assign shared_as_r10 = (shared_as_sub10 == 1'b1) ? (shared_as_x10 - shared_as_y10) : (shared_as_x10 + shared_as_y10);
 
     // Step 11
-    assign shared_as_x11 = (is_div == 1'b1) ? betaw12 : {10'd0, T12s_h};
-    assign shared_as_y11 = (is_div == 1'b1) ? absq12D : {10'd0, U12};
-    assign shared_as_sub11 = (is_div == 1'b1) ? ~q12[2] : d12;
+    assign shared_as_x11 = (opcode[0] == 1'b1) ? betaw12 : {10'd0, T12s_h};
+    assign shared_as_y11 = (opcode[0] == 1'b1) ? absq12D : {10'd0, U12};
+    assign shared_as_sub11 = (opcode[0] == 1'b1) ? ~q12[2] : d12;
     
     assign shared_as_r11 = (shared_as_sub11 == 1'b1) ? (shared_as_x11 - shared_as_y11) : (shared_as_x11 + shared_as_y11);
 
     // Step 12
-    assign shared_as_x12 = (is_div == 1'b1) ? betaw13 : {11'd0, T11s_h};
-    assign shared_as_y12 = (is_div == 1'b1) ? absq13D : {11'd0, U11};
-    assign shared_as_sub12 = (is_div == 1'b1) ? ~q13[2] : d11;
+    assign shared_as_x12 = (opcode[0] == 1'b1) ? betaw13 : {11'd0, T11s_h};
+    assign shared_as_y12 = (opcode[0] == 1'b1) ? absq13D : {11'd0, U11};
+    assign shared_as_sub12 = (opcode[0] == 1'b1) ? ~q13[2] : d11;
     
     assign shared_as_r12 = (shared_as_sub12 == 1'b1) ? (shared_as_x12 - shared_as_y12) : (shared_as_x12 + shared_as_y12);
 
     // Step 13
-    assign shared_as_x13 = (is_div == 1'b1) ? betaw14 : {12'd0, T10s_h};
-    assign shared_as_y13 = (is_div == 1'b1) ? absq14D : {12'd0, U10};
-    assign shared_as_sub13 = (is_div == 1'b1) ? ~q14[2] : d10;
+    assign shared_as_x13 = (opcode[0] == 1'b1) ? betaw14 : {12'd0, T10s_h};
+    assign shared_as_y13 = (opcode[0] == 1'b1) ? absq14D : {12'd0, U10};
+    assign shared_as_sub13 = (opcode[0] == 1'b1) ? ~q14[2] : d10;
     
     assign sub_mask13 = {27{shared_as_sub13}};
     assign y_xor13 = shared_as_y13 ^ sub_mask13;
@@ -1306,24 +1296,24 @@ module FPALL_Shared_combine(
     // opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
     // Multiplex inputs to Shared Rounding Adder
     // opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
-    assign ra_X = (opcode == OP_ADD) ? add_ra_X :
-                  (opcode == OP_MUL) ? mul_ra_X :
-                  (opcode == OP_DIV) ? div_ra_X :
+    assign ra_X = (opcode == 2'b00) ? add_ra_X :
+                  (opcode == 2'b01) ? mul_ra_X :
+                  (opcode == 2'b11) ? div_ra_X :
                                       sqrt_ra_X;                                   
-    assign ra_Cin = (opcode == OP_ADD) ? add_round :
-                    (opcode == OP_MUL) ? mul_round :
-                    (opcode == OP_DIV) ? div_round :
+    assign ra_Cin = (opcode == 2'b00) ? add_round :
+                    (opcode == 2'b01) ? mul_round :
+                    (opcode == 2'b11) ? div_round :
                                         sqrt_round;
 
     // Multiplex inputs to Shared IntAdder_27
     // opcode: 00=Add (fracAdder), 01=Mul (expAdder), others unused
     assign ia27_X[26:9] = add_fracAdder_X[26:9];
-    assign ia27_X[8:0] = (opcode == OP_ADD) ? add_fracAdder_X[8:0] : {1'b0, mul_expAdder_X}; // Lower bits shared: Add(8:0) vs Mul(Exp)
+    assign ia27_X[8:0] = (opcode == 2'b00) ? add_fracAdder_X[8:0] : {1'b0, mul_expAdder_X}; // Lower bits shared: Add(8:0) vs Mul(Exp)
     
     assign ia27_Y[26:9] = add_fracAdder_Y[26:9];
-    assign ia27_Y[8:0] = (opcode == OP_ADD) ? add_fracAdder_Y[8:0] : {1'b0, mul_expAdder_Y}; // Lower bits shared
+    assign ia27_Y[8:0] = (opcode == 2'b00) ? add_fracAdder_Y[8:0] : {1'b0, mul_expAdder_Y}; // Lower bits shared
     
-    assign ia27_Cin = (opcode == OP_ADD) ? add_fracAdder_Cin : mul_expAdder_Cin;
+    assign ia27_Cin = (opcode == 2'b00) ? add_fracAdder_Cin : mul_expAdder_Cin;
     
     assign add_fracAdder_R = ia27_R;
     assign mul_expAdder_R = ia27_R[8:0];
@@ -1344,9 +1334,9 @@ module FPALL_Shared_combine(
         .R(ra_R)
     );
 
-    assign R = (opcode == OP_ADD) ? add_R :  // Add Result
-               (opcode == OP_MUL) ? mul_R :  // Mul Result
-               (opcode == OP_SQRT) ? sqrt_R : // Sqrt Result
+    assign R = (opcode == 2'b00) ? add_R :  // Add Result
+               (opcode == 2'b01) ? mul_R :  // Mul Result
+               (opcode == 2'b10) ? sqrt_R : // Sqrt Result
                                    div_R;   // Div Result
 
 
