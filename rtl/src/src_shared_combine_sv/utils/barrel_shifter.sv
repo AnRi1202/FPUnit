@@ -3,7 +3,7 @@ import FPALL_pkg::*;
 module barrel_shifter(
     input  logic       clk,
     input  fp_fmt_e    fmt,
-    input  logic [23:0] X,
+    input  logic [23:0] X, // {frac_Y_h, 8'b0, frac_Y_l(10)}
     input  logic [7:0]  S, //FP32 -> 4:0
     output logic [25:0] R,
     output logic        Sticky_h, Sticky_l //FP32はsticky_lを使う
@@ -11,8 +11,7 @@ module barrel_shifter(
 
     logic [3:0] S_h,S_l;
     logic [7:0]  ps;
-    logic [23:0] Xfmt; // FP16, -> {frac_Y_h, 4'b0, frac_Y_l, 4'b0}
-    logic [25:0] Xpadded;
+    logic [25:0] Xpadded;// FP16, ->{frac_Y_h, gs(2bit), 6'b0, frac_Y_l(8), gs(2bit)}
     logic [25:0] level5;
     logic        stk4_h, stk4_l;
     logic [12:0] level4_h, level4_l;
@@ -23,7 +22,7 @@ module barrel_shifter(
     logic        stk1_h, stk1_l;
     logic [12:0] level1_h,level1_l;
     logic        stk0_h, stk0_l;
-    logic [12:0] level0_h, level0_l;
+    logic [12:0] level0_h, level0_l; // {shiftedFracY_l,}
 
     assign level5  = Xpadded;
 
@@ -108,6 +107,69 @@ module barrel_shifter(
 
     end
 
+endmodule
+
+module normalizer_z_28_28_28_multi(
+    input  logic       clk,
+    input  fp_fmt_e    fmt,
+    input  logic [27:0] X,
+    output logic [4:0]  Count_h,
+    output logic [4:0]  Count_l,
+    output logic [27:0] R
+);
+    always_comb begin
+        R = 28'b0;
+        Count_l = 5'b0;
+        Count_h = 5'b0;
+
+        if (fmt == FP32) begin
+            logic [27:0] level5, level4, level3, level2, level1, level0;
+            logic count4, count3, count2, count1, count0;
+            level5 = X;
+            count4 = ~(|level5[27:12]);
+            level4 = count4 ? {level5[11:0], 16'b0} : level5;
+            count3 = ~(|level4[27:20]);
+            level3 = count3 ? {level4[19:0], 8'b0} : level4;
+            count2 = ~(|level3[27:24]);
+            level2 = count2 ? {level3[23:0], 4'b0} : level3;
+            count1 = ~(|level2[27:26]);
+            level1 = count1 ? {level2[25:0], 2'b0} : level2;
+            count0 = ~level1[27];
+            level0 = count0 ? {level1[26:0], 1'b0} : level1;
+            R = level0;
+            Count_l = {count4, count3, count2, count1, count0};
+            Count_h = 5'b0;
+        end else begin
+            logic [13:0] level5_h, level4_h, level3_h, level2_h, level1_h;
+            logic [13:0] level5_l, level4_l, level3_l, level2_l, level1_l;
+            logic count3_h, count2_h, count1_h, count0_h;
+            logic count3_l, count2_l, count1_l, count0_l;
+            level5_h = X[27:14];
+            level5_l = X[13:0];
+
+            count3_h = ~(|level5_h[13:6]);
+            level4_h = count3_h ? {level5_h[5:0], 8'b0} : level5_h;
+            count2_h = ~(|level4_h[13:10]);
+            level3_h = count2_h ? {level4_h[9:0], 4'b0} : level4_h;
+            count1_h = ~(|level3_h[13:12]);
+            level2_h = count1_h ? {level3_h[11:0], 2'b0} : level3_h;
+            count0_h = ~level2_h[13];
+            level1_h = count0_h ? {level2_h[12:0], 1'b0} : level2_h;
+
+            count3_l = ~(|level5_l[13:6]);
+            level4_l = count3_l ? {level5_l[5:0], 8'b0} : level5_l;
+            count2_l = ~(|level4_l[13:10]);
+            level3_l = count2_l ? {level4_l[9:0], 4'b0} : level4_l;
+            count1_l = ~(|level3_l[13:12]);
+            level2_l = count1_l ? {level3_l[11:0], 2'b0} : level3_l;
+            count0_l = ~level2_l[13];
+            level1_l = count0_l ? {level2_l[12:0], 1'b0} : level2_l;
+
+            R = {level1_h, level1_l};
+            Count_h = {1'b0, count3_h, count2_h, count1_h, count0_h};
+            Count_l = {1'b0, count3_l, count2_l, count1_l, count0_l};
+        end
+    end
 endmodule
 
 module barrel_shifter_separate(

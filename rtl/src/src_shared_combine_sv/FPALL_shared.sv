@@ -44,7 +44,7 @@ module FPALL_Shared_combine(
     logic cInSigAdd;
     logic [26:0] fracAddResult;
     logic [27:0] fracSticky;
-    logic [4:0] nZerosNew;
+    logic [4:0] nZerosNew, nZerosNew_h;
     logic [27:0] shiftedFrac;
     logic [8:0] extendedExpInc;
     logic [9:0] updatedExp;
@@ -501,7 +501,7 @@ module FPALL_Shared_combine(
                 shiftedOut_l = (expDiff_l > 9) ? 1'b1 : 1'b0;
                 shiftVal_h = (shiftedOut_h == 1'b0)? expDiff_h[3:0] : 4'd10;
                 shiftVal_l = (shiftedOut_l == 1'b0)? expDiff_l[3:0] : 4'd10;
-                fracY = {fracY_h, 4'b0, fracY_l, 4'b0};
+                fracY = {fracY_h, 8'b0, fracY_l};
             end
         end
     end
@@ -521,7 +521,7 @@ module FPALL_Shared_combine(
     assign fracYpad = {1'b0, shiftedFracY};
     assign EffSub_hVector = {27{EffSub_h}};
     assign fracYpadXorOp = fracYpad ^ EffSub_hVector;
-    assign fracXpad = {2'b01, newX[22:0], 2'b00};
+    assign fracXpad = (fmt ==FP32) ? {2'b01, newX[22:0], 2'b00}: {{2'b01,newX.lanes.hi[6:0],2'b0},3'b0, 2'b0 , {2'b01, newX.lanes.lo[6:0],2'b0}};
     assign cInSigAdd = EffSub_h & (~add_sticky_l); // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
 
     // Connect to Shared IntAdder_27
@@ -530,12 +530,17 @@ module FPALL_Shared_combine(
     assign add_fracAdder_Cin = cInSigAdd;    // Carry-in accounting for subtraction and sticky bit
     assign fracAddResult = add_fracAdder_R;  // Get addition result back
     
-    assign fracSticky = {fracAddResult, add_sticky_l};
-    
-    Normalizer_Z_28_28_28_Freq1_uid8 LZCAndShifter (
+
+    always_comb begin
+        fracSticky = {fracAddResult, add_sticky_l};
+        if(fmt ==FP16) fracSticky[12] = add_sticky_h; // TODO: 　latchみたいになってるから書き方として改良する必要あり
+    end
+    normalizer_z_28_28_28_multi LZCAndShifter (
         .clk(clk),
+        .fmt(fmt),
         .X(fracSticky),
-        .Count(nZerosNew),
+        .Count_h(nZerosNew_h),
+        .Count_l(nZerosNew),
         .R(shiftedFrac)
     );
     
