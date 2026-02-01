@@ -52,7 +52,7 @@ module FPALL_Shared_combine(
     logic eqdiffsign_h, eqdiffsign_l;
     logic stk_h, rnd_h, lsb_h;
     logic stk_l, rnd_l, lsb_l;
-    logic [33:0] add_RoundedExpFrac;
+    logic [35:0] add_RoundedExpFrac;
     logic [22:0] fracR;
     logic [7:0] expR;
     logic [3:0] exExpExc;
@@ -427,7 +427,7 @@ module FPALL_Shared_combine(
     logic [32:0] mul_expSig;
     // logic mul_round; // already defined
     logic [33:0] ra_X, ra_R;
-    logic [33:0] add_ra_X, add_ra_R, mul_ra_X, div_ra_X, sqrt_ra_X;
+    logic [33:0] add_ra_X, mul_ra_X, div_ra_X, sqrt_ra_X;
     logic ra_Cin;
     
     logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
@@ -574,16 +574,20 @@ module FPALL_Shared_combine(
     assign lsb_l = shiftedFrac_l[4];
     assign add_round_h = ((rnd_h == 1'b1) && (stk_h == 1'b1)) || ((rnd_h == 1'b1) && (stk_h == 1'b0) && (lsb_h == 1'b1)) ? 1'b1 : 1'b0;
     assign add_round_l = ((rnd_l == 1'b1) && (stk_l == 1'b1)) || ((rnd_l == 1'b1) && (stk_l == 1'b0) && (lsb_l == 1'b1)) ? 1'b1 : 1'b0;
-    assign add_round = (fmt == FP32) ? add_round_l : add_round_h;
     // Connect to Add Rounding Adder (not shared)
-    assign add_ra_X = add_expFrac; 
     // Get result from Add Rounding Adder
-    assign add_RoundedExpFrac = add_ra_R;
-    assign fracR = add_RoundedExpFrac[23:1];
-    assign expR = add_RoundedExpFrac[31:24];
+    always_comb begin
+        if (fmt == FP32) begin
+            add_RoundedExpFrac = add_expFrac + add_round_l;
+        end else begin
+            add_RoundedExpFrac = add_expFrac + add_round_l + {rnd_h, 18'b0};
+        end
+    end
+
     
     assign signR2_h = ((eqdiffsign_h == 1'b1) && (EffSub_h == 1'b1)) ? 1'b0 : signX_h;
-    assign add_R = {signR2_h, expR, fracR};
+    assign signR2_l = ((eqdiffsign_l == 1'b1) && (EffSub_l == 1'b1)) ? 1'b0 : signX_l;
+    assign add_R = (fmt == FP32) ? {signR2_h, add_RoundedExpFrac[31:1]}: {signR2_h, add_RoundedExpFrac[33:28], signR2_l, add_RoundedExpFrac[15:1]};
 
     
     // =================================================================================
@@ -1428,14 +1432,6 @@ module FPALL_Shared_combine(
         .Y(34'd0),
         .Cin(ra_Cin),
         .R(ra_R)
-    );
-
-    IntAdder_34_Freq1_uid11 U_ADD_RA (
-        .clk(clk),
-        .X(add_ra_X),
-        .Y(34'd0),
-        .Cin(add_round),
-        .R(add_ra_R)
     );
 
     assign R = (opcode == OP_ADD) ? add_R :  // Add Result
