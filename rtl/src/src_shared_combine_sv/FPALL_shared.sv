@@ -40,8 +40,8 @@ module FPALL_Shared_combine(
     logic [7:0] shiftVal;
     logic [25:0] shiftedFracY;
     logic add_sticky_h, add_sticky_l;
-    logic [26:0] fracYpad, EffSub_hVector, fracYpadXorOp, fracXpad;
-    logic cInSigAdd;
+    logic [26:0] fracYpad, EffSub_Vector, fracYpadXorOp, fracXpad;
+    logic cInSigAdd_h, cInSigAdd_l;
     logic [26:0] fracAddResult;
     logic [27:0] fracSticky;
     logic [4:0] nZerosNew_l, nZerosNew_h;
@@ -471,28 +471,27 @@ module FPALL_Shared_combine(
         newY.lanes.lo = (swaps[0] ==1'b0) ? y.lanes.lo : x.lanes.lo;
         end
     end
-    // assign newX = (swap == 1'b0) ? X : Y; 
-    // assign newY = (swap == 1'b0) ? Y : X; 
     
     // exponent difference
     assign expDiff_h = newX.fp32.exp - newY.fp32.exp; 
     assign expDiff_l = newX.lanes.lo[14:7] - newY.lanes.lo[14:7]; //lo expDiff
+
     // now we decompose the inputs into their sign, exponent, fraction 
     assign add_expX_h = newX.fp32.exp; // == newX.lanes.hi[14:8];
-    assign add_expX_l = newX.lanes.lo[14:8];
+    assign add_expX_l = newX.lanes.lo[14:7];
     assign signX_h = newX.fp32.sign;
     assign signY_h = newY.fp32.sign;
     assign EffSub_h = signX_h ^ signY_h;
+    assign EffSub_l = signX_l ^ signY_l;
 
     assign signX_l = newX.lanes.lo[15];
     assign signY_l = newY.lanes.lo[15];
-    assign EffSub_l = signX_l ^ signY_l;
 
 
 
     always_comb begin
         begin
-            logic[6:0] fracY_h, fracY_l;
+            logic[7:0] fracY_h, fracY_l;
             fracY_h = {1'b1, newY.lanes.hi[6:0]};
             fracY_l = {1'b1, newY.lanes.lo[6:0]};
 
@@ -522,21 +521,49 @@ module FPALL_Shared_combine(
     );
     
     assign fracYpad = {1'b0, shiftedFracY};
-    assign EffSub_hVector = {27{EffSub_h}};
-    assign fracYpadXorOp = fracYpad ^ EffSub_hVector;
+    always_comb begin
+        $display("EffSub_h=%0b, add_sticky_h =%0b",EffSub_h, add_sticky_h);
+        $display("EffSub_l=%0b, add_sticky_l =%0b",EffSub_l, add_sticky_l);
+        EffSub_Vector[26:14] = {13{EffSub_h}};
+        if(fmt == FP32) begin
+            EffSub_Vector[13:0] = {14{EffSub_h}};
+        end else begin
+            EffSub_Vector[13:0] = {14{EffSub_l}};
+        end
+
+    end
+    assign fracYpadXorOp = fracYpad ^ EffSub_Vector;
     assign fracXpad = (fmt ==FP32) ? {2'b01, newX[22:0], 2'b00}: {{2'b01,newX.lanes.hi[6:0],2'b0},3'b0, 2'b0 , {2'b01, newX.lanes.lo[6:0],2'b0}};
-    assign cInSigAdd = EffSub_h & (~add_sticky_l); // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
+    assign cInSigAdd_h = EffSub_h & (~add_sticky_h);
+    assign cInSigAdd_l = (fmt ==FP32) ? EffSub_h & (~add_sticky_l):  EffSub_l & (~add_sticky_l); // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
 
     // Connect to Shared IntAdder_27
     assign add_fracAdder_X = fracXpad;       // Connect padded X fraction
     assign add_fracAdder_Y = fracYpadXorOp;  // Connect prepared Y fraction
-    assign add_fracAdder_Cin = cInSigAdd;    // Carry-in accounting for subtraction and sticky bit
-    assign fracAddResult = add_fracAdder_R;  // Get addition result back
-    
+    assign add_fracAdder_Cin = cInSigAdd_l;    // Carry-in accounting for subtraction and sticky bit
+   logic [26:0] cin_vec;
+    always_comb begin
+    cin_vec = '0;
+    cin_vec[0]  = cInSigAdd_l;   // low lane cin
+    if (fmt==FP16) cin_vec[16] = cInSigAdd_h; // high lane cin
+    end
 
     always_comb begin
+        if(fmt ==FP32) begin
+            fracAddResult = add_fracAdder_X + add_fracAdder_Y + cin_vec;
+        end else begin
+            
+        end
+    end
+ 
+
+    always_comb begin
+        // $display("shiftedFracY= %27b",shiftedFracY);
+        // $display("fracAddResult=%27b",fracAddResult);
+        // $display("cInSigAdd_h=%0b, cInSigAdd_l=%0b",cInSigAdd_h,cInSigAdd_l)
         fracSticky = {fracAddResult, add_sticky_l};
-        if(fmt ==FP16) fracSticky[13] = add_sticky_h; // TODO: 　latchみたいになってるから書き方として改良する必要あり
+        if(fmt ==FP16) fracSticky[16] = add_sticky_h; // TODO: 　latchみたいになってるから書き方として改良する必要あり
+        $display("fracSticky  =%28b",fracSticky);
     end
     normalizer_z_28_28_28_multi LZCAndShifter (
         .clk(clk),
@@ -560,10 +587,15 @@ module FPALL_Shared_combine(
 
     // FP32: exponent uses high lane, rounding uses low lane
     always_comb begin
+        $display("shiftedFrac=%28b",shiftedFrac);
+        // $display("updatedExp_h=%0b",updatedExp_h);
+        // $display("updatedExp_l=%0b",updatedExp_l);
         if (fmt ==FP32) begin
-            add_expFrac = {2'b0, updatedExp_h, shiftedFrac_h[12:0], shiftedFrac_l[13:3]};
+            add_expFrac = {2'b0, updatedExp_h, shiftedFrac_h[12:0], shiftedFrac_l[13:3]}; //[25:3] 暗黙は消えてる
         end else begin
-            add_expFrac = {updatedExp_h, shiftedFrac_h[12:5], updatedExp_l, shiftedFrac_l[12:5]}; //36bit
+            add_expFrac = {updatedExp_h, shiftedFrac_h[12:5], updatedExp_l, shiftedFrac_l[10:3]}; //36bit
+            $display("add_expdFrac  =%s",disp_36(add_expFrac));
+
         end
     end
     assign stk_h = shiftedFrac_h[4] | shiftedFrac_h[3] | shiftedFrac_h[2];
@@ -581,13 +613,14 @@ module FPALL_Shared_combine(
             add_RoundedExpFrac = add_expFrac + add_round_l;
         end else begin
             add_RoundedExpFrac = add_expFrac + add_round_l + {rnd_h, 18'b0};
+            // $display("add_expdFrac  =%s",disp_36(add_RoundedExpFrac));
         end
     end
 
     
     assign signR2_h = ((eqdiffsign_h == 1'b1) && (EffSub_h == 1'b1)) ? 1'b0 : signX_h;
     assign signR2_l = ((eqdiffsign_l == 1'b1) && (EffSub_l == 1'b1)) ? 1'b0 : signX_l;
-    assign add_R = (fmt == FP32) ? {signR2_h, add_RoundedExpFrac[31:1]}: {signR2_h, add_RoundedExpFrac[33:28], signR2_l, add_RoundedExpFrac[15:1]};
+    assign add_R = (fmt == FP32) ? {signR2_h, add_RoundedExpFrac[31:1]}: {signR2_h, add_RoundedExpFrac[33:19], signR2_l, add_RoundedExpFrac[15:1]};
 
     
     // =================================================================================

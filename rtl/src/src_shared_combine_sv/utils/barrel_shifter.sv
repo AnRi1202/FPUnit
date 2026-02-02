@@ -32,7 +32,6 @@ module barrel_shifter(
         S_h = 4'b0;
         S_l = 4'b0;
         if(fmt == FP16) begin
-            Xpadded = {X[23:16], 5'b0, X[11:4], 5'b0};
             S_h = S[7:4];
             S_l = S[3:0];
         end
@@ -100,12 +99,11 @@ module barrel_shifter(
         end else begin
             level0_l = steps_l[0] ? {1'b0, level1_l[12:1]} : level1_l;
         end
-
-        R        = {level0_h, level0_l};
+        if(fmt ==FP16) level0_h[2:0] = 3'b0; 
+        R = {level0_h, level0_l};
         Sticky_h = stk0_h || level0_h[2] || level0_h[1] || level0_h[0];
         Sticky_l = stk0_l;
         
-        if(fmt ==FP16) level0_h[2:0] = 3'b0; 
     end
 
 endmodule
@@ -144,7 +142,7 @@ module normalizer_z_28_28_28_multi(
             end
             // Stage 3: shift by 8
             count3_h = ~(|level4_h[13:6]);
-            count3_l = (fmt ==FP32) ? count3_h :~(|level4_l[13:6]);
+            count3_l = (fmt ==FP32) ? count3_h :~(|level4_l[11:4]);
             if (fmt == FP32) begin
                 level3_h = count3_h ? {level4_h[5:0],  level4_l[13:6]}: level4_h;
             end else begin 
@@ -154,7 +152,7 @@ module normalizer_z_28_28_28_multi(
 
             // Stage 2: shift by 4            
             count2_h = ~(|level3_h[13:10]);
-            count2_l = (fmt ==FP32) ? count2_h : ~(|level3_l[13:10]);
+            count2_l = (fmt ==FP32) ? count2_h : ~(|level3_l[11:8]);
             if (fmt == FP32) begin
                 level2_h = count2_h ? {level3_h[9:0],  level3_l[13:10]} :level3_h;
             end else begin 
@@ -163,7 +161,7 @@ module normalizer_z_28_28_28_multi(
             level2_l = count2_l ? {level3_l[9:0], 4'b0} : level3_l;
             // Stage 1: shift by 2
             count1_h = ~(|level2_h[13:12]);
-            count1_l = (fmt ==FP32) ? count1_h :~(|level2_l[13:12]);
+            count1_l = (fmt ==FP32) ? count1_h :~(|level2_l[11:10]);
             if (fmt == FP32) begin
                 level1_h = count1_h ? {level2_h[11:0],  level2_l[13:12]} : level2_h;
             end else begin 
@@ -172,7 +170,7 @@ module normalizer_z_28_28_28_multi(
             level1_l = count1_l ? {level2_l[11:0], 2'b0} : level2_l;
             // Stage 0: shift by 1
             count0_h = ~(|level1_h[13]);
-            count0_l = (fmt ==FP32) ? count0_h : ~(|level1_l[13]);
+            count0_l = (fmt ==FP32) ? count0_h : ~(|level1_l[11]);
             if (fmt == FP32) begin
                 level0_h = count0_h ? {level1_h[12:0],  level1_l[13]}: level1_h;
             end else begin 

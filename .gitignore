@@ -40,15 +40,15 @@ innovus.cmd
 primetime/output/
 
 # Simulation
-simulation/INCA_libs/
-simulation/xcelium.d/
-simulation/xrun.history
-simulation/*.shm/
-simulation/*.dsn
-simulation/*.trn
-simulation/*.vcd
-simulation/work/
-simulation/transcript
+**/simulation/INCA_libs/
+**/simulation/xcelium.d/
+**/simulation/xrun.history
+**/simulation/*.shm/
+**/simulation/*.dsn
+**/simulation/*.trn
+**/simulation/*.vcd
+**/simulation/work/
+**/simulation/transcript
 
 # System/Editor
 .DS_Store
