@@ -1,17 +1,36 @@
 import FPALL_pkg::*;
 
+
 module barrel_shifter(
     input  logic       clk,
     input  fp_fmt_e    fmt,
-    input  logic [23:0] X, // {frac_Y_h, 8'b0, frac_Y_l(10)}
-    input  logic [7:0]  S, //FP32 -> 4:0
+    input  logic [23:0] X,
+    input  logic [7:0]  S,
     output logic [25:0] R,
-    output logic        Sticky_h, Sticky_l //FP32はsticky_lを使う
+    output logic        Sticky_h,
+    output logic        Sticky_l
 );
+/*
+  Barrel shifter for FP32/FP16 dual-lane path.
+ 
+  Inputs:
+   - X layout:
+      * FP32: {frac_Y[22:0], 1'b0}
+      * FP16: {frac_Y_h[6:0], 8'b0, frac_Y_l[6:0], 2'b0}
+   - S (shift amount) usage:
+      * fmt == FP32: use S[4:0] as a single shift amount.
+      * fmt == FP16: S[7:4] is lanes.hi shift, S[3:0] is lanes.lo shift.
+ 
+  Outputs:
+   - Sticky_h: FP16 lanes.hi sticky (FP32 unused)
+   - Sticky_l: FP32 sticky, FP16 lanes.lo sticky
+ */
+
 
     logic [3:0] S_h,S_l;
     logic [7:0]  ps;
-    logic [25:0] Xpadded;// FP16, ->{frac_Y_h, gs(2bit), 6'b0, frac_Y_l(8), gs(2bit)}
+    logic [25:0] Xpadded;// FP16, ->{frac_Y_h(8), gs(2bit), 6'b0, frac_Y_l(8), gs(2bit)}
+    // FP32 -> {frac_Y(24), gs}
     logic [25:0] level5;
     logic        stk4_h, stk4_l;
     logic [12:0] level4_h, level4_l;
@@ -99,9 +118,11 @@ module barrel_shifter(
         end else begin
             level0_l = steps_l[0] ? {1'b0, level1_l[12:1]} : level1_l;
         end
-        if(fmt ==FP16) level0_h[2:0] = 3'b0; 
+        if(fmt ==FP16) begin 
+            Sticky_h = stk0_h || level0_h[2] || level0_h[1] || level0_h[0];
+            level0_h[2:0] = 3'b0; 
+        end else Sticky_h = stk0_h;
         R = {level0_h, level0_l};
-        Sticky_h = stk0_h || level0_h[2] || level0_h[1] || level0_h[0];
         Sticky_l = stk0_l;
         
     end

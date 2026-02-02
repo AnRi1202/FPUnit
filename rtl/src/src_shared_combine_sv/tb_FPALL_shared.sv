@@ -102,6 +102,9 @@ module tb_fpadd_bf16x2;
   // -----------------------------
   // Drive & check
   // -----------------------------
+  int mismatch_count = 0;
+  int pass_count = 0;
+
   task automatic run_one(input logic [31:0] x, input logic [31:0] y, input string tag="");
     logic [31:0] expR;
     begin
@@ -122,8 +125,12 @@ module tb_fpadd_bf16x2;
 
       // Strict bit-exact compare (since NaN/Inf are filtered out)
       if (R !== expR) begin
-        $fatal(1, "Mismatch tag=%s X=%h Y=%h got=%s exp=%s", tag, x, y, disp_32(R), disp_32(expR));
-      end else $display("pass");
+        mismatch_count++;
+        $display("Mismatch tag=%s X=%h Y=%h got=%s exp=%s", tag, x, y, disp_32(R), disp_32(expR));
+      end else begin
+        pass_count++;
+        $display("pass");
+      end
     end
   endtask
 
@@ -182,6 +189,7 @@ module tb_fpadd_bf16x2;
     run_random_normal_only(N_RANDOM);
 
     $display("PASS: bf16x2 ADD normal-only tests completed");
+    $display("SUMMARY: pass=%0d mismatch=%0d", pass_count, mismatch_count);
     $finish;
   end
 

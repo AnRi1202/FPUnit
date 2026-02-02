@@ -391,25 +391,26 @@ set rtl_dir "../rtl/src"
 # run_synth_common "FPALL_Shared_combine" "FPALL_Shared_combine"
 
 
-# puts "--- Task 18: Shared combine_sv---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
-
-# analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/abs_comparator.sv"
-# analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_pkg.sv"
-# analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_shared.sv"
-# run_synth_common "FPALL_Shared_combine" "FPALL_Shared_combine"
-
-
-
-# Task 13: Shared FPAddMul
-puts "--- Task 1: shifter---"
+puts "--- Task 18: Shared combine_sv---"
 remove_design -all
 analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-run_synth_common "RightShifterSticky24_by_max_26_Freq1_uid4" "RightShifterSticky24_by_max_26_Freq1_uid4"
+analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
+analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
+analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
+
+analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/abs_comparator.sv"
+analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/barrel_shifter.sv"
+analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_pkg.sv"
+analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_shared.sv"
+run_synth_common "FPALL_Shared_combine" "FPALL_Shared_combine"
+
+
+
+# # Task 13: Shared FPAddMul
+# puts "--- Task 1: shifter---"
+# remove_design -all
+# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
+# run_synth_common "RightShifterSticky24_by_max_26_Freq1_uid4" "RightShifterSticky24_by_max_26_Freq1_uid4"
 
 exit
 
