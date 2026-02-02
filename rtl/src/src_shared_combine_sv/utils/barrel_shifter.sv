@@ -73,25 +73,27 @@ module barrel_shifter(
     output logic        Sticky_h,
     output logic        Sticky_l
 );
-
-
-
+    // stage levels
     logic [25:0] level5;
-    logic        stk4_h, stk4_l;
     logic [12:0] level4_h, level4_l;
-    logic        stk3_h, stk3_l;
     logic [12:0] level3_h, level3_l;
-    logic        stk2_h, stk2_l;
     logic [12:0] level2_h, level2_l;
-    logic        stk1_h, stk1_l;
-    logic [12:0] level1_h,level1_l;
-    logic        stk0_h, stk0_l;
-    logic [12:0] level0_h, level0_l; 
+    logic [12:0] level1_h, level1_l;
+    logic [12:0] level0_h, level0_l;
 
+    // stage sticky bits
+    logic stk4_h, stk4_l;
+    logic stk3_h, stk3_l;
+    logic stk2_h, stk2_l;
+    logic stk1_h, stk1_l;
+    logic stk0_h, stk0_l;
+
+    // input widening (24b -> 26b)
     logic [25:0] X26;
     assign X26 = {X, 2'b00};
     assign level5  = X26;
 
+    // shift control
     logic [4:0] steps_h, steps_l;
     logic [12:0] level0_h_out;  
 
@@ -156,7 +158,7 @@ module barrel_shifter(
         if (fmt == FP16) level0_h_out[2:0] = 3'b0;
         R = {level0_h_out, level0_l};
 
-        Sticky_h = (fmt == FP16) ? (stk0_h | (|level0_h[2:0])) : 1'b0;
+        Sticky_h = (fmt == FP32) ? 1'b0 : (stk0_h | (|level0_h[2:0]));
         Sticky_l = stk0_l;
         
     end

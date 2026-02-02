@@ -227,12 +227,28 @@ set rtl_pkg "../rtl/src/src_shared_combine_sv/FPALL_pkg.sv"
 # run_synth_common "barrel_shifter_gpt" "barrel_shifter_gpt"
 
 
-puts "--- Task 7: barrerl_shifter_origin---"
+# puts "--- Task 7: barrerl_shifter_origin---"
+# remove_design -all
+
+# analyze -library WORK -format sverilog $rtl_pkg
+# analyze -library WORK -format sverilog "$rtl_dir/mux.sv"
+# run_synth_common "shifter_area_cell" "shifter_area_cell"
+
+
+puts "--- Task 8: barrerl_shifter_origin---"
 remove_design -all
 
 analyze -library WORK -format sverilog $rtl_pkg
-analyze -library WORK -format sverilog "$rtl_dir/mux.sv"
-run_synth_common "shifter_area_cell" "shifter_area_cell"
+analyze -library WORK -format sverilog "$rtl_dir/normalizer.sv"
+run_synth_common "normalizer" "normalizer"
+
+
+puts "--- Task 9: barrerl_shifter_origin---"
+remove_design -all
+
+analyze -library WORK -format sverilog $rtl_pkg
+analyze -library WORK -format sverilog "$rtl_dir/normalizer.sv"
+run_synth_common "normalizer_gpt" "normalizer_gpt"
 
 
 exit
