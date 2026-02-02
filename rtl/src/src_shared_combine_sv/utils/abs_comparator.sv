@@ -4,7 +4,8 @@ module abs_comparator (
     input  fp_fmt_e     fmt,
     input  fp_vec_u x,
     input  fp_vec_u y,
-    output logic [1:0]  swaps// FP16x2: lanes-wise |X| < |Y|. [1] is also |X|<|Y| for FP32.
+    output logic        swap_l, // FP16x2: lane.lo |X| < |Y|
+    output logic        swap_h  // FP16x2: lane.hi |X| < |Y|, FP32: |X|<|Y|
 );
 
 
@@ -49,8 +50,8 @@ module abs_comparator (
     assign c32    = sub_hi[16];
 
     // borrow = ~carry_out
-    assign swaps[0] = ~c16; // lanes0: a_lo < b_lo
-    assign swaps[1] = ~c32; // lanes1 (FP16) or entire 32-bit (FP32)
+    assign swap_l = ~c16; // lane.lo: a_lo < b_lo
+    assign swap_h = ~c32; // lane.hi (FP16) or entire 32-bit (FP32)
 endmodule
 
 
@@ -59,17 +60,18 @@ module abs_comparator_origin(
     input  fp_fmt_e     fmt,
     input  logic [31:0] X,
     input  logic [31:0] Y,
-    output logic [1:0]  swaps           // FP16x2: lanes-wise |X| < |Y| -> swap needed. [1] is also |X|<|Y| for FP32.
+    output logic        swap_l,          // FP16x2: lane.lo |X| < |Y|
+    output logic        swap_h           // FP16x2: lane.hi |X| < |Y|, FP32: |X|<|Y|
 );
 
 
     always_comb begin 
         if (fmt == FP32) begin
-           swaps[1] = (X[30:0] < Y[30:0])? 1'b1: 1'b0;
-           swaps[0] = 1'b0;
+           swap_h = (X[30:0] < Y[30:0])? 1'b1: 1'b0;
+           swap_l = 1'b0;
         end else begin
-           swaps[1] = (X[30:16] < Y[30:16])? 1'b1:1'b0; 
-           swaps[0] = (X[14:0] < Y[14:0])? 1'b1:1'b0; 
+           swap_h = (X[30:16] < Y[30:16])? 1'b1:1'b0; 
+           swap_l = (X[14:0] < Y[14:0])? 1'b1:1'b0; 
         end
     end
 endmodule
@@ -79,14 +81,15 @@ module abs_comparator_only(
     input  fp_fmt_e     fmt,
     input  logic [31:0] X,
     input  logic [31:0] Y,
-    output logic [1:0]  swaps           // FP16x2: lanes-wise |X| < |Y| -> swap needed. [1] is also |X|<|Y| for FP32.
+    output logic        swap_l,          // FP16x2: lane.lo |X| < |Y|
+    output logic        swap_h           // FP16x2: lane.hi |X| < |Y|, FP32: |X|<|Y|
 );
 
 
     always_comb begin 
      begin
-           swaps[1] = (X[30:0] < Y[30:0])? 1'b1: 1'b0;
-           swaps[0] = 1'b0;
+           swap_h = (X[30:0] < Y[30:0])? 1'b1: 1'b0;
+           swap_l = 1'b0;
         end
     end
 endmodule

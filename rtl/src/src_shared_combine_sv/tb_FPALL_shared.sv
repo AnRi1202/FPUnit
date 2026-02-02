@@ -129,7 +129,6 @@ module tb_fpadd_bf16x2;
         $display("Mismatch tag=%s X=%h Y=%h got=%s exp=%s", tag, x, y, disp_32(R), disp_32(expR));
       end else begin
         pass_count++;
-        $display("pass");
       end
     end
   endtask

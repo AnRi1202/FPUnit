@@ -8,7 +8,9 @@ module FPALL_Shared_combine(
     input fp_fmt_e fmt, // 
     input logic [31:0] X,
     input logic [31:0] Y,
-    output logic [31:0] R
+    output logic [31:0] R,
+    output logic swap_h,
+    output logic swap_l
 );
     // ========================================================================
     // for multiprecision
@@ -31,17 +33,18 @@ module FPALL_Shared_combine(
     logic [7:0] add_expX_h,add_expX_l;
     logic signX_h, signY_h, EffSub_h;
     logic signX_l, signY_l, EffSub_l;
-    logic [1:0] sXsYExnXY;
-    logic [3:0] sdExnXY;
     logic [23:0] fracY;
+    logic [7:0] fracY_h, fracY_l;
     logic [1:0] excRt;
     logic signR, shiftedOut_h, shiftedOut_l;
-    logic [4:0] shiftVal_h, shiftVal_l;
+    logic [4:0] shiftVal_h_fp32;
+    logic [3:0] shiftVal_h_fp16, shiftVal_l_fp16;
     logic [7:0] shiftVal;
     logic [25:0] shiftedFracY;
     logic add_sticky_h, add_sticky_l;
     logic [26:0] fracYpad, EffSub_Vector, fracYpadXorOp, fracXpad;
     logic cInSigAdd_h, cInSigAdd_l;
+    logic [26:0] cin_vec;   
     logic [26:0] fracAddResult;
     logic [27:0] fracSticky;
     logic [4:0] nZerosNew_l, nZerosNew_h;
@@ -55,10 +58,8 @@ module FPALL_Shared_combine(
     logic [35:0] add_RoundedExpFrac;
     logic [22:0] fracR;
     logic [7:0] expR;
-    logic [3:0] exExpExc;
-    logic [1:0] excRt2, excR;
+    logic [1:0] excR;
     logic signR2_h;
-    logic [33:0] computedR;
 
     // FPMul signals
     logic sign;
@@ -441,6 +442,7 @@ module FPALL_Shared_combine(
     logic ia27_Cin;
 
 
+
     // =================================================================================
     // FPAdd Logic
     // =================================================================================
@@ -448,27 +450,26 @@ module FPALL_Shared_combine(
     //-------------------
     // shared comparator
     //-------------------
-    logic [1:0] swaps;
-
     abs_comparator u_abs_cmp (
         .fmt(fmt),
         .x(x),
         .y(y),
-        .swaps(swaps)
+        .swap_l(swap_l),
+        .swap_h(swap_h)
     );
 
     // assign swap = swaps[1]; // Currently forcing FP32 behavior for swap as the rest of the logic isn't updated yet.
     // input swap so that |X|>|Y| 
     always_comb begin
-        newX.lanes.hi = (swaps[1] ==1'b0) ? x.lanes.hi : y.lanes.hi;
-        newY.lanes.hi = (swaps[1] ==1'b0) ? y.lanes.hi : x.lanes.hi;
+        newX.lanes.hi = (swap_h ==1'b0) ? x.lanes.hi : y.lanes.hi;
+        newY.lanes.hi = (swap_h ==1'b0) ? y.lanes.hi : x.lanes.hi;
 
     if(fmt ==FP32) begin
-            newX.lanes.lo = (swaps[1] ==1'b0) ? x.lanes.lo : y.lanes.lo;
-            newY.lanes.lo = (swaps[1] ==1'b0) ? y.lanes.lo : x.lanes.lo;
+            newX.lanes.lo = (swap_h ==1'b0) ? x.lanes.lo : y.lanes.lo;
+            newY.lanes.lo = (swap_h ==1'b0) ? y.lanes.lo : x.lanes.lo;
     end else begin
-        newX.lanes.lo = (swaps[0] ==1'b0) ? x.lanes.lo : y.lanes.lo;
-        newY.lanes.lo = (swaps[0] ==1'b0) ? y.lanes.lo : x.lanes.lo;
+        newX.lanes.lo = (swap_l ==1'b0) ? x.lanes.lo : y.lanes.lo;
+        newY.lanes.lo = (swap_l ==1'b0) ? y.lanes.lo : x.lanes.lo;
         end
     end
     
@@ -477,41 +478,41 @@ module FPALL_Shared_combine(
     assign expDiff_l = newX.lanes.lo[14:7] - newY.lanes.lo[14:7]; //lo expDiff
 
     // now we decompose the inputs into their sign, exponent, fraction 
-    assign add_expX_h = newX.fp32.exp; // == newX.lanes.hi[14:8];
-    assign add_expX_l = newX.lanes.lo[14:7];
     assign signX_h = newX.fp32.sign;
     assign signY_h = newY.fp32.sign;
-    assign EffSub_h = signX_h ^ signY_h;
-    assign EffSub_l = signX_l ^ signY_l;
-
     assign signX_l = newX.lanes.lo[15];
     assign signY_l = newY.lanes.lo[15];
 
+    assign add_expX_h = newX.fp32.exp; // == newX.lanes.hi[14:8];
+    assign add_expX_l = newX.lanes.lo[14:7];
 
+    assign EffSub_h = signX_h ^ signY_h;
+    assign EffSub_l = signX_l ^ signY_l;
+
+
+    assign fracY_h = {1'b1, newY.lanes.hi[6:0]};
+    assign fracY_l = {1'b1, newY.lanes.lo[6:0]};
+
+    // FP32 shift amount (cap at 26)
+    assign shiftedOut_h   = (expDiff_h > 25);
+    assign shiftVal_h_fp32 = shiftedOut_h ? 5'd26 : expDiff_h[4:0];
+
+    // FP16 shift amount (cap at 10)
+    assign shiftedOut_l    = (expDiff_l > 9);
+    assign shiftVal_h_fp16 = (expDiff_h > 9) ? 4'd10 : expDiff_h[3:0];
+    assign shiftVal_l_fp16 = shiftedOut_l ? 4'd10 : expDiff_l[3:0];
 
     always_comb begin
-        begin
-            logic[7:0] fracY_h, fracY_l;
-            fracY_h = {1'b1, newY.lanes.hi[6:0]};
-            fracY_l = {1'b1, newY.lanes.lo[6:0]};
-
-            shiftedOut_h = (expDiff_h > 25) ? 1'b1 : 1'b0;
-            shiftVal_h = (shiftedOut_h == 1'b0)? expDiff_h[4:0] : 5'd26;
-            fracY = {1'b1, newY[22:0]};
-            if (fmt == FP16) begin 
-                shiftedOut_h =(expDiff_h > 9) ? 1'b1 : 1'b0; 
-                shiftedOut_l = (expDiff_l > 9) ? 1'b1 : 1'b0;
-                shiftVal_h = (shiftedOut_h == 1'b0)? expDiff_h[3:0] : 4'd10;
-                shiftVal_l = (shiftedOut_l == 1'b0)? expDiff_l[3:0] : 4'd10;
-                fracY = {fracY_h, 8'b0, fracY_l};
-            end
-        end
+    if (fmt == FP32) begin
+        shiftVal = {3'b0, shiftVal_h_fp32};
+        fracY    = {1'b1, newY[22:0]};
+    end else begin
+        shiftVal = {shiftVal_h_fp16, shiftVal_l_fp16};
+        fracY    = {fracY_h, 8'b0, fracY_l};
+    end
     end
 
-
-    assign shiftVal = (fmt ==FP32) ? {3'b0, shiftVal_h} : {shiftVal_h[3:0],shiftVal_l[3:0]};
     barrel_shifter RightShifterComponent (
-        .clk(clk),
         .fmt(fmt),
         .S(shiftVal),
         .X(fracY),
@@ -520,48 +521,43 @@ module FPALL_Shared_combine(
         .Sticky_l(add_sticky_l)
     );
     
-    assign fracYpad = {1'b0, shiftedFracY};
-    always_comb begin
-        EffSub_Vector[26:14] = {13{EffSub_h}};
-        if(fmt == FP32) begin
-            EffSub_Vector[13:0] = {14{EffSub_h}};
-        end else begin
-            EffSub_Vector[13:0] = {14{EffSub_l}};
-        end
+    assign fracYpad = {1'b0, shiftedFracY}; // align to 27b adder input (MSB pad)
+    assign EffSub_Vector = { {13{EffSub_h}}, {14{ (fmt==FP32) ? EffSub_h : EffSub_l }} };
 
-    end
+    
     assign fracYpadXorOp = fracYpad ^ EffSub_Vector;
     assign fracXpad = (fmt ==FP32) ? {2'b01, newX[22:0], 2'b00}: {{2'b01,newX.lanes.hi[6:0],2'b0},3'b0, 2'b0 , {2'b01, newX.lanes.lo[6:0],2'b0}};
     assign cInSigAdd_h = EffSub_h & (~add_sticky_h);
-    assign cInSigAdd_l = (fmt ==FP32) ? EffSub_h & (~add_sticky_l):  EffSub_l & (~add_sticky_l); // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
+    // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
+    assign cInSigAdd_l = (fmt ==FP32) ? EffSub_h & (~add_sticky_l):  EffSub_l & (~add_sticky_l); 
+
 
     // Connect to Shared IntAdder_27
     assign add_fracAdder_X = fracXpad;       // Connect padded X fraction
     assign add_fracAdder_Y = fracYpadXorOp;  // Connect prepared Y fraction
     assign add_fracAdder_Cin = cInSigAdd_l;    // Carry-in accounting for subtraction and sticky bit
-   logic [26:0] cin_vec;
-    always_comb begin
-    cin_vec = '0;
-    cin_vec[0]  = cInSigAdd_l;   // low lane cin
-    if (fmt==FP16) cin_vec[16] = cInSigAdd_h; // high lane cin
-    end
+
+    assign cin_vec =
+    (fmt == FP16) ? ((27'(cInSigAdd_l)) | (27'(cInSigAdd_h) << 16))
+                :  (27'(cInSigAdd_l));
 
     always_comb begin
-        if(fmt ==FP32) begin
+        fracAddResult = '0;
+        if (fmt == FP32) begin
             fracAddResult = add_fracAdder_X + add_fracAdder_Y + cin_vec;
-        end else begin //TODO: optimize. 図的には非効率
-            fracAddResult[26:16] = add_fracAdder_X[26:16] + add_fracAdder_Y[26:16] + cInSigAdd_h; 
-            fracAddResult[11: 0] = add_fracAdder_X[11: 0] + add_fracAdder_Y[11: 0] + cInSigAdd_l; 
-
+        end else begin
+            fracAddResult[26:16] = add_fracAdder_X[26:16] + add_fracAdder_Y[26:16] + cInSigAdd_h;
+            fracAddResult[11:0]  = add_fracAdder_X[11:0]  + add_fracAdder_Y[11:0]  + cInSigAdd_l;
         end
     end
  
 
     always_comb begin
         fracSticky = {fracAddResult, add_sticky_l};
-        if(fmt ==FP16) fracSticky[16] = add_sticky_h; // TODO: 　latchみたいになってるから書き方として改良する必要あり
+        if(fmt ==FP16) fracSticky[16] = add_sticky_h; 
     end
-    normalizer_z_28_28_28_multi LZCAndShifter (
+
+    normalizer LZCAndShifter (
         .clk(clk),
         .fmt(fmt),
         .X(fracSticky),
@@ -596,8 +592,8 @@ module FPALL_Shared_combine(
     assign stk_l = shiftedFrac_l[2] | shiftedFrac_l[1] | shiftedFrac_l[0];
     assign rnd_l = shiftedFrac_l[3];
     assign lsb_l = shiftedFrac_l[4];
-    assign add_round_h = ((rnd_h == 1'b1) && (stk_h == 1'b1)) || ((rnd_h == 1'b1) && (stk_h == 1'b0) && (lsb_h == 1'b1)) ? 1'b1 : 1'b0;
-    assign add_round_l = ((rnd_l == 1'b1) && (stk_l == 1'b1)) || ((rnd_l == 1'b1) && (stk_l == 1'b0) && (lsb_l == 1'b1)) ? 1'b1 : 1'b0;
+    assign add_round_h = rnd_h & (stk_h | lsb_h);
+    assign add_round_l = rnd_l & (stk_l | lsb_l);
     // Connect to Add Rounding Adder (not shared)
     // Get result from Add Rounding Adder
     always_comb begin
