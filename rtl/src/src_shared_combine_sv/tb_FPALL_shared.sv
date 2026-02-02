@@ -26,7 +26,7 @@ module tb_fpadd_bf16x2;
   // CONFIG
   // -----------------------------
   localparam int LAT = 2;            // how many posedges until R is valid
-  localparam int N_RANDOM = 20;
+  localparam int N_RANDOM = 2000;
 
   // -----------------------------
   // bf16 helpers

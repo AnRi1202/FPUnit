@@ -522,8 +522,8 @@ module FPALL_Shared_combine(
     
     assign fracYpad = {1'b0, shiftedFracY};
     always_comb begin
-        $display("EffSub_h=%0b, add_sticky_h =%0b",EffSub_h, add_sticky_h);
-        $display("EffSub_l=%0b, add_sticky_l =%0b",EffSub_l, add_sticky_l);
+        // $display("EffSub_h=%0b, add_sticky_h =%0b",EffSub_h, add_sticky_h);
+        // $display("EffSub_l=%0b, add_sticky_l =%0b",EffSub_l, add_sticky_l);
         EffSub_Vector[26:14] = {13{EffSub_h}};
         if(fmt == FP32) begin
             EffSub_Vector[13:0] = {14{EffSub_h}};
@@ -551,8 +551,10 @@ module FPALL_Shared_combine(
     always_comb begin
         if(fmt ==FP32) begin
             fracAddResult = add_fracAdder_X + add_fracAdder_Y + cin_vec;
-        end else begin
-            
+        end else begin //TODO: optimize. 図的には非効率
+            fracAddResult[26:16] = add_fracAdder_X[26:16] + add_fracAdder_Y[26:16] + cInSigAdd_h; 
+            fracAddResult[11: 0] = add_fracAdder_X[11: 0] + add_fracAdder_Y[11: 0] + cInSigAdd_l; 
+
         end
     end
  
@@ -563,7 +565,7 @@ module FPALL_Shared_combine(
         // $display("cInSigAdd_h=%0b, cInSigAdd_l=%0b",cInSigAdd_h,cInSigAdd_l)
         fracSticky = {fracAddResult, add_sticky_l};
         if(fmt ==FP16) fracSticky[16] = add_sticky_h; // TODO: 　latchみたいになってるから書き方として改良する必要あり
-        $display("fracSticky  =%28b",fracSticky);
+        // $display("fracSticky  =%28b",fracSticky);
     end
     normalizer_z_28_28_28_multi LZCAndShifter (
         .clk(clk),
@@ -587,14 +589,14 @@ module FPALL_Shared_combine(
 
     // FP32: exponent uses high lane, rounding uses low lane
     always_comb begin
-        $display("shiftedFrac=%28b",shiftedFrac);
+        // $display("shiftedFrac=%28b",shiftedFrac);
         // $display("updatedExp_h=%0b",updatedExp_h);
         // $display("updatedExp_l=%0b",updatedExp_l);
         if (fmt ==FP32) begin
             add_expFrac = {2'b0, updatedExp_h, shiftedFrac_h[12:0], shiftedFrac_l[13:3]}; //[25:3] 暗黙は消えてる
         end else begin
             add_expFrac = {updatedExp_h, shiftedFrac_h[12:5], updatedExp_l, shiftedFrac_l[10:3]}; //36bit
-            $display("add_expdFrac  =%s",disp_36(add_expFrac));
+            // $display("add_expdFrac  =%s",disp_36(add_expFrac));
 
         end
     end
@@ -612,8 +614,7 @@ module FPALL_Shared_combine(
         if (fmt == FP32) begin
             add_RoundedExpFrac = add_expFrac + add_round_l;
         end else begin
-            add_RoundedExpFrac = add_expFrac + add_round_l + {rnd_h, 18'b0};
-            // $display("add_expdFrac  =%s",disp_36(add_RoundedExpFrac));
+            add_RoundedExpFrac = add_expFrac + add_round_l + {add_round_h, 18'b0};
         end
     end
 
