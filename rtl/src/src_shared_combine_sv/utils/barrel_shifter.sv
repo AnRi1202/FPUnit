@@ -2,66 +2,42 @@ import FPALL_pkg::*;
 
 /*
 ===============================================================================
- Barrel Shifter for Shared FP32 / Dual-FP16 Datapath
+Barrel Shifter for Shared FP32 / Dual-FP16 Datapath
 -------------------------------------------------------------------------------
- This shifter is shared between:
-   - FP32:   single 26-bit mantissa path
-   - FP16x2: dual-lane segmented mantissa path
+This shifter is shared between:
+  - FP32   : single 26-bit fraction path
+  - FP16x2 : dual-lane segmented fraction path (lane isolation via a zero gap)
 
- It operates on a *repacked* fraction vector X and produces
- per-lane sticky bits depending on format mode.
+Implementation note:
+  - Logarithmic barrel shifter (staged shifts: 16/8/4/2/1).
+  - One shared shift network serves both FP32 and FP16x2 modes.
 
--------------------------------------------------------------------------------
- Input Packing
+Input packing expectation:
+  - FP32 (fmt == FP32):
+      `X` represents the single FP32 fraction payload.
+      `X26` conceptually corresponds to { frac[23:0], guard, sticky }.
+  - FP16 (fmt == FP16):
+      FP16x2 is interpreted in the 26-bit widened vector `X26` (after
+      `X26 = { X, 2'b00 }`) as two 10-bit lanes separated by a 6-bit zero gap:
+        lane.hi -> X26[25:16] = { frac_hi[7:0], guard_hi, sticky_hi }
+        gap     -> X26[15:10] = 6'b0
+        lane.lo -> X26[9:0]   = { frac_lo[7:0], guard_lo, sticky_lo }
 
-   Input port:
-     X[23:0]  // 24-bit payload provided by upstream
+      NOTE: This module does not repack lanes; correct lane+gap packing is an
+      upstream responsibility.
 
-   Internal working vector (26-bit):
-     X26 = { X, 2'b00 }   // append 2 LSBs for {guard,sticky} placeholder
+Shift amount encoding (`S`):
+  - FP32 : shift_amt = S[4:0]  (0–31)
+  - FP16 : shift_hi  = S[7:4]  (0–15), shift_lo = S[3:0] (0–15)
 
-   FP32 mode (fmt == FP32):
-     // X already represents the single FP32 fraction path (24b payload)
-     X26 = { fracY[23:0], guard, sticky }   // guard/sticky may be 0 if appended here
+Output (`R`):
+  - `R[25:0]` is the shifted result in the same `X26` layout.
+    - FP32  : 26-bit shifted fraction path
+    - FP16x2: lane.hi in `R[25:16]`, zero gap in `R[15:10]`, lane.lo in `R[9:0]`
 
-   FP16 mode (fmt == FP16):
-      X already contains two 8-bit lane payloads (hi/lo) packed by upstream:
-        X[23:16] = fracY_hi[7:0]
-        X[7:0]   = fracY_lo[7:0]
-      (any middle bits are format-defined by upstream packing)
-     
-      After append:
-        lane.hi = {fracY_hi[7:0], guard_hi, sticky_hi}  -> X26[25:16]
-        gap     = 6'b0                                  X26[15:10]
-        lane.lo = {fracY_lo[7:0], guard_lo, sticky_lo}  -> X26[9:0]
-
-    NOTE: This module does not repack lanes; X must already be lane-packed
-     (including the zero gap region) by upstream logic.
-
--------------------------------------------------------------------------------
-
- Shift Amount Encoding (S):
-
-   FP32 mode:
-       shift_amt = S[4:0]      // single global shift (0–31)
-
-   FP16 mode:
-       shift_hi  = S[7:4]      // lane.hi shift (0–15)
-       shift_lo  = S[3:0]      // lane.lo shift (0–15)
-
--------------------------------------------------------------------------------
- Sticky Outputs:
-
-    Sticky_h : valid only in FP16 mode (upper lane)
-    Sticky_l : sticky for the active 'low' output lane
-            - FP32: global sticky
-            - FP16: lane.lo sticky
-
--------------------------------------------------------------------------------
- Design Intent:
-   - Enable a single log-barrel shifter to serve both FP32 and FP16x2 paths
-   - Avoid duplicating large shift networks
-   - Preserve independent lane behavior in FP16 mode via zero-gap isolation
+Sticky outputs:
+  - Sticky_h : valid only in FP16 mode (upper lane)
+  - Sticky_l : FP32 = global sticky; FP16 = lower-lane sticky
 ===============================================================================
 */
 
@@ -158,7 +134,7 @@ module barrel_shifter(
         if (fmt == FP16) level0_h_out[2:0] = 3'b0;
         R = {level0_h_out, level0_l};
 
-        Sticky_h = (fmt == FP32) ? 1'b0 : (stk0_h | (|level0_h[2:0]));
+        Sticky_h =(stk0_h | (|level0_h[2:0]));
         Sticky_l = stk0_l;
         
     end

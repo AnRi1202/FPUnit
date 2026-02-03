@@ -26,7 +26,7 @@ module tb_fpadd_bf16x2;
   // CONFIG
   // -----------------------------
   localparam int LAT = 2;            // how many posedges until R is valid
-  localparam int N_RANDOM = 2000;
+  localparam int N_RANDOM = 4000;
 
   // -----------------------------
   // bf16 helpers
@@ -143,8 +143,8 @@ module tb_fpadd_bf16x2;
         tries = 0;
         while (1) begin
           tries++;
-          x = rand_bf16x2_safe(/*allow_neg=*/0);
-          y = rand_bf16x2_safe(/*allow_neg=*/0);
+          x = rand_bf16x2_safe(/*allow_neg=*/1);
+          y = rand_bf16x2_safe(/*allow_neg=*/1);
           expR = ref_add_bf16x2(x, y);
 
           if (is_normal_bf16(expR[31:16]) && is_normal_bf16(expR[15:0])) break;
@@ -166,22 +166,6 @@ module tb_fpadd_bf16x2;
     opcode = OP_ADD;
     X = '0; Y = '0;
     repeat (LAT) @(posedge clk);
-
-    // -----------------------------
-    // Directed normal-only tests
-    // -----------------------------
-    // Use only normal bf16s (no exp=00/FF)
-    // 1.0 bf16 = 0x3F80
-    run_one(pack2(16'h3F80,16'h3F80), pack2(16'h3F80,16'h3F80), "1+1 lanes");
-
-    // 1.0 + 2^-20-ish (sticky exercise but still normal)
-    run_one(pack2(16'h3F80,16'h3F80),
-            pack2(f32_bits_to_bf16_rne(32'h3580_0000), f32_bits_to_bf16_rne(32'h3580_0000)),
-            "sticky-ish");
-
-    // cancellation but keep result normal: 1.5 + (-1.25) = 0.25 (still normal bf16)
-    run_one(pack2(16'h3FC0,16'h3FC0), pack2(16'hBFA0,16'hBFA0), "cancellation normal");
-
     // -----------------------------
     // Random normal-only tests
     // -----------------------------

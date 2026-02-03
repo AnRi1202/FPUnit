@@ -1,39 +1,30 @@
 import FPALL_pkg::*;
 /*
 ===============================================================================
- Normalizer (Leading-Zero Count + Left Shift) for Shared FP32 / Dual-FP16 Datapath
+Normalizer (Leading-Zero Count + Left Shift) for Shared FP32 / Dual-FP16 Datapath
 -------------------------------------------------------------------------------
- This module normalizes the post-add fraction by:
-   1) Counting the number of leading zeros (LZC)
-   2) Left-shifting the fraction by that amount
+Normalizes the post-add fraction by:
+  1) Leading-zero count (LZC)
+  2) Left shift by the LZC result
 
- It supports two operating modes:
-   - FP32: single 28-bit lane
-   - FP16: dual independent 14-bit lanes
+Modes:
+  - FP32   : single 28-bit lane (`X[27:0]`)
+  - FP16x2 : two independent 14-bit lanes (`X[27:14]`, `X[13:0]`)
 
--------------------------------------------------------------------------------
- Input:
-   X[27:0] : concatenated fraction with sticky extension
+I/O:
+  - Input  `X[27:0]` : concatenated fraction (includes sticky extension)
+  - Output `R[27:0]` : normalized fraction
+  - Output `Count_h` : valid only in FP16 mode 
+  - Output `Count_l` : FP16x2 lo-lane LZC, or full 28-bit LZC in FP32
 
- Output:
-   R[27:0] : normalized fraction
-   Count_h : LZC result for high lane (FP16) or 0 (FP32)
-   Count_l : LZC result for low lane (FP16) or full-lane count (FP32)
+Datapath:
+  - FP32   : LZC(28) on `X[27:0]` then cross-lane shift -> `R[27:0]`
+  - FP16x2 : LZC(14) + shift on each lane independently
 
--------------------------------------------------------------------------------
- Datapath structure:
-   FP32:
-       X[27:0] -> LZC(28) -> left shift -> R
-   FP16:
-       X[27:14] -> LZC(14) -> shift -> R[27:14]
-       X[13:0]  -> LZC(14) -> shift -> R[13:0]
-
--------------------------------------------------------------------------------
- Design Notes:
-   - Cross-lane shifting is used only in FP32 mode.
-   - FP16 lanes are fully independent to minimize area and routing.
-   - This structure avoids per-stage fmt multiplexers to reduce area.
-
+Notes:
+  - Cross-lane shifting occurs only in FP32 mode.
+  - FP16x2 lanes remain independent to reduce area/routing and avoid per-stage
+    `fmt` multiplexers.
 ===============================================================================
 */
 module normalizer(
@@ -108,7 +99,7 @@ module normalizer(
 
 
         R = {level0_h, level0_l};
-        Count_h = (fmt == FP32) ? 5'd0 : {count4_h, count3_h, count2_h, count1_h, count0_h};
+        Count_h = {count4_h, count3_h, count2_h, count1_h, count0_h};
         Count_l = {count4_l, count3_l, count2_l, count1_l, count0_l};
     end
 endmodule

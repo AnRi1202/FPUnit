@@ -51,6 +51,8 @@ module FPALL_Shared_combine(
     logic [27:0] shiftedFrac;
     logic [13:0] shiftedFrac_h, shiftedFrac_l;
     logic [8:0] extendedExpInc_h, extendedExpInc_l;
+    logic [4:0] nZeros_for_h;
+    logic [8:0] normShift_h, normShift_l;   
     logic [9:0] updatedExp_h, updatedExp_l;
     logic eqdiffsign_h, eqdiffsign_l;
     logic stk_h, rnd_h, lsb_h;
@@ -60,6 +62,8 @@ module FPALL_Shared_combine(
     logic [7:0] expR;
     logic [1:0] excR;
     logic signR2_h;
+    logic [31:0] add_R_fp32;
+    logic [31:0] add_R_fp16;
 
     // FPMul signals
     logic sign;
@@ -494,12 +498,12 @@ module FPALL_Shared_combine(
     assign fracY_l = {1'b1, newY.lanes.lo[6:0]};
 
     // FP32 shift amount (cap at 26)
-    assign shiftedOut_h   = (expDiff_h > 25);
+    assign shiftedOut_h   = (|expDiff_h[7:5]); // expDiff_h > 31
     assign shiftVal_h_fp32 = shiftedOut_h ? 5'd26 : expDiff_h[4:0];
 
     // FP16 shift amount (cap at 10)
     assign shiftedOut_l    = (expDiff_l > 9);
-    assign shiftVal_h_fp16 = (expDiff_h > 9) ? 4'd10 : expDiff_h[3:0];
+    assign shiftVal_h_fp16 = (shiftedOut_h |expDiff_h[4]) ? 4'd10 : expDiff_h[3:0]; //expDiff_h > 16 (area -4)
     assign shiftVal_l_fp16 = shiftedOut_l ? 4'd10 : expDiff_l[3:0];
 
     always_comb begin
@@ -526,7 +530,7 @@ module FPALL_Shared_combine(
 
     
     assign fracYpadXorOp = fracYpad ^ EffSub_Vector;
-    assign fracXpad = (fmt ==FP32) ? {2'b01, newX[22:0], 2'b00}: {{2'b01,newX.lanes.hi[6:0],2'b0},3'b0, 2'b0 , {2'b01, newX.lanes.lo[6:0],2'b0}};
+    assign fracXpad = (fmt ==FP32) ? {2'b01, newX[22:0], 2'b00}: {{2'b01,newX.lanes.hi[6:0],2'b0}, 3'b0, 2'b0 , {2'b01, newX.lanes.lo[6:0],2'b0}};
     assign cInSigAdd_h = EffSub_h & (~add_sticky_h);
     // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
     assign cInSigAdd_l = (fmt ==FP32) ? EffSub_h & (~add_sticky_l):  EffSub_l & (~add_sticky_l); 
@@ -568,10 +572,17 @@ module FPALL_Shared_combine(
     
     assign extendedExpInc_h = {1'b0, add_expX_h} + 9'd1;
     assign extendedExpInc_l = {1'b0, add_expX_l} + 9'd1;
-    assign updatedExp_h = (fmt == FP32) ? {1'b0, extendedExpInc_h} - {5'b00000, nZerosNew_l} : {1'b0, extendedExpInc_h} - {5'b00000, nZerosNew_h};
-    assign updatedExp_l = (fmt == FP32) ? '0 :  {1'b0, extendedExpInc_l} - {5'b00000, nZerosNew_l};
-    assign eqdiffsign_h = (fmt == FP32) ? ((nZerosNew_l == 5'b11111) ? 1'b1 : 1'b0) :(nZerosNew_h == 5'b11111) ? 1'b1 : 1'b0 ;
-    assign eqdiffsign_l = (fmt == FP32) ? '0 : (nZerosNew_h == 5'b11111) ? 1'b1 : 1'b0 ;
+    assign nZeros_for_h = (fmt == FP32) ? nZerosNew_l : nZerosNew_h;
+
+    assign normShift_h = {4'b0, nZeros_for_h};          // FP32: nZerosNew_l, FP16: nZerosNew_h
+    assign normShift_l = {4'b0, nZerosNew_l};  
+    assign updatedExp_h = extendedExpInc_h - normShift_h;
+    assign updatedExp_l = (fmt == FP32) ? 9'd0 : (extendedExpInc_l - normShift_l);
+
+
+    assign eqdiffsign_h = (nZeros_for_h == 5'd31);
+    assign eqdiffsign_l = (fmt == FP32) ? 1'b0 : (nZerosNew_h == 5'd31);
+
     
      
     assign shiftedFrac_h = shiftedFrac[27:14];
@@ -579,17 +590,17 @@ module FPALL_Shared_combine(
 
     // FP32: exponent uses high lane, rounding uses low lane
     always_comb begin
+        add_expFrac = '0;
         if (fmt ==FP32) begin
             add_expFrac = {2'b0, updatedExp_h, shiftedFrac_h[12:0], shiftedFrac_l[13:3]}; //[26:3] 暗黙は消えてる
         end else begin
             add_expFrac = {updatedExp_h, shiftedFrac_h[12:5], updatedExp_l, shiftedFrac_l[10:3]}; //36bit
-
         end
     end
-    assign stk_h = shiftedFrac_h[4] | shiftedFrac_h[3] | shiftedFrac_h[2];
+    assign stk_h = |shiftedFrac_h[4:2];
     assign rnd_h = shiftedFrac_h[5];
     assign lsb_h = shiftedFrac_h[6];
-    assign stk_l = shiftedFrac_l[2] | shiftedFrac_l[1] | shiftedFrac_l[0];
+    assign stk_l = |shiftedFrac_l[2:0];
     assign rnd_l = shiftedFrac_l[3];
     assign lsb_l = shiftedFrac_l[4];
     assign add_round_h = rnd_h & (stk_h | lsb_h);
@@ -597,19 +608,33 @@ module FPALL_Shared_combine(
     // Connect to Add Rounding Adder (not shared)
     // Get result from Add Rounding Adder
     always_comb begin
-        if (fmt == FP32) begin
-            add_RoundedExpFrac = add_expFrac + add_round_l;
-        end else begin
-            add_RoundedExpFrac[35:18] = add_expFrac[35:18] + add_round_h;
-            add_RoundedExpFrac[17:0 ] = add_expFrac[17:0 ] + add_round_l;
-        end
+    add_RoundedExpFrac = '0;
+    if (fmt == FP32) begin
+        add_RoundedExpFrac = add_expFrac + add_round_l;
+    end else begin
+        add_RoundedExpFrac[35:18] = add_expFrac[35:18] + add_round_h;
+        add_RoundedExpFrac[17:0 ] = add_expFrac[17:0 ] + add_round_l;
+    end
     end
 
     
-    assign signR2_h = ((eqdiffsign_h == 1'b1) && (EffSub_h == 1'b1)) ? 1'b0 : signX_h;
-    assign signR2_l = ((eqdiffsign_l == 1'b1) && (EffSub_l == 1'b1)) ? 1'b0 : signX_l;
-    assign add_R = (fmt == FP32) ? {signR2_h, add_RoundedExpFrac[31:1]}: {signR2_h, add_RoundedExpFrac[33:19], signR2_l, add_RoundedExpFrac[15:1]};
+    assign signR2_h = signX_h & ~(eqdiffsign_h & EffSub_h);
+    assign signR2_l = signX_l & ~(eqdiffsign_l & EffSub_l);
 
+
+    assign add_R_fp32 = {
+        signR2_h,
+        add_RoundedExpFrac[31:1]   // exp + frac (FP32)
+    };
+
+    assign add_R_fp16 = {
+        signR2_h,
+        add_RoundedExpFrac[33:19], // exp+frac high lane
+        signR2_l,
+        add_RoundedExpFrac[15:1]   // exp+frac low lane
+    };
+
+    assign add_R = (fmt == FP32) ? add_R_fp32 : add_R_fp16;
     
     // =================================================================================
     // FPMult Logic
