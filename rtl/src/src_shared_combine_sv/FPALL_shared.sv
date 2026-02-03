@@ -51,7 +51,6 @@ module FPALL_Shared_combine(
     logic [27:0] shiftedFrac;
     logic [13:0] shiftedFrac_h, shiftedFrac_l;
     logic [8:0] extendedExpInc_h, extendedExpInc_l;
-    logic [4:0] nZeros_for_h;
     logic [8:0] normShift_h, normShift_l;   
     logic [9:0] updatedExp_h, updatedExp_l;
     logic eqdiffsign_h, eqdiffsign_l;
@@ -526,7 +525,7 @@ module FPALL_Shared_combine(
     );
     
     assign fracYpad = {1'b0, shiftedFracY}; // align to 27b adder input (MSB pad)
-    assign EffSub_Vector = { {13{EffSub_h}}, {14{ (fmt==FP32) ? EffSub_h : EffSub_l }} };
+    assign EffSub_Vector = (fmt == FP32) ? {27{EffSub_h}} : { {11{EffSub_h}}, 5'd0, {11{EffSub_l}} };
 
     
     assign fracYpadXorOp = fracYpad ^ EffSub_Vector;
@@ -545,15 +544,8 @@ module FPALL_Shared_combine(
     (fmt == FP16) ? ((27'(cInSigAdd_l)) | (27'(cInSigAdd_h) << 16))
                 :  (27'(cInSigAdd_l));
 
-    always_comb begin
-        fracAddResult = '0;
-        if (fmt == FP32) begin
-            fracAddResult = add_fracAdder_X + add_fracAdder_Y + cin_vec;
-        end else begin
-            fracAddResult[26:16] = add_fracAdder_X[26:16] + add_fracAdder_Y[26:16] + cInSigAdd_h;
-            fracAddResult[11:0]  = add_fracAdder_X[11:0]  + add_fracAdder_Y[11:0]  + cInSigAdd_l;
-        end
-    end
+    // Shared IntAdder
+    assign fracAddResult = add_fracAdder_X + add_fracAdder_Y + cin_vec;
  
 
     always_comb begin
@@ -572,16 +564,15 @@ module FPALL_Shared_combine(
     
     assign extendedExpInc_h = {1'b0, add_expX_h} + 9'd1;
     assign extendedExpInc_l = {1'b0, add_expX_l} + 9'd1;
-    assign nZeros_for_h = (fmt == FP32) ? nZerosNew_l : nZerosNew_h;
 
-    assign normShift_h = {4'b0, nZeros_for_h};          // FP32: nZerosNew_l, FP16: nZerosNew_h
+    assign normShift_h = {4'b0, nZerosNew_h};   
     assign normShift_l = {4'b0, nZerosNew_l};  
     assign updatedExp_h = extendedExpInc_h - normShift_h;
     assign updatedExp_l = (fmt == FP32) ? 9'd0 : (extendedExpInc_l - normShift_l);
 
 
-    assign eqdiffsign_h = (nZeros_for_h == 5'd31);
-    assign eqdiffsign_l = (fmt == FP32) ? 1'b0 : (nZerosNew_h == 5'd31);
+    assign eqdiffsign_h = nZerosNew_h == 5'd31;
+    assign eqdiffsign_l = nZerosNew_l == 5'd31; // FP32 not use
 
     
      

@@ -55,9 +55,9 @@ module normalizer(
         // Stage 4: shift by 16 (FP32 lane only)
         
         // "stage4 on" condition: FP32 mode AND upper 16b are all-zero
-        count4_h = 1'b0;                 // Stage4 is FP32-only, and Count_h is FP16-only
-        count4_l = ((fmt == FP32) &&  ~(|X[27:12]));
-        {level4_h, level4_l} = ((fmt == FP32) && count4_l) ? {X[11:0], 16'b0} : X;
+        count4_h = ((fmt == FP32) &&  ~(|X[27:12]));
+        count4_l = 1'b0;                 // Stage4 is FP32-only, and Count_h is FP16-only
+        {level4_h, level4_l} = ((fmt == FP32) && count4_h) ? {X[11:0], 16'b0} : X;
 
         // Stage 3: shift by 8
         count3_h = ~(|level4_h[13:6]);
