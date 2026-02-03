@@ -7,15 +7,35 @@ Normalizes the post-add fraction by:
   1) Leading-zero count (LZC)
   2) Left shift by the LZC result
 
-Modes:
-  - FP32   : single 28-bit lane (`X[27:0]`)
-  - FP16x2 : two independent 14-bit lanes (`X[27:14]`, `X[13:0]`)
+
+FP32 mode (single 28-bit lane):
+[27:3] : padding(1b), frac(24b)
+[2]    : guard
+[1]    : rnd 
+[0]    : stk (actual value from add_sticky_l)
+
+FP16 mode (dual 14-bit lanes, after fracSticky assignment):
+High lane [27:14] (14 bits):
+    [27]    : padding_h
+    [26:19] : frac_h (8-bit high lane fraction)
+    [18]    : guard_h
+    [17]    : rnd_h 
+    [16]    : stk_h (overwritten by add_sticky_h, originally gap[4])
+    [15:14] : gap[3:2] (2 bits of 5-bit gap, now 4-bit after [16] override)
+
+Low lane [13:0] (14 bits):
+    [13:12] : gap[1:0] (remaining 2 bits of gap)
+    [11]    : padding_l
+    [10:3]  : frac_l (8-bit low lane fraction)
+    [2]     : guard_l
+    [1]     : rnd_l 
+    [0]     : stk_l 
 
 I/O:
   - Input  `X[27:0]` : concatenated fraction (includes sticky extension)
   - Output `R[27:0]` : normalized fraction
-  - Output `Count_h` : valid only in FP16 mode 
-  - Output `Count_l` : FP16x2 lo-lane LZC, or full 28-bit LZC in FP32
+  - Output `Count_h` : FP16x2 hi-lane LZC, or full 28-bit LZC in FP32
+  - Output `Count_l` : valid only in FP16 mode (start at X[11])  
 
 Datapath:
   - FP32   : LZC(28) on `X[27:0]` then cross-lane shift -> `R[27:0]`
@@ -56,7 +76,7 @@ module normalizer(
         
         // "stage4 on" condition: FP32 mode AND upper 16b are all-zero
         count4_h = ((fmt == FP32) &&  ~(|X[27:12]));
-        count4_l = 1'b0;                 // Stage4 is FP32-only, and Count_h is FP16-only
+        count4_l = 1'b0;   // Stage4 is FP32-only, and Count_l is FP16-only
         {level4_h, level4_l} = ((fmt == FP32) && count4_h) ? {X[11:0], 16'b0} : X;
 
         // Stage 3: shift by 8
