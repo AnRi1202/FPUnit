@@ -428,8 +428,8 @@ module FPALL_Shared_combine(
     logic [31:0] add_R, mul_R;
     logic [35:0] add_expFrac;
     logic add_round_h, add_round_l, add_round;
-    logic [32:0] mul_expSig;
-    // logic mul_round; // already defined
+    logic [30:0] mul_expSig;
+    // logic mult_round; // already defined
     logic [33:0] ra_X, ra_R;
     logic [33:0] add_ra_X, mul_ra_X, div_ra_X, sqrt_ra_X;
     logic ra_Cin;
@@ -626,13 +626,11 @@ module FPALL_Shared_combine(
     };
 
     assign add_R = (fmt == FP32) ? add_R_fp32 : add_R_fp16;
-    
 
-    
     // =================================================================================
     // FPMult Logic
     // =================================================================================
-    
+
     assign sign = X[31] ^ Y[31];
     assign mul_expX = X[30:23];
     assign expY = Y[30:23];
