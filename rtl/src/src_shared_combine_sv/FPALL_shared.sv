@@ -665,27 +665,37 @@ module FPALL_Shared_combine(
     
     // assign sigProd = sigX * sigY;
     always_comb begin
-        sigProd = 48'd0;
+        // sigProd = 48'd0;
 
-        if (fmt == FP32) begin
-            // Full 24x24 multiply
-            sigProd = sigX * sigY;
-        end
-        else begin
-            // FP16 mode: two independent 8x8 multiplies (no cross terms)
-            logic [15:0] prod_h;
-            logic [15:0] prod_l;
+        // if (fmt == FP32) begin
+        //     // Full 24x24 multiply
+            logic carry;
+            logic [31:0] mult_result_l;
+            logic [40:0] mult_result_m; // FP16 -> 32bit + 1bit. Do not carry m[32];
+            logic [47:0] mult_result_h;
 
-            prod_h = sigX[23:16] * sigY[23:16]; // {1, frac7} x {1, frac7}
-            prod_l = sigX[ 7: 0] * sigY[ 7: 0];
+            mult_result_l = sigX[15:0] * sigY[15:0];
+            mult_result_m = (sigX[15:0] * sigY[23:16] + sigX[23:16] * sigY[15:0]) << 16;
+            mult_result_h = (sigX[23:16] * sigY[23:16]) << 32;
 
-            sigProd[47:32] = prod_h;
-            sigProd[15: 0] = prod_l;
+            if (fmt == FP16) mult_result_m[32] = 1'b0;
+            sigProd = mult_result_l + mult_result_m + mult_result_h;
+        // end
+        // else begin
+        //     // FP16 mode: two independent 8x8 multiplies (no cross terms)
+        //     logic [15:0] prod_h;
+        //     logic [15:0] prod_l;
 
-            // sigProd[31:16] remains 0, so:
-            //  - no (Xh*Yl + Xl*Yh)<<16 contribution
-            //  - no carry propagation between lanes (including the “1bit” you worry about)
-        end
+        //     prod_h = sigX[23:16] * sigY[23:16]; // {1, frac7} x {1, frac7}
+        //     prod_l = sigX[ 7: 0] * sigY[ 7: 0];
+
+        //     sigProd[47:32] = prod_h;
+        //     sigProd[15: 0] = prod_l;
+
+        //     // sigProd[31:16] remains 0, so:
+        //     //  - no (Xh*Yl + Xl*Yh)<<16 contribution
+        //     //  - no carry propagation between lanes (including the “1bit” you worry about)
+        // end
     end
     // exponent update 
     assign norm_h = sigProd[47]; // 1x.xx... 
@@ -1512,26 +1522,26 @@ module FPALL_Shared_combine(
                     (opcode == OP_DIV) ? div_round :
                                         sqrt_round;
 
-    // Multiplex inputs to Shared IntAdder_27
-    // opcode: 00=Add (fracAdder), 01=Mul (expAdder), others unused
-    assign ia27_X[26:9] = add_fracAdder_X[26:9];
-    assign ia27_X[8:0] = (opcode == OP_ADD) ? add_fracAdder_X[8:0] : {1'b0, mul_expAdder_X}; // Lower bits shared: Add(8:0) vs Mul(Exp)
+    // // Multiplex inputs to Shared IntAdder_27
+    // // opcode: 00=Add (fracAdder), 01=Mul (expAdder), others unused
+    // assign ia27_X[26:9] = add_fracAdder_X[26:9];
+    // assign ia27_X[8:0] = (opcode == OP_ADD) ? add_fracAdder_X[8:0] : {1'b0, mul_expAdder_X}; // Lower bits shared: Add(8:0) vs Mul(Exp)
     
-    assign ia27_Y[26:9] = add_fracAdder_Y[26:9];
-    assign ia27_Y[8:0] = (opcode == OP_ADD) ? add_fracAdder_Y[8:0] : {1'b0, mul_expAdder_Y}; // Lower bits shared
+    // assign ia27_Y[26:9] = add_fracAdder_Y[26:9];
+    // assign ia27_Y[8:0] = (opcode == OP_ADD) ? add_fracAdder_Y[8:0] : {1'b0, mul_expAdder_Y}; // Lower bits shared
     
-    assign ia27_Cin = (opcode == OP_ADD) ? add_fracAdder_Cin : mul_expAdder_Cin;
+    // assign ia27_Cin = (opcode == OP_ADD) ? add_fracAdder_Cin : mul_expAdder_Cin;
     
-    assign add_fracAdder_R = ia27_R;
-    assign mul_expAdder_R = ia27_R[8:0];
+    // assign add_fracAdder_R = ia27_R;
+    // assign mul_expAdder_R = ia27_R[8:0];
 
-    IntAdder_27_Freq1_uid6 U_SHARED_IA27 (
-        .clk(clk),
-        .X(ia27_X),
-        .Y(ia27_Y),
-        .Cin(ia27_Cin),
-        .R(ia27_R)
-    );
+    // IntAdder_27_Freq1_uid6 U_SHARED_IA27 (
+    //     .clk(clk),
+    //     .X(ia27_X),
+    //     .Y(ia27_Y),
+    //     .Cin(ia27_Cin),
+    //     .R(ia27_R)
+    // );
 
     IntAdder_34_Freq1_uid11 U_SHARED_RA (
         .clk(clk),
