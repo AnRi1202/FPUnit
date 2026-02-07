@@ -14,7 +14,6 @@ FILELIST_VHDL += $(SIM_DIR)/filelists/$(TARGET)_vhdl.f
 
 XRUN_FLAGS := -v200x -64bit -sv -access +rwc -input "@run 50112ns; exit"
 MSIM_VLOG_FLAGS := -64 -sv -mixedsvvh
-
 MSIM_VCOM_FLAGS := -64 -93
 MSIM_VSIM_FLAGS := -64 -c -t 1ps -do "run 50112ns; quit"
 
