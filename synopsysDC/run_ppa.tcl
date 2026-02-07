@@ -224,7 +224,7 @@ set rtl_dir "../src/rtl"
 # analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
 
 # analyze -library WORK -format vhdl "$rtl_dir/vhdl_src_combine/FPALL_shared.vhdl"
-# run_synth_common "FPAllShared" "FPAllShared"
+# run_synth_common "fpall_shared" "fpall_shared"
 
 
 # puts "--- Task 18: Shared combine_sv---"
@@ -237,7 +237,7 @@ set rtl_dir "../src/rtl"
 # analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/barrel_shifter.sv"
 
 # analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_shared.sv"
-# run_synth_common "FPAllShared" "FPAllShared"
+# run_synth_common "fpall_shared" "fpall_shared"
 
 
 ##################    add_only    ######################################

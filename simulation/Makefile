@@ -1,6 +1,8 @@
 TOOL ?= xrun
 # TOOL xrun|msim
 TARGET ?= shared-all
+TOP ?= tb_fpadd_bf16x2
+# TOP: tb_fpadd_bf16x2 | tb_fpadd_fp32 | tb_fpmult_bf16x2 | tb_fpmult_fp32
 
 export ROOT := $(abspath ..)
 SIM :=$(abspath .)

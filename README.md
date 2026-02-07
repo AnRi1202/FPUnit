@@ -4,7 +4,7 @@ A research-oriented repository for synthesizing and simulating high-performance 
 
 ## Overview
 
-This project explores hardware resource sharing techniques between different floating-point precisions. The core implementation (`FPAllShared`) supports combined operations for:
+This project explores hardware resource sharing techniques between different floating-point precisions. The core implementation (`fpall_shared`) supports combined operations for:
 - **Formats**: IEEE-754 Single Precision (FP32) and Half Precision (FP16).
 - **Operations**: Addition, Subtraction, Multiplication, Division, and Square Root.
 - **Key Feature**: SIMD-like execution for FP16 (processing two lanes simultaneously) while utilizing the same hardware for a single FP32 operation.
