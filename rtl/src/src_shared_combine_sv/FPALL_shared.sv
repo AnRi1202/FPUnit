@@ -8,9 +8,7 @@ module FPALL_Shared_combine(
     input fp_fmt_e fmt, // 
     input logic [31:0] X,
     input logic [31:0] Y,
-    output logic [31:0] R,
-    output logic swap_h,
-    output logic swap_l
+    output logic [31:0] R
 );
     // ========================================================================
     // for multiprecision

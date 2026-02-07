@@ -41,7 +41,7 @@ define_design_lib WORK -path ./WORK
 set compile_preserve_subdesign_interfaces true
 
 # for CSV
-set rpt_file "$run_dir/report/results_summary.csv"
+set rpt_file "$run_dir/results_summary.csv"
 set f [open $rpt_file w]
 puts $f "Entity,TotalArea,LeakagePower,DynamicPower,Slack"
 close $f
@@ -393,10 +393,11 @@ set rtl_dir "../rtl/src"
 
 puts "--- Task 18: Shared combine_sv---"
 remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
+analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
+
+analyze -library WORK -format sverilog "$rtl_dir/add/FPAdd.sv"
+run_synth_common "FPAdd" "FPAdd"
+
 
 
 analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_pkg.sv"
