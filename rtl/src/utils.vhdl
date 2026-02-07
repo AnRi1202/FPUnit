@@ -1,4 +1,796 @@
 --------------------------------------------------------------------------------
+--                 RightShifterSticky24_by_max_26_Freq1_uid4
+-- VHDL generated for Kintex7 @ 1MHz
+-- This operator is part of the Infinite Virtual Library FloPoCoLib
+-- All rights reserved 
+-- Authors: Bogdan Pasca (2008-2011), Florent de Dinechin (2008-2019)
+--------------------------------------------------------------------------------
+-- Pipeline depth: 0 cycles
+-- Clock period (ns): 1000
+-- Target frequency (MHz): 1
+-- Input signals: X S
+-- Output signals: R Sticky
+--  approx. input signal timings: X: (c0, 2.276000ns)S: (c0, 2.843500ns)
+--  approx. output signal timings: R: (c0, 3.929500ns)Sticky: (c0, 6.211750ns)
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+library std;
+use std.textio.all;
+library work;
+
+entity RightShifterSticky24_by_max_26_Freq1_uid4 is
+    port (clk : in std_logic;
+          X : in  std_logic_vector(23 downto 0);
+          S : in  std_logic_vector(4 downto 0);
+          R : out  std_logic_vector(25 downto 0);
+          Sticky : out  std_logic   );
+end entity;
+
+architecture arch of RightShifterSticky24_by_max_26_Freq1_uid4 is
+signal ps :  std_logic_vector(4 downto 0);
+   -- timing of ps: (c0, 2.843500ns)
+signal Xpadded :  std_logic_vector(25 downto 0);
+   -- timing of Xpadded: (c0, 2.276000ns)
+signal level5 :  std_logic_vector(25 downto 0);
+   -- timing of level5: (c0, 2.276000ns)
+signal stk4 :  std_logic;
+   -- timing of stk4: (c0, 3.435500ns)
+signal level4 :  std_logic_vector(25 downto 0);
+   -- timing of level4: (c0, 2.843500ns)
+signal stk3 :  std_logic;
+   -- timing of stk3: (c0, 4.003000ns)
+signal level3 :  std_logic_vector(25 downto 0);
+   -- timing of level3: (c0, 3.386500ns)
+signal stk2 :  std_logic;
+   -- timing of stk2: (c0, 4.558250ns)
+signal level2 :  std_logic_vector(25 downto 0);
+   -- timing of level2: (c0, 3.386500ns)
+signal stk1 :  std_logic;
+   -- timing of stk1: (c0, 5.113500ns)
+signal level1 :  std_logic_vector(25 downto 0);
+   -- timing of level1: (c0, 3.929500ns)
+signal stk0 :  std_logic;
+   -- timing of stk0: (c0, 5.668750ns)
+signal level0 :  std_logic_vector(25 downto 0);
+   -- timing of level0: (c0, 3.929500ns)
+signal stk :  std_logic;
+   -- timing of stk: (c0, 6.211750ns)
+begin
+   ps<= S;
+   Xpadded <= X&(1 downto 0 => '0');
+   level5<= Xpadded;
+   stk4 <= '1' when (level5(15 downto 0)/="0000000000000000" and ps(4)='1')   else '0';
+   level4 <=  level5 when  ps(4)='0'    else (15 downto 0 => '0') & level5(25 downto 16);
+   stk3 <= '1' when (level4(7 downto 0)/="00000000" and ps(3)='1') or stk4 ='1'   else '0';
+   level3 <=  level4 when  ps(3)='0'    else (7 downto 0 => '0') & level4(25 downto 8);
+   stk2 <= '1' when (level3(3 downto 0)/="0000" and ps(2)='1') or stk3 ='1'   else '0';
+   level2 <=  level3 when  ps(2)='0'    else (3 downto 0 => '0') & level3(25 downto 4);
+   stk1 <= '1' when (level2(1 downto 0)/="00" and ps(1)='1') or stk2 ='1'   else '0';
+   level1 <=  level2 when  ps(1)='0'    else (1 downto 0 => '0') & level2(25 downto 2);
+   stk0 <= '1' when (level1(0 downto 0)/="0" and ps(0)='1') or stk1 ='1'   else '0';
+   level0 <=  level1 when  ps(0)='0'    else (0 downto 0 => '0') & level1(25 downto 1);
+   stk <= stk0;
+   R <= level0;
+   Sticky <= stk;
+end architecture;
+
+--------------------------------------------------------------------------------
+--                           IntAdder_27_Freq1_uid6
+-- VHDL generated for Kintex7 @ 1MHz
+-- This operator is part of the Infinite Virtual Library FloPoCoLib
+-- All rights reserved 
+-- Authors: Bogdan Pasca, Florent de Dinechin (2008-2016)
+--------------------------------------------------------------------------------
+-- Pipeline depth: 0 cycles
+-- Clock period (ns): 1000
+-- Target frequency (MHz): 1
+-- Input signals: X Y Cin
+-- Output signals: R
+--  approx. input signal timings: X: (c0, 1.733000ns)Y: (c0, 4.472500ns)Cin: (c0, 6.754750ns)
+--  approx. output signal timings: R: (c0, 8.042750ns)
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+library std;
+use std.textio.all;
+library work;
+
+entity IntAdder_27_Freq1_uid6 is
+    port (clk : in std_logic;
+          X : in  std_logic_vector(26 downto 0);
+          Y : in  std_logic_vector(26 downto 0);
+          Cin : in  std_logic;
+          R : out  std_logic_vector(26 downto 0)   );
+end entity;
+
+architecture arch of IntAdder_27_Freq1_uid6 is
+signal Rtmp :  std_logic_vector(26 downto 0);
+   -- timing of Rtmp: (c0, 8.042750ns)
+begin
+   Rtmp <= X + Y + Cin;
+   R <= Rtmp;
+end architecture;
+
+--------------------------------------------------------------------------------
+--                      Normalizer_Z_28_28_28_Freq1_uid8
+-- VHDL generated for Kintex7 @ 1MHz
+-- This operator is part of the Infinite Virtual Library FloPoCoLib
+-- All rights reserved 
+-- Authors: Florent de Dinechin, (2007-2020)
+--------------------------------------------------------------------------------
+-- Pipeline depth: 0 cycles
+-- Clock period (ns): 1000
+-- Target frequency (MHz): 1
+-- Input signals: X
+-- Output signals: Count R
+--  approx. input signal timings: X: (c0, 8.042750ns)
+--  approx. output signal timings: Count: (c0, 13.040000ns)R: (c0, 13.583000ns)
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+library std;
+use std.textio.all;
+library work;
+
+entity Normalizer_Z_28_28_28_Freq1_uid8 is
+    port (clk : in std_logic;
+          X : in  std_logic_vector(27 downto 0);
+          Count : out  std_logic_vector(4 downto 0);
+          R : out  std_logic_vector(27 downto 0)   );
+end entity;
+
+architecture arch of Normalizer_Z_28_28_28_Freq1_uid8 is
+signal level5 :  std_logic_vector(27 downto 0);
+   -- timing of level5: (c0, 8.042750ns)
+signal count4 :  std_logic;
+   -- timing of count4: (c0, 8.634750ns)
+signal level4 :  std_logic_vector(27 downto 0);
+   -- timing of level4: (c0, 9.177750ns)
+signal count3 :  std_logic;
+   -- timing of count3: (c0, 9.745250ns)
+signal level3 :  std_logic_vector(27 downto 0);
+   -- timing of level3: (c0, 10.288250ns)
+signal count2 :  std_logic;
+   -- timing of count2: (c0, 10.843500ns)
+signal level2 :  std_logic_vector(27 downto 0);
+   -- timing of level2: (c0, 11.386500ns)
+signal count1 :  std_logic;
+   -- timing of count1: (c0, 11.941750ns)
+signal level1 :  std_logic_vector(27 downto 0);
+   -- timing of level1: (c0, 12.484750ns)
+signal count0 :  std_logic;
+   -- timing of count0: (c0, 13.040000ns)
+signal level0 :  std_logic_vector(27 downto 0);
+   -- timing of level0: (c0, 13.583000ns)
+signal sCount :  std_logic_vector(4 downto 0);
+   -- timing of sCount: (c0, 13.040000ns)
+begin
+   level5 <= X ;
+   count4<= '1' when level5(27 downto 12) = (27 downto 12=>'0') else '0';
+   level4<= level5(27 downto 0) when count4='0' else level5(11 downto 0) & (15 downto 0 => '0');
+
+   count3<= '1' when level4(27 downto 20) = (27 downto 20=>'0') else '0';
+   level3<= level4(27 downto 0) when count3='0' else level4(19 downto 0) & (7 downto 0 => '0');
+
+   count2<= '1' when level3(27 downto 24) = (27 downto 24=>'0') else '0';
+   level2<= level3(27 downto 0) when count2='0' else level3(23 downto 0) & (3 downto 0 => '0');
+
+   count1<= '1' when level2(27 downto 26) = (27 downto 26=>'0') else '0';
+   level1<= level2(27 downto 0) when count1='0' else level2(25 downto 0) & (1 downto 0 => '0');
+
+   count0<= '1' when level1(27 downto 27) = (27 downto 27=>'0') else '0';
+   level0<= level1(27 downto 0) when count0='0' else level1(26 downto 0) & (0 downto 0 => '0');
+
+   R <= level0;
+   sCount <= count4 & count3 & count2 & count1 & count0;
+   Count <= sCount;
+end architecture;
+
+--------------------------------------------------------------------------------
+--                          IntAdder_34_Freq1_uid11
+-- VHDL generated for Kintex7 @ 1MHz
+-- This operator is part of the Infinite Virtual Library FloPoCoLib
+-- All rights reserved 
+-- Authors: Bogdan Pasca, Florent de Dinechin (2008-2016)
+--------------------------------------------------------------------------------
+-- Pipeline depth: 0 cycles
+-- Clock period (ns): 1000
+-- Target frequency (MHz): 1
+-- Input signals: X Y Cin
+-- Output signals: R
+--  approx. input signal timings: X: (c0, 14.132000ns)Y: (c0, 0.000000ns)Cin: (c0, 14.126000ns)
+--  approx. output signal timings: R: (c0, 15.518000ns)
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+library std;
+use std.textio.all;
+library work;
+
+entity IntAdder_34_Freq1_uid11 is
+    port (clk : in std_logic;
+          X : in  std_logic_vector(33 downto 0);
+          Y : in  std_logic_vector(33 downto 0);
+          Cin : in  std_logic;
+          R : out  std_logic_vector(33 downto 0)   );
+end entity;
+
+architecture arch of IntAdder_34_Freq1_uid11 is
+signal Rtmp :  std_logic_vector(33 downto 0);
+   -- timing of Rtmp: (c0, 15.518000ns)
+begin
+   Rtmp <= X + Y + Cin;
+   R <= Rtmp;
+end architecture;
+
+
+
+-------- FPDiv----------------------
+--------------------------------------------------------------------------------
+--                           selFunction_Freq1_uid4
+-- VHDL generated for Kintex7 @ 1MHz
+-- This operator is part of the Infinite Virtual Library FloPoCoLib
+-- All rights reserved 
+-- Authors: Florent de Dinechin, Bogdan Pasca (2007-2022)
+--------------------------------------------------------------------------------
+-- combinatorial
+-- Clock period (ns): 1000
+-- Target frequency (MHz): 1
+-- Input signals: X
+-- Output signals: Y
+--  approx. input signal timings: X: (c0, 0.000000ns)
+--  approx. output signal timings: Y: (c0, 0.543000ns)
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+library std;
+use std.textio.all;
+library work;
+
+entity selFunction_Freq1_uid4 is
+    port (X : in  std_logic_vector(8 downto 0); -- Partial (w)の先頭6bitと、Dividerの先頭3bitのPDプロット
+          Y : out  std_logic_vector(2 downto 0)   ); -- -2から2を出す
+end entity;
+
+architecture arch of selFunction_Freq1_uid4 is
+signal Y0 :  std_logic_vector(2 downto 0);
+   -- timing of Y0: (c0, 0.543000ns)
+signal Y1 :  std_logic_vector(2 downto 0);
+   -- timing of Y1: (c0, 0.543000ns)
+begin
+   with X  select  Y0 <= 
+      "000" when "000000000",
+      "000" when "000000001",
+      "000" when "000000010",
+      "000" when "000000011",
+      "000" when "000000100",
+      "000" when "000000101",
+      "000" when "000000110",
+      "000" when "000000111",
+      "000" when "000001000",
+      "000" when "000001001",
+      "000" when "000001010",
+      "000" when "000001011",
+      "000" when "000001100",
+      "000" when "000001101",
+      "000" when "000001110",
+      "000" when "000001111",
+      "001" when "000010000",
+      "000" when "000010001",
+      "000" when "000010010",
+      "000" when "000010011",
+      "000" when "000010100",
+      "000" when "000010101",
+      "000" when "000010110",
+      "000" when "000010111",
+      "001" when "000011000",
+      "001" when "000011001",
+      "001" when "000011010",
+      "001" when "000011011",
+      "000" when "000011100",
+      "000" when "000011101",
+      "000" when "000011110",
+      "000" when "000011111",
+      "001" when "000100000",
+      "001" when "000100001",
+      "001" when "000100010",
+      "001" when "000100011",
+      "001" when "000100100",
+      "001" when "000100101",
+      "001" when "000100110",
+      "000" when "000100111",
+      "001" when "000101000",
+      "001" when "000101001",
+      "001" when "000101010",
+      "001" when "000101011",
+      "001" when "000101100",
+      "001" when "000101101",
+      "001" when "000101110",
+      "001" when "000101111",
+      "010" when "000110000",
+      "001" when "000110001",
+      "001" when "000110010",
+      "001" when "000110011",
+      "001" when "000110100",
+      "001" when "000110101",
+      "001" when "000110110",
+      "001" when "000110111",
+      "010" when "000111000",
+      "010" when "000111001",
+      "001" when "000111010",
+      "001" when "000111011",
+      "001" when "000111100",
+      "001" when "000111101",
+      "001" when "000111110",
+      "001" when "000111111",
+      "010" when "001000000",
+      "010" when "001000001",
+      "010" when "001000010",
+      "001" when "001000011",
+      "001" when "001000100",
+      "001" when "001000101",
+      "001" when "001000110",
+      "001" when "001000111",
+      "010" when "001001000",
+      "010" when "001001001",
+      "010" when "001001010",
+      "010" when "001001011",
+      "001" when "001001100",
+      "001" when "001001101",
+      "001" when "001001110",
+      "001" when "001001111",
+      "010" when "001010000",
+      "010" when "001010001",
+      "010" when "001010010",
+      "010" when "001010011",
+      "010" when "001010100",
+      "010" when "001010101",
+      "001" when "001010110",
+      "001" when "001010111",
+      "010" when "001011000",
+      "010" when "001011001",
+      "010" when "001011010",
+      "010" when "001011011",
+      "010" when "001011100",
+      "010" when "001011101",
+      "010" when "001011110",
+      "001" when "001011111",
+      "010" when "001100000",
+      "010" when "001100001",
+      "010" when "001100010",
+      "010" when "001100011",
+      "010" when "001100100",
+      "010" when "001100101",
+      "010" when "001100110",
+      "010" when "001100111",
+      "010" when "001101000",
+      "010" when "001101001",
+      "010" when "001101010",
+      "010" when "001101011",
+      "010" when "001101100",
+      "010" when "001101101",
+      "010" when "001101110",
+      "010" when "001101111",
+      "010" when "001110000",
+      "010" when "001110001",
+      "010" when "001110010",
+      "010" when "001110011",
+      "010" when "001110100",
+      "010" when "001110101",
+      "010" when "001110110",
+      "010" when "001110111",
+      "010" when "001111000",
+      "010" when "001111001",
+      "010" when "001111010",
+      "010" when "001111011",
+      "010" when "001111100",
+      "010" when "001111101",
+      "010" when "001111110",
+      "010" when "001111111",
+      "010" when "010000000",
+      "010" when "010000001",
+      "010" when "010000010",
+      "010" when "010000011",
+      "010" when "010000100",
+      "010" when "010000101",
+      "010" when "010000110",
+      "010" when "010000111",
+      "010" when "010001000",
+      "010" when "010001001",
+      "010" when "010001010",
+      "010" when "010001011",
+      "010" when "010001100",
+      "010" when "010001101",
+      "010" when "010001110",
+      "010" when "010001111",
+      "010" when "010010000",
+      "010" when "010010001",
+      "010" when "010010010",
+      "010" when "010010011",
+      "010" when "010010100",
+      "010" when "010010101",
+      "010" when "010010110",
+      "010" when "010010111",
+      "010" when "010011000",
+      "010" when "010011001",
+      "010" when "010011010",
+      "010" when "010011011",
+      "010" when "010011100",
+      "010" when "010011101",
+      "010" when "010011110",
+      "010" when "010011111",
+      "010" when "010100000",
+      "010" when "010100001",
+      "010" when "010100010",
+      "010" when "010100011",
+      "010" when "010100100",
+      "010" when "010100101",
+      "010" when "010100110",
+      "010" when "010100111",
+      "010" when "010101000",
+      "010" when "010101001",
+      "010" when "010101010",
+      "010" when "010101011",
+      "010" when "010101100",
+      "010" when "010101101",
+      "010" when "010101110",
+      "010" when "010101111",
+      "010" when "010110000",
+      "010" when "010110001",
+      "010" when "010110010",
+      "010" when "010110011",
+      "010" when "010110100",
+      "010" when "010110101",
+      "010" when "010110110",
+      "010" when "010110111",
+      "010" when "010111000",
+      "010" when "010111001",
+      "010" when "010111010",
+      "010" when "010111011",
+      "010" when "010111100",
+      "010" when "010111101",
+      "010" when "010111110",
+      "010" when "010111111",
+      "010" when "011000000",
+      "010" when "011000001",
+      "010" when "011000010",
+      "010" when "011000011",
+      "010" when "011000100",
+      "010" when "011000101",
+      "010" when "011000110",
+      "010" when "011000111",
+      "010" when "011001000",
+      "010" when "011001001",
+      "010" when "011001010",
+      "010" when "011001011",
+      "010" when "011001100",
+      "010" when "011001101",
+      "010" when "011001110",
+      "010" when "011001111",
+      "010" when "011010000",
+      "010" when "011010001",
+      "010" when "011010010",
+      "010" when "011010011",
+      "010" when "011010100",
+      "010" when "011010101",
+      "010" when "011010110",
+      "010" when "011010111",
+      "010" when "011011000",
+      "010" when "011011001",
+      "010" when "011011010",
+      "010" when "011011011",
+      "010" when "011011100",
+      "010" when "011011101",
+      "010" when "011011110",
+      "010" when "011011111",
+      "010" when "011100000",
+      "010" when "011100001",
+      "010" when "011100010",
+      "010" when "011100011",
+      "010" when "011100100",
+      "010" when "011100101",
+      "010" when "011100110",
+      "010" when "011100111",
+      "010" when "011101000",
+      "010" when "011101001",
+      "010" when "011101010",
+      "010" when "011101011",
+      "010" when "011101100",
+      "010" when "011101101",
+      "010" when "011101110",
+      "010" when "011101111",
+      "010" when "011110000",
+      "010" when "011110001",
+      "010" when "011110010",
+      "010" when "011110011",
+      "010" when "011110100",
+      "010" when "011110101",
+      "010" when "011110110",
+      "010" when "011110111",
+      "010" when "011111000",
+      "010" when "011111001",
+      "010" when "011111010",
+      "010" when "011111011",
+      "010" when "011111100",
+      "010" when "011111101",
+      "010" when "011111110",
+      "010" when "011111111",
+      "110" when "100000000",
+      "110" when "100000001",
+      "110" when "100000010",
+      "110" when "100000011",
+      "110" when "100000100",
+      "110" when "100000101",
+      "110" when "100000110",
+      "110" when "100000111",
+      "110" when "100001000",
+      "110" when "100001001",
+      "110" when "100001010",
+      "110" when "100001011",
+      "110" when "100001100",
+      "110" when "100001101",
+      "110" when "100001110",
+      "110" when "100001111",
+      "110" when "100010000",
+      "110" when "100010001",
+      "110" when "100010010",
+      "110" when "100010011",
+      "110" when "100010100",
+      "110" when "100010101",
+      "110" when "100010110",
+      "110" when "100010111",
+      "110" when "100011000",
+      "110" when "100011001",
+      "110" when "100011010",
+      "110" when "100011011",
+      "110" when "100011100",
+      "110" when "100011101",
+      "110" when "100011110",
+      "110" when "100011111",
+      "110" when "100100000",
+      "110" when "100100001",
+      "110" when "100100010",
+      "110" when "100100011",
+      "110" when "100100100",
+      "110" when "100100101",
+      "110" when "100100110",
+      "110" when "100100111",
+      "110" when "100101000",
+      "110" when "100101001",
+      "110" when "100101010",
+      "110" when "100101011",
+      "110" when "100101100",
+      "110" when "100101101",
+      "110" when "100101110",
+      "110" when "100101111",
+      "110" when "100110000",
+      "110" when "100110001",
+      "110" when "100110010",
+      "110" when "100110011",
+      "110" when "100110100",
+      "110" when "100110101",
+      "110" when "100110110",
+      "110" when "100110111",
+      "110" when "100111000",
+      "110" when "100111001",
+      "110" when "100111010",
+      "110" when "100111011",
+      "110" when "100111100",
+      "110" when "100111101",
+      "110" when "100111110",
+      "110" when "100111111",
+      "110" when "101000000",
+      "110" when "101000001",
+      "110" when "101000010",
+      "110" when "101000011",
+      "110" when "101000100",
+      "110" when "101000101",
+      "110" when "101000110",
+      "110" when "101000111",
+      "110" when "101001000",
+      "110" when "101001001",
+      "110" when "101001010",
+      "110" when "101001011",
+      "110" when "101001100",
+      "110" when "101001101",
+      "110" when "101001110",
+      "110" when "101001111",
+      "110" when "101010000",
+      "110" when "101010001",
+      "110" when "101010010",
+      "110" when "101010011",
+      "110" when "101010100",
+      "110" when "101010101",
+      "110" when "101010110",
+      "110" when "101010111",
+      "110" when "101011000",
+      "110" when "101011001",
+      "110" when "101011010",
+      "110" when "101011011",
+      "110" when "101011100",
+      "110" when "101011101",
+      "110" when "101011110",
+      "110" when "101011111",
+      "110" when "101100000",
+      "110" when "101100001",
+      "110" when "101100010",
+      "110" when "101100011",
+      "110" when "101100100",
+      "110" when "101100101",
+      "110" when "101100110",
+      "110" when "101100111",
+      "110" when "101101000",
+      "110" when "101101001",
+      "110" when "101101010",
+      "110" when "101101011",
+      "110" when "101101100",
+      "110" when "101101101",
+      "110" when "101101110",
+      "110" when "101101111",
+      "110" when "101110000",
+      "110" when "101110001",
+      "110" when "101110010",
+      "110" when "101110011",
+      "110" when "101110100",
+      "110" when "101110101",
+      "110" when "101110110",
+      "110" when "101110111",
+      "110" when "101111000",
+      "110" when "101111001",
+      "110" when "101111010",
+      "110" when "101111011",
+      "110" when "101111100",
+      "110" when "101111101",
+      "110" when "101111110",
+      "110" when "101111111",
+      "110" when "110000000",
+      "110" when "110000001",
+      "110" when "110000010",
+      "110" when "110000011",
+      "110" when "110000100",
+      "110" when "110000101",
+      "110" when "110000110",
+      "110" when "110000111",
+      "110" when "110001000",
+      "110" when "110001001",
+      "110" when "110001010",
+      "110" when "110001011",
+      "110" when "110001100",
+      "110" when "110001101",
+      "110" when "110001110",
+      "110" when "110001111",
+      "110" when "110010000",
+      "110" when "110010001",
+      "110" when "110010010",
+      "110" when "110010011",
+      "110" when "110010100",
+      "110" when "110010101",
+      "110" when "110010110",
+      "110" when "110010111",
+      "110" when "110011000",
+      "110" when "110011001",
+      "110" when "110011010",
+      "110" when "110011011",
+      "110" when "110011100",
+      "110" when "110011101",
+      "110" when "110011110",
+      "110" when "110011111",
+      "110" when "110100000",
+      "110" when "110100001",
+      "110" when "110100010",
+      "110" when "110100011",
+      "110" when "110100100",
+      "110" when "110100101",
+      "110" when "110100110",
+      "110" when "110100111",
+      "110" when "110101000",
+      "110" when "110101001",
+      "110" when "110101010",
+      "110" when "110101011",
+      "110" when "110101100",
+      "110" when "110101101",
+      "110" when "110101110",
+      "111" when "110101111",
+      "110" when "110110000",
+      "110" when "110110001",
+      "110" when "110110010",
+      "110" when "110110011",
+      "110" when "110110100",
+      "111" when "110110101",
+      "111" when "110110110",
+      "111" when "110110111",
+      "110" when "110111000",
+      "110" when "110111001",
+      "110" when "110111010",
+      "110" when "110111011",
+      "111" when "110111100",
+      "111" when "110111101",
+      "111" when "110111110",
+      "111" when "110111111",
+      "110" when "111000000",
+      "110" when "111000001",
+      "111" when "111000010",
+      "111" when "111000011",
+      "111" when "111000100",
+      "111" when "111000101",
+      "111" when "111000110",
+      "111" when "111000111",
+      "110" when "111001000",
+      "111" when "111001001",
+      "111" when "111001010",
+      "111" when "111001011",
+      "111" when "111001100",
+      "111" when "111001101",
+      "111" when "111001110",
+      "111" when "111001111",
+      "111" when "111010000",
+      "111" when "111010001",
+      "111" when "111010010",
+      "111" when "111010011",
+      "111" when "111010100",
+      "111" when "111010101",
+      "111" when "111010110",
+      "111" when "111010111",
+      "111" when "111011000",
+      "111" when "111011001",
+      "111" when "111011010",
+      "111" when "111011011",
+      "111" when "111011100",
+      "111" when "111011101",
+      "111" when "111011110",
+      "111" when "111011111",
+      "111" when "111100000",
+      "111" when "111100001",
+      "111" when "111100010",
+      "111" when "111100011",
+      "111" when "111100100",
+      "111" when "111100101",
+      "111" when "111100110",
+      "111" when "111100111",
+      "111" when "111101000",
+      "111" when "111101001",
+      "111" when "111101010",
+      "111" when "111101011",
+      "000" when "111101100",
+      "000" when "111101101",
+      "000" when "111101110",
+      "000" when "111101111",
+      "000" when "111110000",
+      "000" when "111110001",
+      "000" when "111110010",
+      "000" when "111110011",
+      "000" when "111110100",
+      "000" when "111110101",
+      "000" when "111110110",
+      "000" when "111110111",
+      "000" when "111111000",
+      "000" when "111111001",
+      "000" when "111111010",
+      "000" when "111111011",
+      "000" when "111111100",
+      "000" when "111111101",
+      "000" when "111111110",
+      "000" when "111111111",
+      "---" when others;
+   Y1 <= Y0; -- for the possible blockram register
+   Y <= Y1;
+end architecture;
+
+
+
+----------------- FPMult--------------------------
+--------------------------------------------------------------------------------
 --                           MultTable_Freq1_uid14
 -- VHDL generated for Kintex7 @ 1MHz
 -- This operator is part of the Infinite Virtual Library FloPoCoLib
@@ -6471,139 +7263,3 @@ begin
    Rtmp <= X + Y + Cin;
    R <= Rtmp;
 end architecture;
-
---------------------------------------------------------------------------------
---                        FPMult_8_23_uid2_Freq1_uid3
--- VHDL generated for Kintex7 @ 1MHz
--- This operator is part of the Infinite Virtual Library FloPoCoLib
--- All rights reserved 
--- Authors: Bogdan Pasca, Florent de Dinechin 2008-2021
---------------------------------------------------------------------------------
--- Pipeline depth: 0 cycles
--- Clock period (ns): 1000
--- Target frequency (MHz): 1
--- Input signals: X Y
--- Output signals: R
---  approx. input signal timings: X: (c0, 0.000000ns)Y: (c0, 0.000000ns)
---  approx. output signal timings: R: (c0, 7.946250ns)
-
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
-use ieee.std_logic_unsigned.all;
-library std;
-use std.textio.all;
-library work;
-
-entity FPMult_8_23_uid2_Freq1_uid3 is
-    port (clk : in std_logic;
-          X : in  std_logic_vector(8+23+2 downto 0);
-          Y : in  std_logic_vector(8+23+2 downto 0);
-          R : out  std_logic_vector(8+23+2 downto 0)   );
-end entity;
-
-architecture arch of FPMult_8_23_uid2_Freq1_uid3 is
-   component IntMultiplier_24x24_48_Freq1_uid5 is
-      port ( clk : in std_logic;
-             X : in  std_logic_vector(23 downto 0);
-             Y : in  std_logic_vector(23 downto 0);
-             R : out  std_logic_vector(47 downto 0)   );
-   end component;
-
-   component IntAdder_33_Freq1_uid280 is
-      port ( clk : in std_logic;
-             X : in  std_logic_vector(32 downto 0);
-             Y : in  std_logic_vector(32 downto 0);
-             Cin : in  std_logic;
-             R : out  std_logic_vector(32 downto 0)   );
-   end component;
-
-signal sign :  std_logic;
-   -- timing of sign: (c0, 0.043000ns)
-signal expX :  std_logic_vector(7 downto 0);
-   -- timing of expX: (c0, 0.000000ns)
-signal expY :  std_logic_vector(7 downto 0);
-   -- timing of expY: (c0, 0.000000ns)
-signal expSumPreSub :  std_logic_vector(9 downto 0);
-   -- timing of expSumPreSub: (c0, 1.092000ns)
-signal bias :  std_logic_vector(9 downto 0);
-   -- timing of bias: (c0, 0.000000ns)
-signal expSum :  std_logic_vector(9 downto 0);
-   -- timing of expSum: (c0, 2.184000ns)
-signal sigX :  std_logic_vector(23 downto 0);
-   -- timing of sigX: (c0, 0.000000ns)
-signal sigY :  std_logic_vector(23 downto 0);
-   -- timing of sigY: (c0, 0.000000ns)
-signal sigProd :  std_logic_vector(47 downto 0);
-   -- timing of sigProd: (c0, 4.870000ns)
-signal excSel :  std_logic_vector(3 downto 0);
-   -- timing of excSel: (c0, 0.000000ns)
-signal exc :  std_logic_vector(1 downto 0);
-   -- timing of exc: (c0, 0.043000ns)
-signal norm :  std_logic;
-   -- timing of norm: (c0, 4.870000ns)
-signal expPostNorm :  std_logic_vector(9 downto 0);
-   -- timing of expPostNorm: (c0, 4.870000ns)
-signal sigProdExt :  std_logic_vector(47 downto 0);
-   -- timing of sigProdExt: (c0, 5.413000ns)
-signal expSig :  std_logic_vector(32 downto 0);
-   -- timing of expSig: (c0, 5.413000ns)
-signal sticky :  std_logic;
-   -- timing of sticky: (c0, 5.413000ns)
-signal guard :  std_logic;
-   -- timing of guard: (c0, 6.017250ns)
-signal round :  std_logic;
-   -- timing of round: (c0, 6.560250ns)
-signal expSigPostRound :  std_logic_vector(32 downto 0);
-   -- timing of expSigPostRound: (c0, 7.946250ns)
-signal excPostNorm :  std_logic_vector(1 downto 0);
-   -- timing of excPostNorm: (c0, 7.946250ns)
-signal finalExc :  std_logic_vector(1 downto 0);
-   -- timing of finalExc: (c0, 7.946250ns)
-begin
-   sign <= X(31) xor Y(31);
-   expX <= X(30 downto 23);
-   expY <= Y(30 downto 23);
-   expSumPreSub <= ("00" & expX) + ("00" & expY);
-   bias <= CONV_STD_LOGIC_VECTOR(127,10);
-   expSum <= expSumPreSub - bias;
-   sigX <= "1" & X(22 downto 0);
-   sigY <= "1" & Y(22 downto 0);
-   SignificandMultiplication: IntMultiplier_24x24_48_Freq1_uid5
-      port map ( clk  => clk,
-                 X => sigX,
-                 Y => sigY,
-                 R => sigProd);
-   excSel <= X(33 downto 32) & Y(33 downto 32);
-   with excSel  select  
-   exc <= "00" when  "0000" | "0001" | "0100", 
-          "01" when "0101",
-          "10" when "0110" | "1001" | "1010" ,
-          "11" when others;
-   norm <= sigProd(47);
-   -- exponent update
-   expPostNorm <= expSum + ("000000000" & norm);
-   -- significand normalization shift
-   sigProdExt <= sigProd(46 downto 0) & "0" when norm='1' else
-                         sigProd(45 downto 0) & "00";
-   expSig <= expPostNorm & sigProdExt(47 downto 25);
-   sticky <= sigProdExt(24);
-   guard <= '0' when sigProdExt(23 downto 0)="000000000000000000000000" else '1';
-   round <= sticky and ( (guard and not(sigProdExt(25))) or (sigProdExt(25) ))  ;
-   RoundingAdder: IntAdder_33_Freq1_uid280
-      port map ( clk  => clk,
-                 Cin => round,
-                 X => expSig,
-                 Y => "000000000000000000000000000000000",
-                 R => expSigPostRound);
-   with expSigPostRound(32 downto 31)  select 
-   excPostNorm <=  "01"  when  "00",
-                               "10"             when "01", 
-                               "00"             when "11"|"10",
-                               "11"             when others;
-   with exc  select  
-   finalExc <= exc when  "11"|"10"|"00",
-                       excPostNorm when others; 
-   R <= finalExc & sign & expSigPostRound(30 downto 0);
-end architecture;
-

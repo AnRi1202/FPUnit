@@ -2,6 +2,8 @@ SCRIPT ?= run_ppa.tcl
 LOG ?= $(basename $(SCRIPT)).log
 
 run:
+	rm -r WORK
+	mkdir WORK
 	dc_shell-xg-t -f $(SCRIPT) -o $(LOG)
 
 clean:

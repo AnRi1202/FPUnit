@@ -188,6 +188,8 @@ proc run_synth_common {entity_name label} {
 
 set rtl_dir "../rtl/src"
 
+#########################     Original     ################################################# 
+
 # # Task 1: Baseline FPAdd
 # puts "--- Task 1: FPAdd ---"
 # remove_design -all
@@ -212,172 +214,8 @@ set rtl_dir "../rtl/src"
 # analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
 # run_synth_common "FPSqrt_8_23" "FPSqrt"
 
-# # # Task 4': Baseline FPSqrt
-# puts "--- Task 4': FPSqrt ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/src_divsqrt/FPSqrt_Kin_f1_minor_change.vhdl"
-# run_synth_common "FPSqrt_8_23" "FPSqrt"
+#########################     ALL     ################################################# 
 
-# # Task 5: Shared FPAddMul
-# puts "--- Task 5: Shared ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_addmul_shared/FPAdd_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_addmul_shared/FPMult_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_addmul_shared/FPAddMul_Shared.vhdl"
-# run_synth_common "FPAddMul_Shared" "FPAddMul_Shared"
-
-# # Task 6: Mux34
-# puts "--- Task 6: Mux34 ---"
-# remove_design -all
-# # Use absolute path to stay safe
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/Mux34.vhdl"
-# run_synth_common "Mux34" "SHARE"
-
-# # Task 6': Mux34
-# puts "--- Task 6': Mux34 ---"
-# remove_design -all
-# # Use absolute path to stay safe
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/experiment/IntAdder_8.vhdl"
-# run_synth_common "IntAdder_8" "int8"
-
-# # # Task 7: Baseline FPFMA
-# puts "--- Task 4: FPFMA ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPFMA_Kin_f1_origin.vhdl"
-# run_synth_common "IEEEFPFMA_8_23_Freq1_uid2" "FPFMA"
-# Task 5: Shared FPAddMul
-
-# puts "--- Task 8_0: All origin ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPALL_origin.vhdl"
-
-
-# run_synth_common "FPALL_origin" "FPALL_origin"
-
-# puts "--- Task 8: Shared ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
-
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAdd_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPMult_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPDiv_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPSqrt_NoRA.vhdl"
-
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPALL_Shared.vhdl"
-# run_synth_common "FPALL_Shared" "FPALL_Shared"
-
-# puts "--- Task 9: Shared-divsq ---"
-# remove_design -all
-# # Original FP modules (for IntAdder components)
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-
-# # Shared modules (Add and Mul use these)
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPAdd_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/FPMult_NoRA.vhdl"
-
-# # New DivSqrt shared module (replaces FPDiv_NoRA and FPSqrt_NoRA)
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared_divsq/FPDivSqrt_Shared.vhdl"
-
-# # Top-level integration
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared_divsq/FPALL_Shared_divsq.vhdl"
-# run_synth_common "FPALL_Shared_divsq" "FPALL_Shared_divsq"
-
-# # Task 10: Shared FPAddMul
-# puts "--- Task 10: Shared ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPAdd_f100.vhdl"
-# run_synth_common "FPAdd_8_23_Freq100_uid2" "FPAdd_f100"
-
-# # Task 11: Shared FPAddMul
-# puts "--- Task 11: Shared ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPMult_f100.vhdl"
-# run_synth_common "FPMult_8_23_uid2_Freq100_uid3" "FPDiv_f100"
-
-# # Task 12: Shared FPAddMul
-# puts "--- Task 12: Shared ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPDiv_f100.vhdl"
-# run_synth_common "FPDiv_8_23_Freq100_uid2" "FPDiv_f100"
-
-# # Task 13: Shared FPAddMul
-# puts "--- Task 13: Shared ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPSqrt_f100.vhdl"
-# run_synth_common "FPSqrt_8_23" "FPSqrt_f100"
-
-
-
-# # Task 14: Shared FPAddMul
-# puts "--- Task 14: Pipe Shared ---"
-# remove_design -all
-# # Dependency for Shared Adders (IntAdder_34, IntAdder_27)
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPAdd_f100.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPMult_f100.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPDiv_f100.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe/FPSqrt_f100.vhdl"
-
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe_shared/FPAdd_Pipe_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe_shared/FPMult_Pipe_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe_shared/FPDiv_Pipe_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe_shared/FPSqrt_Pipe_NoRA.vhdl"
-
-# analyze -library WORK -format vhdl "$rtl_dir/src_pipe_shared/FPALL_Pipe_Shared.vhdl"
-# run_synth_common "FPALL_Pipe_Shared" "FPALL_Pipe_Shared"
-
-# # Task 14'': bit_ff
-# puts "--- Task 14': bit_ff ---"
-# remove_design -all
-# # Use absolute path to stay safe
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/experiment/bit_ff.vhdl"
-# run_synth_common "bit_ff" "bit_ff"
-
-
-# # Task 14'': bit_ff
-# puts "--- Task 14': bit_mux ---"
-# remove_design -all
-# # Use absolute path to stay safe
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared/experiment/bit_mux.vhdl"
-# run_synth_common "bit_mux" "bit_mux"
-
-# # Task 15: shared_divsqr
-# puts "--- Task 15: Shared divsq ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
-
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared_divsq/FPAdd_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared_divsq/FPMult_NoRA.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared_divsq/FPDivSqrt_NoRA.vhdl"
-
-
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared_divsq/FPALL_Shared_divsq.vhdl"
-# run_synth_common "FPALL_Shared_divsq" "FPALL_Shared_divsq"
-
-# # Task 16: base_combine
-# puts "--- Task 16: baseline combine---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
-
-# analyze -library WORK -format vhdl "$rtl_dir/src_combine/FPALL_shared.vhdl"
-
-# run_synth_common "FPALL_Shared_combine" "FPALL_combine"
 
 # # Task 17: shared_combine
 # puts "--- Task 17: Shared combine---"
@@ -387,18 +225,13 @@ set rtl_dir "../rtl/src"
 # analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
 # analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
 
-# analyze -library WORK -format vhdl "$rtl_dir/src_shared_combine/FPALL_shared.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/vhdl_src_combine/FPALL_shared.vhdl"
 # run_synth_common "FPALL_Shared_combine" "FPALL_Shared_combine"
 
 
 puts "--- Task 18: Shared combine_sv---"
 remove_design -all
 analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
-
-analyze -library WORK -format sverilog "$rtl_dir/add/FPAdd.sv"
-run_synth_common "FPAdd" "FPAdd"
-
-
 
 analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_pkg.sv"
 analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/normalizer.sv"
@@ -407,14 +240,6 @@ analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/bar
 
 analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_shared.sv"
 run_synth_common "FPALL_Shared_combine" "FPALL_Shared_combine"
-
-
-
-# # Task 13: Shared FPAddMul
-# puts "--- Task 1: shifter---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# run_synth_common "RightShifterSticky24_by_max_26_Freq1_uid4" "RightShifterSticky24_by_max_26_Freq1_uid4"
 
 exit
 
