@@ -19,9 +19,9 @@ architecture arch of FPALL_Shared_Wrapper is
         port (
             clk : in std_logic;
             fmt : in std_logic;
-            X : in std_logic_vector(33 downto 0);
-            Y : in std_logic_vector(33 downto 0);
-            R : out std_logic_vector(33 downto 0)
+            X : in std_logic_vector(31 downto 0);
+            Y : in std_logic_vector(31 downto 0);
+            R : out std_logic_vector(31 downto 0)
         );
     end component;
 begin
@@ -29,8 +29,11 @@ begin
     port map (
         clk => clk,
         fmt => FMT_GEN,
-        X => X,
-        Y => Y,
-        R => R
+        X => X(31 downto 0),
+        Y => Y(31 downto 0),
+        R => R(31 downto 0)
     );
+    R(33 downto 32) <= "10" when (OP_CODE_GEN = "10" and X(33 downto 32) /= "01") else
+                       "10" when (OP_CODE_GEN /= "10" and (X(33 downto 32) /= "01" or Y(33 downto 32) /= "01")) else
+                       "01";
 end architecture;
