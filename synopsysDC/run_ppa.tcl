@@ -38,8 +38,6 @@ file mkdir $run_dir/report/new
 
 define_design_lib WORK -path ./WORK
 
-set compile_preserve_subdesign_interfaces true
-
 # for CSV
 set rpt_file "$run_dir/results_summary.csv"
 set f [open $rpt_file w]
@@ -189,10 +187,10 @@ proc run_synth_common {entity_name label} {
 set rtl_dir "../rtl/src"
 
 # # Task 1: Baseline FPAdd
-# puts "--- Task 1: FPAdd ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd"
+puts "--- Task 1: FPAdd ---"
+remove_design -all
+analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
+run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd_VHDL"
 
 # # # Task 2: Baseline FPMult
 # puts "--- Task 2: FPMult ---"
@@ -391,30 +389,25 @@ set rtl_dir "../rtl/src"
 # run_synth_common "FPALL_Shared_combine" "FPALL_Shared_combine"
 
 
-puts "--- Task 18: Shared combine_sv---"
+# puts "--- Task 18: Shared combine_sv---"
+# remove_design -all
+# # analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
+# # analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
+# # analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
+# # analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
+# analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
+
+
+# analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_shared.sv"
+# run_synth_common "FPALL_Shared_combine" "FPALL_Shared_combine"
+
+puts "--- Task 19: shared adder---"
 remove_design -all
 analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
-
+analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
 analyze -library WORK -format sverilog "$rtl_dir/add/FPAdd.sv"
-run_synth_common "FPAdd" "FPAdd"
+run_synth_common "FPAdd" "FPAdd_SV"
 
-
-
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_pkg.sv"
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/normalizer.sv"
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/abs_comparator.sv"
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/barrel_shifter.sv"
-
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_shared.sv"
-run_synth_common "FPALL_Shared_combine" "FPALL_Shared_combine"
-
-
-
-# # Task 13: Shared FPAddMul
-# puts "--- Task 1: shifter---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# run_synth_common "RightShifterSticky24_by_max_26_Freq1_uid4" "RightShifterSticky24_by_max_26_Freq1_uid4"
 
 exit
 
