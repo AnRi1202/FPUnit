@@ -1,3 +1,5 @@
+ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+
 add_fp16:
 	xrun -v200x -64bit -sv -access +rwc ../FPALL_pkg.sv ../tb/*.sv ../FPALL_shared.sv ../utils/*.sv ../origin/*.vhdl
 

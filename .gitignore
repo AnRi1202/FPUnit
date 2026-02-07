@@ -18,6 +18,7 @@
 
 archive
 multi_fmt
+build
 
 # Synopsys Design Compiler
 synopsysDC/WORK/
