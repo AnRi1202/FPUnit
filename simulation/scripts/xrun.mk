@@ -1,5 +1,4 @@
 tool_sim:
-	mkdir -p $(BUILD)
 	cd $(BUILD) && \
 	xrun $(XRUN_FLAGS) \
 	-top $(TOP) \

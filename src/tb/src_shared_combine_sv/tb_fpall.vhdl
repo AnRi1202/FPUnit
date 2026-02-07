@@ -15,11 +15,11 @@ library std;
 use std.textio.all;
 library work;
 
-entity TestBench_FPAdd_8_23_Freq1_uid2_Freq1_uid13 is
+entity tb_fpadd_flopoco is
 end entity;
 
-architecture behavorial of TestBench_FPAdd_8_23_Freq1_uid2_Freq1_uid13 is
-   component FPALL_Shared_Wrapper  is
+architecture behavorial of tb_fpadd_flopoco is
+   component fpall_shared_wrapper  is
       port ( clk : in std_logic;
              X : in  std_logic_vector(8+23+2 downto 0);
              Y : in  std_logic_vector(8+23+2 downto 0);
@@ -170,7 +170,7 @@ begin
       wait for 5 ns;
    end process;
 
-   test: FPALL_Shared_Wrapper 
+   test: fpall_shared_wrapper 
       port map ( clk  => clk,
                  X => X,
                  Y => Y,
@@ -179,7 +179,7 @@ begin
    process
       variable input, expectedOutput : line; 
       variable tmpChar : character;
-      file inputsFile : text is "test.input"; 
+      file inputsFile : text is "fpadd.input"; 
       variable V_X : bit_vector(33 downto 0);
       variable V_Y : bit_vector(33 downto 0);
       variable V_R : bit_vector(33 downto 0);
@@ -207,7 +207,7 @@ begin
 
     -- Process that verifies the corresponding output
    process
-      file inputsFile : text is "test.input"; 
+      file inputsFile : text is "fpadd.input"; 
       variable input, expectedOutput : line; 
       variable testCounter : integer := 1;
       variable errorCounter : integer := 0;
@@ -388,11 +388,11 @@ library std;
 use std.textio.all;
 library work;
 
-entity TestBench_FPMult_8_23_uid2_Freq1_uid3_Freq1_uid282 is
+entity tb_fpmult_flopoco is
 end entity;
 
-architecture behavorial of TestBench_FPMult_8_23_uid2_Freq1_uid3_Freq1_uid282 is
-   component FPALL_Shared_Wrapper is
+architecture behavorial of tb_fpmult_flopoco is
+   component fpall_shared_wrapper is
     generic(
         OP_CODE_GEN : std_logic_vector(1 downto 0) := "01"
     );
@@ -546,7 +546,7 @@ begin
       wait for 5 ns;
    end process;
 
-   test: FPALL_Shared_Wrapper
+   test: fpall_shared_wrapper
       port map ( clk  => clk,
                  X => X,
                  Y => Y,
@@ -555,7 +555,7 @@ begin
    process
       variable input, expectedOutput : line; 
       variable tmpChar : character;
-      file inputsFile : text is "test.input"; 
+      file inputsFile : text is "fpmult.input"; 
       variable V_X : bit_vector(33 downto 0);
       variable V_Y : bit_vector(33 downto 0);
       variable V_R : bit_vector(33 downto 0);
@@ -583,7 +583,7 @@ begin
 
     -- Process that verifies the corresponding output
    process
-      file inputsFile : text is "test.input"; 
+      file inputsFile : text is "fpmult.input"; 
       variable input, expectedOutput : line; 
       variable testCounter : integer := 1;
       variable errorCounter : integer := 0;
@@ -628,11 +628,11 @@ library std;
 use std.textio.all;
 library work;
 
-entity TestBench_FPDiv_8_23_Freq1_uid2_Freq1_uid20 is
+entity tb_fpdiv_flopoco is
 end entity;
 
-architecture behavorial of TestBench_FPDiv_8_23_Freq1_uid2_Freq1_uid20 is
-   component FPALL_Shared_Wrapper is
+architecture behavorial of tb_fpdiv_flopoco is
+   component fpall_shared_wrapper is
       generic(
         OP_CODE_GEN : std_logic_vector(1 downto 0) := "11"
     ); 
@@ -786,7 +786,7 @@ begin
       wait for 5 ns;
    end process;
 
-   test: FPALL_Shared_Wrapper
+   test: fpall_shared_wrapper
       port map ( clk  => clk,
                  X => X,
                  Y => Y,
@@ -795,7 +795,7 @@ begin
    process
       variable input, expectedOutput : line; 
       variable tmpChar : character;
-      file inputsFile : text is "test.input"; 
+      file inputsFile : text is "fpdiv.input"; 
       variable V_X : bit_vector(33 downto 0);
       variable V_Y : bit_vector(33 downto 0);
       variable V_R : bit_vector(33 downto 0);
@@ -823,7 +823,7 @@ begin
 
     -- Process that verifies the corresponding output
    process
-      file inputsFile : text is "test.input"; 
+      file inputsFile : text is "fpdiv.input"; 
       variable input, expectedOutput : line; 
       variable testCounter : integer := 1;
       variable errorCounter : integer := 0;
@@ -865,11 +865,11 @@ library std;
 use std.textio.all;
 library work;
 
-entity TestBench_FPSqrt_8_23_Freq1_uid3 is
+entity tb_fpsqrt_flopoco is
 end entity;
 
-architecture behavorial of TestBench_FPSqrt_8_23_Freq1_uid3 is
-   component FPALL_Shared_Wrapper is
+architecture behavorial of tb_fpsqrt_flopoco is
+   component fpall_shared_wrapper is
       generic(
         OP_CODE_GEN : std_logic_vector(1 downto 0) := "10"
     ); 
@@ -1021,7 +1021,7 @@ begin
       wait for 5 ns;
    end process;
 
-   test: FPALL_Shared_Wrapper
+   test: fpall_shared_wrapper
       port map ( clk  => clk,
                  X => X,
                  R => R);
@@ -1029,7 +1029,7 @@ begin
    process
       variable input, expectedOutput : line; 
       variable tmpChar : character;
-      file inputsFile : text is "test.input"; 
+      file inputsFile : text is "fpsqrt.input"; 
       variable V_X : bit_vector(33 downto 0);
       variable V_R : bit_vector(33 downto 0);
    begin
@@ -1053,7 +1053,7 @@ begin
 
     -- Process that verifies the corresponding output
    process
-      file inputsFile : text is "test.input"; 
+      file inputsFile : text is "fpsqrt.input"; 
       variable input, expectedOutput : line; 
       variable testCounter : integer := 1;
       variable errorCounter : integer := 0;
