@@ -1,2 +1,20 @@
-run:
-	xrun -v200x -64bit -sv ../rtl/src/src_shared_combine_sv/*.vhdl ../rtl/src/src_shared_combine_sv/*.sv ../rtl/src/src_shared_combine_sv/utils/*.sv ../rtl/src/*.vhdl -top TestBench_FPAdd_8_23_Freq1_uid2_Freq1_uid13 -access +rwc -input "@run 300500ns; exit"
+TOOL ?= xrun
+# TOOL xrun|msim
+TARGET ?= shared-all
+
+export ROOT := $(abspath ..)
+SIM :=$(abspath .)
+BUILD := $(SIM)/build/$(TOOL)/$(TARGET)
+FILELIST := $(SIM)/filelists/common.f
+FILELIST += $(SIM)/filelists/$(TARGET).f
+
+XRUN_FLAGS := -v200x -64bit -sv -access +rwc -input "@run 300500ns; exit"
+
+include $(SIM)/scripts/$(TOOL).mk
+
+.PHONY: sim clean
+
+sim: 
+	$(MAKE) tool_sim
+
+
