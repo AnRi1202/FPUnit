@@ -67,8 +67,8 @@ module FPALL_Shared_combine(
     logic sign_l;
     logic [7:0] mult_expX, mult_expY;
     logic [9:0] expSumPreSub_h, expSumPreSub_l, bias, expSum_h, expSum_l;
-    logic [23:0] sigX, sigY;
-    logic [47:0] sigProd;
+    logic [24:0] sigX, sigY;
+    logic [49:0] sigProd;
     logic [3:0] excSel;
     logic [1:0] exc;
     logic norm_h, norm_l;
@@ -654,49 +654,19 @@ module FPALL_Shared_combine(
     assign expSum_l = expSumPreSub_l - bias;
     
     assign sigX = 
-        (fmt ==FP32) ? {1'b1, mult_x.fp32.frac}
-            : { {1'b1, mult_x.lanes.hi[6:0]}, 8'b0, {1'b1, mult_x.lanes.lo[6:0]}};
+        (fmt ==FP32) ? {2'b01, mult_x.fp32.frac}
+            : { {1'b1, mult_x.lanes.hi[6:0]}, 9'b0, {1'b1, mult_x.lanes.lo[6:0]}};
 
     assign sigY = 
-        (fmt ==FP32) ? {1'b1, mult_y.fp32.frac}
-            : { {1'b1, mult_y.lanes.hi[6:0]}, 8'b0, {1'b1, mult_y.lanes.lo[6:0]}};
-    
-    // assign sigProd = sigX * sigY;
+        (fmt ==FP32) ? {2'b01, mult_y.fp32.frac}
+            : { {1'b1, mult_y.lanes.hi[6:0]}, 9'b0, {1'b1, mult_y.lanes.lo[6:0]}};
     always_comb begin
-        // sigProd = 48'd0;
-
-        // if (fmt == FP32) begin
-        //     // Full 24x24 multiply
-            logic carry;
-            logic [31:0] mult_result_l;
-            logic [40:0] mult_result_m; // FP16 -> 32bit + 1bit. Do not carry m[32];
-            logic [47:0] mult_result_h;
-
-            mult_result_l = sigX[15:0] * sigY[15:0];
-            mult_result_m = (sigX[15:0] * sigY[23:16] + sigX[23:16] * sigY[15:0]) << 16;
-            mult_result_h = (sigX[23:16] * sigY[23:16]) << 32;
-
-            if (fmt == FP16) mult_result_m[32] = 1'b0;
-            sigProd = mult_result_l + mult_result_m + mult_result_h;
-        // end
-        // else begin
-        //     // FP16 mode: two independent 8x8 multiplies (no cross terms)
-        //     logic [15:0] prod_h;
-        //     logic [15:0] prod_l;
-
-        //     prod_h = sigX[23:16] * sigY[23:16]; // {1, frac7} x {1, frac7}
-        //     prod_l = sigX[ 7: 0] * sigY[ 7: 0];
-
-        //     sigProd[47:32] = prod_h;
-        //     sigProd[15: 0] = prod_l;
-
-        //     // sigProd[31:16] remains 0, so:
-        //     //  - no (Xh*Yl + Xl*Yh)<<16 contribution
-        //     //  - no carry propagation between lanes (including the “1bit” you worry about)
-        // end
+        sigProd = sigX * sigY;
     end
+
+
     // exponent update 
-    assign norm_h = sigProd[47]; // 1x.xx... 
+    assign norm_h = (fmt ==FP16) ? sigProd[49] : sigProd[47]; // 1x.xx... 
     assign norm_l = (fmt ==FP16) ? sigProd[15]: 1'b0; // 1x.xx... 
 
     assign expPostNorm_h = expSum_h + {7'd0, norm_h};
@@ -707,7 +677,7 @@ module FPALL_Shared_combine(
         if(fmt ==FP32) begin
             sigProdExt = (norm_h) ? {sigProd[46:0], 1'b0} : {sigProd[45:0], 2'b00}; //cut implicit 1
         end else begin
-            sigProdExt[47:32] = (norm_h) ? {sigProd[46:32], 1'b0} : {sigProd[45:32], 2'b00};
+            sigProdExt[47:32] = (norm_h) ? {sigProd[48:34], 1'b0} : {sigProd[47:34], 2'b00};
             sigProdExt[15: 0] = (norm_l) ? {sigProd[14:0], 1'b0} : {sigProd[13:0], 2'b00}; 
         end
     end
