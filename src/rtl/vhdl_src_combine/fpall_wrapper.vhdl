@@ -14,7 +14,7 @@ entity FPALL_Shared_Wrapper is
 end entity;
 
 architecture arch of FPALL_Shared_Wrapper is
-    component FPALL_Shared_combine is
+    component fpall_shared is
         port (
             clk : in std_logic;
             opcode : in std_logic_vector(1 downto 0);
@@ -24,7 +24,7 @@ architecture arch of FPALL_Shared_Wrapper is
         );
     end component;
 begin
-    U_SHARED: FPALL_Shared_combine
+    U_SHARED: fpall_shared
     port map (
         clk => clk,
         opcode => OP_CODE_GEN,

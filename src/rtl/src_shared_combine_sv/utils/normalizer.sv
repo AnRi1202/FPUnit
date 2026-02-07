@@ -1,4 +1,4 @@
-import FPALL_pkg::*;
+import fpall_pkg::*;
 /*
 ===============================================================================
 Normalizer (Leading-Zero Count + Left Shift) for Shared FP32 / Dual-FP16 Datapath

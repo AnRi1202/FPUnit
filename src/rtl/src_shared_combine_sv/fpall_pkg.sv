@@ -1,5 +1,5 @@
 
-package FPALL_pkg;
+package fpall_pkg;
 
     typedef enum logic {
         FP32 = 1'b0,

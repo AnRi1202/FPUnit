@@ -187,7 +187,7 @@ proc run_synth_common {entity_name label} {
 #----------------------------------------------------------------------------------------------#
 
 set rtl_dir "../rtl/src/src_shared_combine_sv/utils"
-set rtl_pkg "../rtl/src/src_shared_combine_sv/FPALL_pkg.sv"
+set rtl_pkg "../rtl/src/src_shared_combine_sv/fpall_pkg.sv"
 
 # puts "--- Task 1: abs_comparator---"
 # remove_design -all

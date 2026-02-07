@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-import FPALL_pkg::*;
+import fpall_pkg::*;
 
 module tb_fpmult_fp32;
 
@@ -10,7 +10,7 @@ module tb_fpmult_fp32;
   logic [31:0] R;
 
   // Adjust if your DUT has different ports
-  FPALL_Shared_combine dut (
+  fpall_shared dut (
     .clk(clk),
     .fmt(fmt),
     .opcode(opcode),

@@ -19,7 +19,7 @@ library std;
 use std.textio.all;
 library work;
 
-entity FPALL_Shared_combine is
+entity fpall_shared is
     port (
         clk : in std_logic;
         opcode : in std_logic_vector(1 downto 0); -- 00: Add, 01: Mul, 10: Sqrt, 11: Div
@@ -29,7 +29,7 @@ entity FPALL_Shared_combine is
     );
 end entity;
 
-architecture arch of FPALL_Shared_combine is
+architecture arch of fpall_shared is
  -- FPAdd --
    component RightShifterSticky24_by_max_26_Freq1_uid4 is
       port ( clk : in std_logic;

@@ -1,8 +1,8 @@
 `timescale 1ns/1ps
-import FPALL_pkg::*;
+import fpall_pkg::*;
 
 
-module FPALL_Shared_combine(
+module fpall_shared(
     input logic clk,
     input fp_op_e opcode, //00: Add, 01: Mul, 10: Sqrt, 11: Div
     input fp_fmt_e fmt, // 

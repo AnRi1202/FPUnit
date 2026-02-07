@@ -1,4 +1,4 @@
-import FPALL_pkg::*;
+import fpall_pkg::*;
 
 module abs_comparator (
     input  fp_fmt_e     fmt,

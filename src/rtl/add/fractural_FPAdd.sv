@@ -1,5 +1,5 @@
 
-import FPALL_pkg::*;
+import fpall_pkg::*;
 
 
 module frac_FPADD(
