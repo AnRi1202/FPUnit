@@ -203,6 +203,7 @@ begin
          wait for 10 ns;
       end loop;
          wait for 100 ns; -- wait for pipeline to flush (and some more)
+         wait;
    end process;
 
     -- Process that verifies the corresponding output
@@ -231,6 +232,7 @@ begin
       end loop;
       report integer'image(errorCounter) & " error(s) encoutered." severity note;
       report "End of simulation after " & integer'image(testCounter-1) & " tests" severity note;
+      wait;
    end process;
 
 end architecture;
@@ -579,6 +581,7 @@ begin
          wait for 10 ns;
       end loop;
          wait for 100 ns; -- wait for pipeline to flush (and some more)
+         wait;
    end process;
 
     -- Process that verifies the corresponding output
@@ -607,6 +610,7 @@ begin
       end loop;
       report integer'image(errorCounter) & " error(s) encoutered." severity note;
       report "End of simulation after " & integer'image(testCounter-1) & " tests" severity note;
+      wait;
    end process;
 
 end architecture;
@@ -819,6 +823,7 @@ begin
          wait for 10 ns;
       end loop;
          wait for 100 ns; -- wait for pipeline to flush (and some more)
+         wait;
    end process;
 
     -- Process that verifies the corresponding output
@@ -847,6 +852,7 @@ begin
       end loop;
       report integer'image(errorCounter) & " error(s) encoutered." severity note;
       report "End of simulation after " & integer'image(testCounter-1) & " tests" severity note;
+      wait;
    end process;
 
 end architecture;
@@ -1049,6 +1055,7 @@ begin
          wait for 10 ns;
       end loop;
          wait for 100 ns; -- wait for pipeline to flush (and some more)
+         wait;
    end process;
 
     -- Process that verifies the corresponding output
@@ -1077,6 +1084,7 @@ begin
       end loop;
       report integer'image(errorCounter) & " error(s) encoutered." severity note;
       report "End of simulation after " & integer'image(testCounter-1) & " tests" severity note;
+      wait;
    end process;
 
 end architecture;
