@@ -253,6 +253,21 @@ analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/bar
 analyze -library WORK -format sverilog "$rtl_dir/add/FPAdd.sv"
 run_synth_common "FPAdd" "FPAdd"
 
+puts "--- Task 18: fractural Add only---"
+remove_design -all
+analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
+
+analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_pkg.sv"
+analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/normalizer.sv"
+analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/abs_comparator.sv"
+analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/barrel_shifter.sv"
+
+analyze -library WORK -format sverilog "$rtl_dir/add/fractural_FPAdd.sv"
+run_synth_common "FPAdd" "fractural_FPAdd"
+
+
+
+
 exit
 
 
