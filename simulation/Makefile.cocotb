@@ -1,0 +1,7 @@
+SIM_DIR :=$(abspath .)
+BUILD := $(SIM_DIR)/build/$(SIM)/$(TARGET)
+
+SIM ?= xrun
+TOPLEVEL_LANG ?=verilog
+
+VERILOG_SOURCES := $(shell cat )
