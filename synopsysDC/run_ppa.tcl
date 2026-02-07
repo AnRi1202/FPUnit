@@ -186,6 +186,8 @@ proc run_synth_common {entity_name label} {
 
 set rtl_dir "../rtl/src"
 
+#########################     Original     ################################################# 
+
 # # Task 1: Baseline FPAdd
 puts "--- Task 1: FPAdd ---"
 remove_design -all
@@ -229,15 +231,13 @@ puts "--- Task 18: Shared combine_sv---"
 remove_design -all
 analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
 
-analyze -library WORK -format sverilog "$rtl_dir/add/FPAdd.sv"
-run_synth_common "FPAdd" "FPAdd"
-
-
 analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_pkg.sv"
 analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/normalizer.sv"
 analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/abs_comparator.sv"
 analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/barrel_shifter.sv"
 
+analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_shared.sv"
+run_synth_common "FPALL_Shared_combine" "FPALL_Shared_combine"
 
 exit
 
