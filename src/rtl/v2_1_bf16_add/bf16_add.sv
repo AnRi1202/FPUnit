@@ -2,7 +2,7 @@
 import fpall_pkg::*;
 
 
-module add_fp32_bf16(
+module bf16_add(
     input logic clk,
     input fp_fmt_e fmt, 
     input logic [31:0] X,

@@ -31,7 +31,7 @@ set symbol_library ""
 #--------------------------------- Set up result folders --------------------------------------#
 #----------------------------------------------------------------------------------------------#
 set tag [clock format [clock seconds] -format "%Y%m%d-%H%M%S"]  ;# 例: 20251216-141905
-set run_dir "run-$tag"
+set run_dir "run-$VER-$tag"
 
 file mkdir $run_dir/output/new
 file mkdir $run_dir/report/new
@@ -180,108 +180,94 @@ proc run_synth_common {entity_name label} {
    # =============================== 
 }
 
+proc analyze_filelist {filelist_path format} {
+    global ROOT
+    if {![file exists $filelist_path]} {
+        puts "Error: Filelist not found at $filelist_path"
+        return
+    }
+    puts ">>> Reading filelist: $filelist_path"
+    set fp [open $filelist_path r]
+    while {[gets $fp line] >= 0} {
+        set line [string trim $line]
+        # Skip empty lines and comments
+        if {$line == "" || [string match "#*" $line] || [string match "//*" $line]} {
+            continue
+        }
+        # Resolve $ROOT if present
+        regsub -all {\$ROOT} $line $ROOT line
+        
+        puts "  Analyzing: $line"
+        if {[catch {analyze -library WORK -format $format $line} msg]} {
+            puts "  Warning: Failed to analyze $line: $msg"
+        }
+    }
+    close $fp
+}
+
 #----------------------------------------------------------------------------------------------#
 #--------------------------------- CHOOSE DESIGNS     -----------------------------------------#
 #----------------------------------------------------------------------------------------------#
 
-set rtl_dir "../src/rtl"
-
-#########################     Original     ################################################# 
-
-# # # Task 1: Baseline FPAdd
-# puts "--- Task 1: FPAdd ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd_VHDL"
-
-# # # Task 2: Baseline FPMult
-# puts "--- Task 2: FPMult ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-# run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
-
-# # # Task 3: Baseline FPDiv
-# puts "--- Task 3: FPDiv ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-# run_synth_common "FPDiv_8_23_Freq1_uid2" "FPDiv"
-
-# # # Task 4: Baseline FPSqrt
-# puts "--- Task 4: FPSqrt ---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
-# run_synth_common "FPSqrt_8_23" "FPSqrt"
-
-#########################     ALL     ################################################# 
-
-
-# # Task 17: shared_combine
-# puts "--- Task 17: Shared combine---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/FPAdd_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPMult_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPDiv_Kin_f1_origin.vhdl"
-# analyze -library WORK -format vhdl "$rtl_dir/FPSqrt_Kin_f1_origin.vhdl"
-
-# analyze -library WORK -format vhdl "$rtl_dir/vhdl_src_combine/FPALL_shared.vhdl"
-# run_synth_common "fpall_shared" "fpall_shared"
-
-
-# puts "--- Task 18: Shared combine_sv---"
-# remove_design -all
-# analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
-
-# analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/fpall_pkg.sv"
-# analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/normalizer.sv"
-# analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/abs_comparator.sv"
-# analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/barrel_shifter.sv"
-
-# analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/FPALL_shared.sv"
-# run_synth_common "fpall_shared" "fpall_shared"
-
-
-##################    add_only    ######################################
-puts "--- Task 18: Add only---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
-
-analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/fpall_pkg.sv"
-analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/normalizer.sv"
-analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/abs_comparator.sv"
-analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/barrel_shifter.sv"
-
-analyze -library WORK -format sverilog "$rtl_dir/add/FPAdd.sv"
-run_synth_common "FPAdd" "FPAdd"
-
-puts "--- Task 18: fractural Add only---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
-
-analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/fpall_pkg.sv"
-analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/normalizer.sv"
-analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/abs_comparator.sv"
-analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/barrel_shifter.sv"
-
-analyze -library WORK -format sverilog "$rtl_dir/add/fractural_FPAdd.sv"
-run_synth_common "FPAdd" "fractural_FPAdd"
 
 
 
+# #########################     Original     ################################################# 
+set origin_dir "$ROOT/src/rtl/original"
+# Task 1: Baseline FPAdd
+if {$TASK == "all" || $TASK == "1" || $TASK == "FPAdd_VHDL"} {
+    puts "--- Task 1: FPAdd ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$origin_dir/FPAdd_Kin_f1_origin.vhdl"
+    run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd_VHDL"
+}
 
-puts "--- Task 18: fractural Add only---"
-remove_design -all
-analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
+# Task 2: Baseline FPMult
+if {$TASK == "all" || $TASK == "2" || $TASK == "FPMult"} {
+    puts "--- Task 2: FPMult ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$origin_dir/FPMult_Kin_f1_origin.vhdl"
+    run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
+}
 
-analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/fpall_pkg.sv"
-analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/normalizer.sv"
-analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/abs_comparator.sv"
-analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/barrel_shifter.sv"
+# Task 3: Baseline FPDiv
+if {$TASK == "all" || $TASK == "3" || $TASK == "FPDiv"} {
+    puts "--- Task 3: FPDiv ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$origin_dir/FPDiv_Kin_f1_origin.vhdl"
+    run_synth_common "FPDiv_8_23_Freq1_uid2" "FPDiv"
+}
 
-analyze -library WORK -format sverilog "$rtl_dir/add/fractural_FPAdd.sv"
-run_synth_common "FPAdd" "fractural_FPAdd"
+# Task 4: Baseline FPSqrt
+if {$TASK == "all" || $TASK == "4" || $TASK == "FPSqrt"} {
+    puts "--- Task 4: FPSqrt ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$origin_dir/FPSqrt_Kin_f1_origin.vhdl"
+    run_synth_common "FPSqrt_8_23" "FPSqrt"
+}
+
+########################  v_  ####################################
+
+set rtl_pkg    "$ROOT/src/rtl/v2_bf16_full/fpall_pkg.sv"
+set vhdl_utils_base "$ROOT/src/rtl/v2_bf16_full/utils.vhdl"
 
 
+# Task 20: Synthesis by Version Filelist
+if {$TASK == "all" || $TASK == "0"} {
+    remove_design -all
+    # From common baseline (v2_bf16_full) if different
+    analyze -library WORK -format vhdl $vhdl_utils_base
+    analyze -library WORK -format sverilog $rtl_pkg
 
+    set flist "$ROOT/simulation/filelists/${VER}_sv.f"
+    analyze_filelist "$flist" sverilog
+
+    if {[file exists "$ROOT/simulation/filelists/${VER}_vhdl.f"]} {
+        analyze_filelist "$ROOT/simulation/filelists/${VER}_vhdl.f" vhdl
+    }
+   
+    run_synth_common "$TOP" "$TOP"
+}
 
 exit
 

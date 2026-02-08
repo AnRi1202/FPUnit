@@ -1,5 +1,5 @@
 # rtl
-$ROOT/src/rtl/v2_1_bf16_add/add_fp32_bf16.sv 
+$ROOT/src/rtl/v2_1_bf16_add/bf16_add.sv 
 
 
 # utils

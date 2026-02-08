@@ -1,4 +1,6 @@
-module add_fp32_base(
+import fpall_pkg::*;
+
+module fp32_add(
     input logic clk,
     input fp_fmt_e fmt, 
     input logic [31:0] X,

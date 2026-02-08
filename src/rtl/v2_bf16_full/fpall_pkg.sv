@@ -39,6 +39,7 @@ package fpall_pkg;
     } fp_vec_u;
 
 // ==================== utils =============== // 
+`ifndef SYNTHESIS
     function automatic string disp_36(input logic [35:0] v);
         string s;
         int i;
@@ -66,5 +67,6 @@ package fpall_pkg;
             return s;
         end
     endfunction
+`endif
 
 endpackage
