@@ -2,7 +2,6 @@
 module area_opt(
     input logic clk,
     input logic [1:0] opcode, //00: Add, 01: Mul, 10: Sqrt, 11: Div
-    input logic fmt, // 0: FP32, 1: FP16
     input logic [31:0] X,
     input logic [31:0] Y,
     output logic [31:0] R
@@ -10,7 +9,6 @@ module area_opt(
 
     
     // FPAdd signals
-    // logic [32:0] excExpFracX, excExpFracY; // Unused
     logic swap;
     logic [7:0] expDiff;
     logic [31:0] newX, newY;
@@ -19,7 +17,6 @@ module area_opt(
     logic [1:0] sXsYExnXY;
     logic [3:0] sdExnXY;
     logic [23:0] fracY;
-    // logic [1:0] excRt; // Unused
     logic shiftedOut;
     logic [4:0] shiftVal;
     logic [25:0] shiftedFracY;

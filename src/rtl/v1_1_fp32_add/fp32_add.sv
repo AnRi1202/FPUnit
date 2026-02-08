@@ -10,7 +10,6 @@ module fp32_add(
 
     
     // FPAdd signals
-    logic [32:0] excExpFracX, excExpFracY;
     logic swap;
     logic [7:0] expDiff;
     logic [31:0] newX, newY;
@@ -19,8 +18,7 @@ module fp32_add(
     logic [1:0] sXsYExnXY;
     logic [3:0] sdExnXY;
     logic [23:0] fracY;
-    logic [1:0] excRt;
-    logic signR, shiftedOut;
+    logic shiftedOut;
     logic [4:0] shiftVal;
     logic [25:0] shiftedFracY;
     logic add_sticky;
@@ -31,27 +29,19 @@ module fp32_add(
     logic [4:0] nZerosNew;
     logic [27:0] shiftedFrac;
     logic [8:0] extendedExpInc;
-    logic [9:0] updatedExp;
-    logic eqdiffsign;
+    logic [8:0] updatedExp;
     logic stk, rnd, lsb;
-    logic [33:0] RoundedExpFrac;
+    logic [32:0] RoundedExpFrac;
     logic [22:0] fracR;
     logic [7:0] expR;
-    logic [3:0] exExpExc;
-    logic [1:0] excRt2, excR;
-    logic signR2;
-    logic [33:0] computedR;
-    logic [33:0] add_expFrac;
-    logic [33:0] add_ra_X;
+
+    logic [32:0] add_expFrac;
     logic add_round;
     // =================================================================================
     // FPAdd Logic
     // =================================================================================
 
-    //-------------------
-    // shared comparator
-    //-------------------
-    assign swap = (X[30:0] < Y[30:0]) ? 1'b1 : 1'b0; //comparator
+    assign swap = (X[30:0] < Y[30:0]); //comparator
     // input swap so that |X|>|Y| 
     assign newX = (swap == 1'b0) ? X : Y; 
     assign newY = (swap == 1'b0) ? Y : X; 
@@ -64,9 +54,8 @@ module fp32_add(
     assign EffSub = signX ^ signY;
     
     assign fracY = {1'b1, newY[22:0]};
-    assign signR = signX;
     
-    assign shiftedOut = (expDiff > 25) ? 1'b1 : 1'b0;
+    assign shiftedOut = (expDiff > 8'd25) ? 1'b1 : 1'b0;
     assign shiftVal = (shiftedOut == 1'b0) ? expDiff[4:0] : 5'd26;
 
     RightShifterSticky24_by_max_26_Freq1_uid4 RightShifterComponent (
@@ -84,14 +73,7 @@ module fp32_add(
     assign cInSigAdd = EffSub & (~add_sticky); // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
 
     // Connect to Shared IntAdder_27
-    IntAdder_27_Freq1_uid6 fracAdder(
-        .clk(clk),
-        .Cin(cInSigAdd),
-        .X(fracXpad),
-        .Y(fracYpadXorOp),
-        .R(fracAddResult)
-    );
-    // assign fracAddResult = fracXpad + fracYpadXorOp + cInSigAdd;
+    assign fracAddResult = fracXpad + fracYpadXorOp + cInSigAdd;  // Get addition result back
     
     assign fracSticky = {fracAddResult, add_sticky};
     
@@ -103,28 +85,19 @@ module fp32_add(
     );
     
     assign extendedExpInc = {1'b0, add_expX} + 9'd1;
-    assign updatedExp = {1'b0, extendedExpInc} - {5'b00000, nZerosNew};
+    assign updatedExp = {extendedExpInc} - {4'b0000, nZerosNew};
     
     assign add_expFrac = {updatedExp, shiftedFrac[26:3]};
     assign stk = shiftedFrac[2] | shiftedFrac[1] | shiftedFrac[0];
     assign rnd = shiftedFrac[3];
     assign lsb = shiftedFrac[4];
     // Connect to Shared Rounding Adder
-    assign add_ra_X = add_expFrac; 
     assign add_round = ((rnd == 1'b1) && (stk == 1'b1)) || ((rnd == 1'b1) && (stk == 1'b0) && (lsb == 1'b1)) ? 1'b1 : 1'b0;
     // Get result from Shared Rounding Adder
-    // IntAdder_34_Freq1_uid11 roundingAdder(
-    //     .clk(clk),
-    //     .Cin(add_round),
-    //     .X(add_expFrac),
-    //     .Y('0),
-    //     .R(RoundedExpFrac)
-    // );
-    assign RoundedExpFrac = add_round + add_expFrac;
+    assign RoundedExpFrac = add_expFrac + add_round;
     assign fracR = RoundedExpFrac[23:1];
     assign expR = RoundedExpFrac[31:24];
     
-    assign signR2 = signR;
-    assign R = {signR2, expR, fracR};
+    assign R = {signX, expR, fracR};
 
 endmodule

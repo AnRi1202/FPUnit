@@ -30,7 +30,7 @@ module fpall_shared_logic_wrapper(
         .R(R)
     );
 `elsif V1_1_FP32_ADD
-    add_fp32_base u_dut (
+    fp32_add u_dut (
         .clk(clk),
         .fmt(fp_fmt_e'(fmt_in)),
         .X(X),
