@@ -12,7 +12,15 @@ module fpall_shared_logic_wrapper(
     output logic [31:0] R
 );
 
-`ifdef V1_AREA_OPT
+`ifdef V0_AREA_OPT
+    area_opt u_dut (
+        .clk(clk),
+        .opcode(opcode_in),
+        .X(X),
+        .Y(Y),
+        .R(R)
+    );
+`elsif V1_AREA_OPT
     area_opt u_dut (
         .clk(clk),
         .opcode(opcode_in),

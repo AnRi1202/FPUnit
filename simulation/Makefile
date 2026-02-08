@@ -17,6 +17,11 @@ DEFINES :=
 
 VALID_TARGET := 0
 
+ifeq ($(TARGET),v0_area_opt)
+  DEFINES += +define+V0_AREA_OPT
+  VALID_TARGET := 1
+endif
+
 ifeq ($(TARGET),v1_area_opt)
   DEFINES += +define+V1_AREA_OPT
   VALID_TARGET := 1

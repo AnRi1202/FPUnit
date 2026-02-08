@@ -1,7 +1,8 @@
 SCRIPT ?= run_ppa.tcl
 LOG ?= $(basename $(SCRIPT)).log
 TASK ?= 0
-VER ?= v2_bf16_full
+TOP ?= none
+VER ?= none
 FILELIST ?= none
 export ROOT := $(abspath ..)
 

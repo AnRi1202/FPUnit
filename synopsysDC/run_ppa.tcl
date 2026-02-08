@@ -259,8 +259,9 @@ if {$TASK == "all" || $TASK == "0"} {
     analyze -library WORK -format vhdl $vhdl_utils_base
     analyze -library WORK -format sverilog $rtl_pkg
 
-    set flist "$ROOT/simulation/filelists/${VER}_sv.f"
-    analyze_filelist "$flist" sverilog
+    if {[file exists "$ROOT/simulation/filelists/${VER}_sv.f"]} {
+        analyze_filelist "$ROOT/simulation/filelists/${VER}_sv.f" sverilog
+    }
 
     if {[file exists "$ROOT/simulation/filelists/${VER}_vhdl.f"]} {
         analyze_filelist "$ROOT/simulation/filelists/${VER}_vhdl.f" vhdl
