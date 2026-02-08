@@ -231,12 +231,12 @@ set rtl_dir "../src/rtl"
 # remove_design -all
 # analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
 
-# analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/fpall_pkg.sv"
-# analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/normalizer.sv"
-# analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/abs_comparator.sv"
-# analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/barrel_shifter.sv"
+# analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/fpall_pkg.sv"
+# analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/normalizer.sv"
+# analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/abs_comparator.sv"
+# analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/barrel_shifter.sv"
 
-# analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/FPALL_shared.sv"
+# analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/FPALL_shared.sv"
 # run_synth_common "fpall_shared" "fpall_shared"
 
 
@@ -245,10 +245,10 @@ puts "--- Task 18: Add only---"
 remove_design -all
 analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
 
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/fpall_pkg.sv"
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/normalizer.sv"
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/abs_comparator.sv"
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/barrel_shifter.sv"
+analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/fpall_pkg.sv"
+analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/normalizer.sv"
+analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/abs_comparator.sv"
+analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/barrel_shifter.sv"
 
 analyze -library WORK -format sverilog "$rtl_dir/add/FPAdd.sv"
 run_synth_common "FPAdd" "FPAdd"
@@ -257,10 +257,10 @@ puts "--- Task 18: fractural Add only---"
 remove_design -all
 analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
 
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/fpall_pkg.sv"
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/normalizer.sv"
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/abs_comparator.sv"
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/barrel_shifter.sv"
+analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/fpall_pkg.sv"
+analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/normalizer.sv"
+analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/abs_comparator.sv"
+analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/barrel_shifter.sv"
 
 analyze -library WORK -format sverilog "$rtl_dir/add/fractural_FPAdd.sv"
 run_synth_common "FPAdd" "fractural_FPAdd"
@@ -272,10 +272,10 @@ puts "--- Task 18: fractural Add only---"
 remove_design -all
 analyze -library WORK -format vhdl "$rtl_dir/utils.vhdl"
 
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/fpall_pkg.sv"
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/normalizer.sv"
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/abs_comparator.sv"
-analyze -library WORK -format sverilog "$rtl_dir/src_shared_combine_sv/utils/barrel_shifter.sv"
+analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/fpall_pkg.sv"
+analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/normalizer.sv"
+analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/abs_comparator.sv"
+analyze -library WORK -format sverilog "$rtl_dir/v2_bf16_full_sv/utils/barrel_shifter.sv"
 
 analyze -library WORK -format sverilog "$rtl_dir/add/fractural_FPAdd.sv"
 run_synth_common "FPAdd" "fractural_FPAdd"

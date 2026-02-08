@@ -8,8 +8,11 @@ $(shell grep -v '^\s*#' $(1) | sed 's|\$$ROOT|$(ROOT)|g')
 endef
 
 
+SIM ?= xcelium
+TARGET ?= v2_bf16_full
+
 VERILOG_SOURCES = $(call get_sources,$(SIM_DIR)/filelists/common_sv.f)
-VERILOG_SOURCES += $(call get_sources,$(SIM_DIR)/filelists/cocotb/shared-all_sv.f)
+VERILOG_SOURCES += $(call get_sources,$(SIM_DIR)/filelists/cocotb/v2_bf16_full_sv.f)
 VHDL_SOURCES = $(call get_sources,$(SIM_DIR)/filelists/common_vhdl.f)
 
 
@@ -27,7 +30,6 @@ MODULE := $(TEST_UNIT)_test
 # Fix typo in path (shared-combine -> shared_combine)
 export PYTHONPATH := $(ROOT)/src/tb/cocotb:$(PYTHONPATH)
 
-SIM ?= xcelium
 EXTRA_ARGS += -64bit -sv -v200x -access +rwc
 
 include $(shell cocotb-config --makefiles)/Makefile.sim

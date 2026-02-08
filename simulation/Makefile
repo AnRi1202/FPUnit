@@ -1,5 +1,5 @@
 SIM ?= xrun
-TARGET ?= shared-all
+TARGET ?= v2_bf16_full
 TOP ?= tb_fpadd_bf16x2
 # TOP: 
 #   - SV: tb_fpadd_bf16x2 | tb_fpadd_fp32 | tb_fpmult_bf16x2 | tb_fpmult_fp32
@@ -8,14 +8,25 @@ export ROOT := $(abspath ..)
 SIM_DIR :=$(abspath .)
 BUILD := $(SIM_DIR)/build/$(SIM)/$(TARGET)
 FILELIST_SV := $(SIM_DIR)/filelists/common_sv.f
-FILELIST_SV += $(SIM_DIR)/filelists/$(TARGET)_sv.f
+FILELIST_SV += $(wildcard $(SIM_DIR)/filelists/$(TARGET)_sv.f)
 FILELIST_VHDL := $(SIM_DIR)/filelists/common_vhdl.f
-FILELIST_VHDL += $(SIM_DIR)/filelists/$(TARGET)_vhdl.f
+FILELIST_VHDL += $(wildcard $(SIM_DIR)/filelists/$(TARGET)_vhdl.f)
 
-XRUN_FLAGS := -v200x -64bit -sv -access +rwc -input "@run 50112ns; exit"
+# --- DUT selection define ---
+DEFINES :=
+
+ifeq ($(TARGET),shared-all)
+  DEFINES += +define+USE_FPALL
+endif
+
+
+# flags
+XRUN_FLAGS := -v200x -64bit -sv -access +rwc -input "@run 150112ns; exit"
 MSIM_VLOG_FLAGS := -64 -sv -mixedsvvh
 MSIM_VCOM_FLAGS := -64 -93
-MSIM_VSIM_FLAGS := -64 -c -t 1ps -do "run 50112ns; quit"
+MSIM_VSIM_FLAGS := -64 -c -t 1ps -do "run 150112ns; quit"
+
+
 
 include $(SIM_DIR)/scripts/$(SIM).mk
 

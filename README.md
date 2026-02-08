@@ -14,7 +14,7 @@ This project explores hardware resource sharing techniques between different flo
 ```text
 .
 ├── src/rtl/                         # RTL Source Files
-│   ├── src_shared_combine_sv/       # SystemVerilog implementation with logic sharing
+│   ├── v2_bf16_full_sv/       # SystemVerilog implementation with logic sharing
 │   │   ├── fpall_shared.sv          # Main combined FPU module
 │   │   ├── fpall_pkg.sv             # Package for types and enums
 │   │   └── utils/                   # Sub-modules (shifters, normalizers, etc.)

@@ -1,5 +1,16 @@
 # ROOT = flopoco_synth/simulation
 # package
-$ROOT/src/rtl/src_shared_combine_sv/fpall_pkg.sv
+$ROOT/src/rtl/v2_bf16_full/fpall_pkg.sv
 
-# utils
+
+# $ROOT is determined by Makefile
+##### tb  ###### 
+### TODO: 本当はv2_bfにtbを置くのではなく、共通にするべき
+$ROOT/src/tb/v2_bf16_full/tb_fpadd_bf16x2.sv
+$ROOT/src/tb/v2_bf16_full/tb_fpadd_fp32.sv
+$ROOT/src/tb/v2_bf16_full/tb_fpmult_bf16x2.sv
+$ROOT/src/tb/v2_bf16_full/tb_fpmult_fp32.sv
+
+# wrapper
+$ROOT/src/tb/fpall_shared_logic_wrapper.sv 
+

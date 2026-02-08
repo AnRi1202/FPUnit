@@ -1,17 +1,8 @@
-### simple
-xrun -v200x -64bit -sv ../rtl/src/src_shared_combine_sv/*.vhdl ../rtl/src/src_shared_combine_sv/*.sv ../rtl/src/*.vhdl  -top TestBench_FPAdd_8_23_Freq1_uid2_Freq1_uid13 -access +rwc -input "@run 10500ns; exit"
+### 同じtbを用いて新しいrtlを作る時
+target名を決める
+filelists に<target>_sv.fや<target>_vhdl.fを追加する
+src/rtlフォルダに作ったファイルを上記の.fに追加する
+wrapperにtarget名に応じた `defineを定義する
 
+### 新しいtbを追加する
 
-xrun -v200x -64bit -sv ../rtl/src/src_shared_combine_sv/*.vhdl ../rtl/src/src_shared_combine_sv/*.sv ../rtl/src/*.vhdl  -top TestBench_FPMult_8_23_uid2_Freq1_uid3_Freq1_uid282 -access +rwc -input "@run 50112ns; exit"
-
-
-xrun -v200x -64bit -sv ../rtl/src/src_shared_combine_sv/*.vhdl ../rtl/src/src_shared_combine_sv/*.sv ../rtl/src/*.vhdl  -top TestBench_FPDiv_8_23_Freq1_uid2_Freq1_uid20  -access +rwc -input "@run 50112ns; exit"
-
-
-
-xrun -v200x -64bit -sv ../rtl/src/src_shared_combine_sv/*.vhdl ../rtl/src/src_shared_combine_sv/*.sv ../rtl/src/*.vhdl  -top TestBench_FPSqrt_8_23_Freq1_uid3  -access +rwc -input "@run 10112ns; exit"
-
-
-### 現在
-
-xrun -v200x -64bit -sv ../rtl/src/src_shared_combine_sv/*.vhdl ../rtl/src/src_shared_combine_sv/*.sv ../rtl/src/src_shared_combine_sv/utils/*.sv ../rtl/src/*.vhdl -top TestBench_FPAdd_8_23_Freq1_uid2_Freq1_uid13 -access +rwc -input "@run 300500ns; exit"
