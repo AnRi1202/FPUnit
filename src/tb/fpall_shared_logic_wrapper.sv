@@ -73,6 +73,16 @@ module fpall_shared_logic_wrapper(
         .Y(Y),
         .R(R)
     );
+
+`elsif V3_ADDMUL_ONLY
+    addmul_only u_dut (
+        .clk(clk),
+        .opcode(opcode_in),
+        .fmt(fmt_in),
+        .X(X),
+        .Y(Y),
+        .R(R)
+    );
 `else
     // Trigger compilation error if no version is defined
     Error_No_DUT_Version_Defined_Check_Macros();
