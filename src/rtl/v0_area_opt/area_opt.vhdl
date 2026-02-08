@@ -511,7 +511,10 @@ signal Rn2 :  std_logic_vector(30 downto 0);
     signal shared_as_x2 : std_logic_vector(26 downto 0);
     signal shared_as_y2 : std_logic_vector(26 downto 0);
     signal shared_as_sub2 : std_logic;
-    signal shared_as_r2 : std_logic_vector(26 downto 0);     
+    signal shared_as_r2 : std_logic_vector(26 downto 0);
+      signal sub_mask2 : std_logic_vector(26 downto 0); 
+      signal y_xor2 : std_logic_vector(26 downto 0); 
+      signal cin_vec2 : std_logic_vector(26 downto 0);     
     -- Shared Add/Sub Gen 3 signals
     signal shared_as_x3 : std_logic_vector(26 downto 0);
     signal shared_as_y3 : std_logic_vector(26 downto 0);
@@ -577,9 +580,9 @@ signal Rn2 :  std_logic_vector(30 downto 0);
     signal shared_as_y13 : std_logic_vector(26 downto 0);
     signal shared_as_sub13 : std_logic;
     signal shared_as_r13 : std_logic_vector(26 downto 0);
-      signal sub_mask13 : std_logic_vector(26 downto 0); 
-      signal y_xor13 : std_logic_vector(26 downto 0); 
-      signal cin_vec13 : std_logic_vector(26 downto 0);
+    signal sub_mask13 : std_logic_vector(26 downto 0); 
+    signal y_xor13 : std_logic_vector(26 downto 0); 
+    signal cin_vec13 : std_logic_vector(26 downto 0);
 
 
 
@@ -1294,8 +1297,15 @@ mul_sticky <= '1' when sigProdExt(23 downto 0) /= 0 else '0';
     shared_as_y2 <= absq3D when opcode(0)='1' else '0' & U21;
     shared_as_sub2 <= not q3(2)  when opcode(0)='1' else d21;
 
-    shared_as_r2 <= shared_as_x2 - shared_as_y2 when shared_as_sub2 = '1'
-               else shared_as_x2 + shared_as_y2;
+   --  shared_as_r2 <= shared_as_x2 - shared_as_y2 when shared_as_sub2 = '1'
+   --             else shared_as_x2 + shared_as_y2;
+
+   sub_mask2 <= (others => shared_as_sub2);
+   y_xor2 <= shared_as_y2 xor sub_mask2;
+
+   cin_vec2(26 downto 1) <= (others => '0');
+   cin_vec2(0) <= shared_as_sub2;
+   shared_as_r2 <= shared_as_x2 + y_xor2 + cin_vec2;
 
 -- Shared Add/Sub Logic Step 3
     shared_as_x3 <= betaw4 when opcode(0)='1' else "00" & T20s_h;

@@ -338,17 +338,17 @@ module area_opt(
     // Gen 2
     logic [26:0] shared_as_x2, shared_as_y2;
     logic shared_as_sub2;
-    logic [26:0] shared_as_r2;
+    logic [26:0] shared_as_r2, sub_mask2, y_xor2, cin_vec2;
     
     // Gen 3
     logic [26:0] shared_as_x3, shared_as_y3;
     logic shared_as_sub3;
-    logic [26:0] shared_as_r3;
+    logic [26:0] shared_as_r3, sub_mask3, y_xor3, cin_vec3;
     
     // Gen 4
     logic [26:0] shared_as_x4, shared_as_y4;
     logic shared_as_sub4;
-    logic [26:0] shared_as_r4;
+    logic [26:0] shared_as_r4, sub_mask4, y_xor4, cin_vec4;
     
     // Gen 5
     logic [26:0] shared_as_x5, shared_as_y5;
@@ -364,7 +364,7 @@ module area_opt(
     logic [26:0] shared_as_x7, shared_as_y7;
     logic shared_as_sub7;
     logic [26:0] shared_as_r7;
-    
+
     // Gen 8
     logic [26:0] shared_as_x8, shared_as_y8;
     logic shared_as_sub8;
@@ -1194,21 +1194,30 @@ module area_opt(
     assign shared_as_y2 = (opcode[0] == 1'b1) ? absq3D : {1'b0, U21};
     assign shared_as_sub2 = (opcode[0] == 1'b1) ? ~q3[2] : d21;
     
-    assign shared_as_r2 = (shared_as_sub2 == 1'b1) ? (shared_as_x2 - shared_as_y2) : (shared_as_x2 + shared_as_y2);
+    assign sub_mask2 = {27{shared_as_sub2}}; // 26 downto 0 is 27 bits
+    assign y_xor2 = shared_as_y2 ^ sub_mask2;
+    assign cin_vec2 = {26'd0, shared_as_sub2};
+    assign shared_as_r2 = shared_as_x2 + y_xor2 + cin_vec2;
 
     // Step 3
     assign shared_as_x3 = (opcode[0] == 1'b1) ? betaw4 : {2'b00, T20s_h};
     assign shared_as_y3 = (opcode[0] == 1'b1) ? absq4D : {2'b00, U20};
     assign shared_as_sub3 = (opcode[0] == 1'b1) ? ~q4[2] : d20;
     
-    assign shared_as_r3 = (shared_as_sub3 == 1'b1) ? (shared_as_x3 - shared_as_y3) : (shared_as_x3 + shared_as_y3);
+    assign sub_mask3 = {27{shared_as_sub3}};
+    assign y_xor3 = shared_as_y3 ^ sub_mask3;
+    assign cin_vec3 = {26'd0, shared_as_sub3};
+    assign shared_as_r3 = shared_as_x3 + y_xor3 + cin_vec3;
 
     // Step 4
     assign shared_as_x4 = (opcode[0] == 1'b1) ? betaw5 : {3'b000, T19s_h};
     assign shared_as_y4 = (opcode[0] == 1'b1) ? absq5D : {3'b000, U19};
     assign shared_as_sub4 = (opcode[0] == 1'b1) ? ~q5[2] : d19;
     
-    assign shared_as_r4 = (shared_as_sub4 == 1'b1) ? (shared_as_x4 - shared_as_y4) : (shared_as_x4 + shared_as_y4);
+    assign sub_mask4 = {27{shared_as_sub4}};
+    assign y_xor4 = shared_as_y4 ^ sub_mask4;
+    assign cin_vec4 = {26'd0, shared_as_sub4};
+    assign shared_as_r4 = shared_as_x4 + y_xor4 + cin_vec4;
 
     // Step 5
     assign shared_as_x5 = (opcode[0] == 1'b1) ? betaw6 : {4'd0, T18s_h};
