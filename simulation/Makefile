@@ -27,6 +27,12 @@ ifeq ($(TARGET),v1_1_fp32_add)
   VALID_TARGET := 1
 endif
 
+ifeq ($(TARGET),v1_2_fp32_mult)
+  DEFINES += +define+V1_2_FP32_MULT
+  VALID_TARGET := 1
+endif
+
+
 ifeq ($(TARGET),v2_bf16_full)
   DEFINES += +define+V2_BF16_FULL
   VALID_TARGET := 1
@@ -35,6 +41,11 @@ endif
 
 ifeq ($(TARGET),v2_1_bf16_add)
   DEFINES += +define+V2_1_BF16_ADD
+  VALID_TARGET := 1
+endif
+
+ifeq ($(TARGET),v2_2_bf16_mult)
+  DEFINES += +define+V2_2_BF16_MULT
   VALID_TARGET := 1
 endif
 
