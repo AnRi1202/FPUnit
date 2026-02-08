@@ -60,7 +60,7 @@ package fp_pkg;
     input data_t  data_a,
     input data_t  data_b,
     input logic   sub,
-    input logic   carry,
+    input logic   carry
   );
 
 
@@ -82,7 +82,7 @@ package fp_pkg;
   function automatic csa_res_t csa (
     input data_t  data_a,
     input data_t  data_b,
-    input data_t  carry,
+    input data_t  carry
   );
     csa.sum = data_a ^ data_b ^ carry;
     csa.carry = (data_a & data_b) | (data_a & carry) | (data_b & carry);

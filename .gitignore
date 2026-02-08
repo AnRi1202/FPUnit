@@ -61,3 +61,7 @@ primetime/output/
 run.log
 
 run/
+
+
+# cocotb
+**/__pycache__

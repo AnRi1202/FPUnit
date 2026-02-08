@@ -2,11 +2,13 @@
 import fpall_pkg::*;
 import fp_pkg::*;
 
-// FP32 Addition Wrapper
+// ============================================================================
+// FP32 Wrappers
+// ============================================================================
+
 module fp32_add_wrapper (
   input   logic           i_clk,
   input   logic           i_rst_n,
-  input   logic           i_mode,
   input   fp_pkg::fp32_t  i_operand_a,
   input   fp_pkg::fp32_t  i_operand_b,
   output  fp_pkg::fp32_t  o_sum
@@ -24,13 +26,11 @@ module fp32_add_wrapper (
 endmodule
 
 
-// FP32 Multiplication Wrapper
-module fp32_mul_wrapper (
+module fp32_mult_wrapper (
   input   logic           i_clk,
   input   logic           i_rst_n,
-  input   logic           i_mode,
-  input   fp_pkg::fp32_t  i_operand_a,
-  input   fp_pkg::fp32_t  i_operand_b,
+  input   fp_pkg::fp32_t  i_a,
+  input   fp_pkg::fp32_t  i_b,
   output  fp_pkg::fp32_t  o_prod
 );
 
@@ -38,74 +38,105 @@ module fp32_mul_wrapper (
     .clk    (i_clk),
     .opcode (OP_MUL),
     .fmt    (FP32),
-    .X      (32'(i_operand_a)),
-    .Y      (32'(i_operand_b)),
+    .X      (32'(i_a)),
+    .Y      (32'(i_b)),
     .R      (o_prod)
   );
 
 endmodule
 
 
-// BFloat16 Addition Wrapper (Dual-Lane)
-module bf16_add_wrapper (
-  input   logic                i_clk,
-  input   logic                i_rst_n,
-  input   logic                i_mode,
-  input   fp_pkg::bf16_t [1:0] i_operand_a,
-  input   fp_pkg::bf16_t [1:0] i_operand_b,
-  output  fp_pkg::bf16_t [1:0] o_sum
+// ============================================================================
+// FP16 Wrappers (Half Precision)
+// ============================================================================
+
+module fp16_add_wrapper (
+  input   logic           i_clk,
+  input   logic           i_rst_n,
+  input   fp_pkg::fp16_t  i_operand_a,
+  input   fp_pkg::fp16_t  i_operand_b,
+  output  fp_pkg::fp16_t  o_sum
 );
 
+  logic [31:0] tmp_R;
   fpall_shared u_dut (
     .clk    (i_clk),
     .opcode (OP_ADD),
-    .fmt    (FP16), // FP16 in fpall_shared refers to dual-lane 16-bit mode (BF16)
-    .X      (32'(i_operand_a)),
-    .Y      (32'(i_operand_b)),
-    .R      (o_sum)
+    .fmt    (FP16),
+    .X      ({16'b0, i_operand_a}), // Low lane
+    .Y      ({16'b0, i_operand_b}),
+    .R      (tmp_R)
   );
+  assign o_sum = tmp_R[15:0];
 
 endmodule
 
 
-// BFloat16 Multiplication Wrapper (Dual-Lane)
-module bf16_mul_wrapper (
-  input   logic                i_clk,
-  input   logic                i_rst_n,
-  input   logic                i_mode,
-  input   fp_pkg::bf16_t [1:0] i_operand_a,
-  input   fp_pkg::bf16_t [1:0] i_operand_b,
-  output  fp_pkg::bf16_t [1:0] o_prod
+module fp16_mult_wrapper (
+  input   logic           i_clk,
+  input   logic           i_rst_n,
+  input   fp_pkg::fp16_t  i_a,
+  input   fp_pkg::fp16_t  i_b,
+  output  fp_pkg::fp16_t  o_prod
 );
 
+  logic [31:0] tmp_R;
   fpall_shared u_dut (
     .clk    (i_clk),
     .opcode (OP_MUL),
     .fmt    (FP16),
-    .X      (32'(i_operand_a)),
-    .Y      (32'(i_operand_b)),
-    .R      (o_prod)
+    .X      ({16'b0, i_a}), // Low lane
+    .Y      ({16'b0, i_b}),
+    .R      (tmp_R)
   );
+  assign o_prod = tmp_R[15:0];
 
 endmodule
 
 
-// FP32 Square Root Wrapper
-module fp32_sqrt_wrapper (
+// ============================================================================
+// BFloat16 Wrappers
+// ============================================================================
+
+module bf16_add_wrapper (
   input   logic           i_clk,
   input   logic           i_rst_n,
-  input   logic           i_mode,
-  input   fp_pkg::fp32_t  i_operand,
-  output  fp_pkg::fp32_t  o_result
+  input   fp_pkg::bf16_t  i_operand_a,
+  input   fp_pkg::bf16_t  i_operand_b,
+  output  fp_pkg::bf16_t  o_sum
 );
 
+  logic [31:0] tmp_R;
   fpall_shared u_dut (
     .clk    (i_clk),
-    .opcode (OP_SQRT),
-    .fmt    (FP32),
-    .X      (32'(i_operand)),
-    .Y      (32'b0),
-    .R      (o_result)
+    .opcode (OP_ADD),
+    .fmt    (FP16),
+    .X      ({16'b0, i_operand_a}), // Low lane
+    .Y      ({16'b0, i_operand_b}),
+    .R      (tmp_R)
   );
+  assign o_sum = tmp_R[15:0];
+
+endmodule
+
+
+module bf16_mult_wrapper (
+  input   logic           i_clk,
+  input   logic           i_rst_n,
+  input   fp_pkg::bf16_t  i_a,
+  input   fp_pkg::bf16_t  i_b,
+  output  fp_pkg::bf16_t  o_prod
+);
+
+  logic [31:0] tmp_R;
+  fpall_shared u_dut (
+    .clk    (i_clk),
+    .opcode (OP_MUL),
+    .fmt    (FP16),
+    .X      ({16'b0, i_a}), // Low lane
+    .Y      ({16'b0, i_b}),
+    .R      (tmp_R)
+  );
+  assign o_prod = tmp_R[15:0];
 
 endmodule

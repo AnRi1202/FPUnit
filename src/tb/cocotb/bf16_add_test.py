@@ -68,8 +68,8 @@ async def test_bf16_adder_pipeline(dut):
     dut.i_operand_a.value = float_to_bfloat16(val_a)
     dut.i_operand_b.value = float_to_bfloat16(val_b)
 
-    for i in range(5):
-        await RisingEdge(dut.i_clk)
+
+    await RisingEdge(dut.i_clk)
 
     result_hex = dut.o_sum.value.to_unsigned()
     result_float = bfloat16_to_float(result_hex)
@@ -85,8 +85,7 @@ async def test_bf16_adder_pipeline(dut):
     dut.i_operand_a.value = float_to_bfloat16(val_a)
     dut.i_operand_b.value = float_to_bfloat16(val_b)
 
-    for i in range(5):
-        await RisingEdge(dut.i_clk)
+    await RisingEdge(dut.i_clk)
 
     result_hex = dut.o_sum.value.to_unsigned()
     result_float = bfloat16_to_float(result_hex)
@@ -102,8 +101,24 @@ async def test_bf16_adder_pipeline(dut):
     dut.i_operand_a.value = float_to_bfloat16(val_a)
     dut.i_operand_b.value = float_to_bfloat16(val_b)
 
-    for i in range(5):
-        await RisingEdge(dut.i_clk)
+    await RisingEdge(dut.i_clk)
+
+    result_hex = dut.o_sum.value.to_unsigned()
+    result_float = bfloat16_to_float(result_hex)
+
+    dut._log.info(f"Test 4 - Addition of negatives: {val_a} + {val_b} = {result_float} (expected {expected}), error={abs(result_float-expected):.2e}")
+    assert abs(result_float - expected) < 1e-2, f"Failed: Expected {expected}, got {result_float}"
+
+
+    # Test Case 5: Addition of negatives - (-2.0) + (-3.0) = -5.0
+    val_a = -2.0
+    val_b = -3.0
+    expected = val_a + val_b
+
+    dut.i_operand_a.value = float_to_bfloat16(val_a)
+    dut.i_operand_b.value = float_to_bfloat16(val_b)
+
+    await RisingEdge(dut.i_clk)
 
     result_hex = dut.o_sum.value.to_unsigned()
     result_float = bfloat16_to_float(result_hex)

@@ -1,7 +1,33 @@
-SIM_DIR :=$(abspath .)
-BUILD := $(SIM_DIR)/build/$(SIM)/$(TARGET)
+export ROOT := $(abspath ..)
+SIM_DIR := $(abspath .)
 
-SIM ?= xrun
-TOPLEVEL_LANG ?=verilog
+TOPLEVEL_LANG ?= verilog
 
-VERILOG_SOURCES := $(shell cat )
+define get_sources
+$(shell grep -v '^\s*#' $(1) | sed 's|\$$ROOT|$(ROOT)|g')
+endef
+
+
+VERILOG_SOURCES = $(call get_sources,$(SIM_DIR)/filelists/common_sv.f)
+VERILOG_SOURCES += $(call get_sources,$(SIM_DIR)/filelists/cocotb/shared-all_sv.f)
+VHDL_SOURCES = $(call get_sources,$(SIM_DIR)/filelists/common_vhdl.f)
+
+
+TEST_UNIT ?= fp32_add
+
+# result folder 
+SIM_BUILD := $(SIM_DIR)/build/$(SIM)/$(TARGET)/$(TEST_UNIT)_cocotb
+COCOTB_RESULTS_FILE := $(SIM_BUILD)/results.xml
+export SIM_BUILD COCOTB_RESULTS_FILE
+
+
+TOPLEVEL := $(TEST_UNIT)_wrapper
+MODULE := $(TEST_UNIT)_test
+
+# Fix typo in path (shared-combine -> shared_combine)
+export PYTHONPATH := $(ROOT)/src/tb/cocotb:$(PYTHONPATH)
+
+SIM ?= xcelium
+EXTRA_ARGS += -64bit -sv -v200x -access +rwc
+
+include $(shell cocotb-config --makefiles)/Makefile.sim
