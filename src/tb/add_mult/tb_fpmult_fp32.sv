@@ -10,10 +10,10 @@ module tb_fpmult_fp32;
   logic [31:0] R;
 
   // Adjust if your DUT has different ports
-  fpall_shared dut (
+  fpall_shared_logic_wrapper dut (
     .clk(clk),
-    .fmt(fmt),
-    .opcode(opcode),
+    .fmt_in(fmt),
+    .opcode_in(opcode),
     .X(X),
     .Y(Y),
     .R(R)

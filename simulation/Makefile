@@ -15,9 +15,19 @@ FILELIST_VHDL += $(wildcard $(SIM_DIR)/filelists/$(TARGET)_vhdl.f)
 # --- DUT selection define ---
 DEFINES :=
 
-ifeq ($(TARGET),shared-all)
-  DEFINES += +define+USE_FPALL
+ifeq ($(TARGET),v1_1_fp32_add)
+  DEFINES += +define+V1_1_FP32_ADD
 endif
+
+ifeq ($(TARGET),v2_bf16_full)
+  DEFINES += +define+V2_BF16_FULL
+endif
+
+
+ifeq ($(TARGET),v2_1_bf16_add)
+  DEFINES += +define+V2_1_BF16_ADD
+endif
+
 
 
 # flags

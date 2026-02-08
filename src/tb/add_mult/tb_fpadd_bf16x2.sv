@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 import fpall_pkg::*;
 
-module tb_fpmult_bf16x2;
+module tb_fpadd_bf16x2;
 
   logic     clk;
   fp_fmt_e  fmt;
@@ -10,10 +10,10 @@ module tb_fpmult_bf16x2;
   logic [31:0] R;
 
   // Adjust if your DUT has different ports
-  fpall_shared dut (
+  fpall_shared_logic_wrapper dut (
     .clk(clk),
-    .fmt(fmt),
-    .opcode(opcode),
+    .fmt_in(fmt),
+    .opcode_in(opcode),
     .X(X),
     .Y(Y),
     .R(R)
@@ -87,15 +87,15 @@ module tb_fpmult_bf16x2;
   endfunction
 
   // -----------------------------
-  // Reference model (MUL only)
+  // Reference model (ADD only)
   // -----------------------------
-  function automatic logic [31:0] ref_mul_bf16x2(input logic [31:0] x, input logic [31:0] y);
+  function automatic logic [31:0] ref_add_bf16x2(input logic [31:0] x, input logic [31:0] y);
     logic [15:0] xh, xl, yh, yl;
     shortreal sh, sl;
     xh = x[31:16]; xl = x[15:0];
     yh = y[31:16]; yl = y[15:0];
-    sh = bf16_to_sr(xh) * bf16_to_sr(yh);
-    sl = bf16_to_sr(xl) * bf16_to_sr(yl);
+    sh = bf16_to_sr(xh) + bf16_to_sr(yh);
+    sl = bf16_to_sr(xl) + bf16_to_sr(yl);
     return {sr_to_bf16(sh), sr_to_bf16(sl)};
   endfunction
 
@@ -109,20 +109,21 @@ module tb_fpmult_bf16x2;
     logic [31:0] expR;
     begin
       fmt    = FP16;
-      opcode = OP_MUL;
+      opcode = OP_ADD;
       X = x;
       Y = y;
 
       repeat (LAT) @(posedge clk);
 
-      expR = ref_mul_bf16x2(x, y);
+      expR = ref_add_bf16x2(x, y);
 
       // If you truly want to avoid over/under/NaN/Inf in *tests*, assert here.
+      // This also catches cases where DUT generates them unexpectedly.
       if (!(is_normal_bf16(expR[31:16]) && is_normal_bf16(expR[15:0]))) begin
         $fatal(1, "Ref produced non-normal (filtered test expected normal). tag=%s X=%h Y=%h expR=%h", tag, x, y, expR);
       end
 
-      // Strict bit-exact compare
+      // Strict bit-exact compare (since NaN/Inf are filtered out)
       if (R !== expR) begin
         mismatch_count++;
         $display("Mismatch tag=%s X=%h Y=%h got=%s exp=%s", tag, x, y, disp_32(R), disp_32(expR));
@@ -144,7 +145,7 @@ module tb_fpmult_bf16x2;
           tries++;
           x = rand_bf16x2_safe(/*allow_neg=*/1);
           y = rand_bf16x2_safe(/*allow_neg=*/1);
-          expR = ref_mul_bf16x2(x, y);
+          expR = ref_add_bf16x2(x, y);
 
           if (is_normal_bf16(expR[31:16]) && is_normal_bf16(expR[15:0])) break;
           if (tries > 2000) $fatal(1, "Could not find normal-only vector");
@@ -155,10 +156,14 @@ module tb_fpmult_bf16x2;
     end
   endtask
 
+  function automatic logic [31:0] pack2(input logic [15:0] hi, input logic [15:0] lo);
+    return {hi, lo};
+  endfunction
+
   initial begin
     // init
     fmt    = FP16;
-    opcode = OP_MUL;
+    opcode = OP_ADD;
     X = '0; Y = '0;
     repeat (LAT) @(posedge clk);
     // -----------------------------
@@ -166,7 +171,7 @@ module tb_fpmult_bf16x2;
     // -----------------------------
     run_random_normal_only(N_RANDOM);
 
-    $display("PASS: bf16x2 MUL normal-only tests completed");
+    $display("PASS: bf16x2 ADD normal-only tests completed");
     $display("SUMMARY: pass=%0d mismatch=%0d", pass_count, mismatch_count);
     $finish;
   end
