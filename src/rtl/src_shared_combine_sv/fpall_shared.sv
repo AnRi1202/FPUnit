@@ -1,14 +1,14 @@
 `timescale 1ns/1ps
+    import fpall_pkg::*;
 
 module fpall_shared(
     input logic clk,
-    input fpall_pkg::fp_op_e opcode, //00: Add, 01: Mul, 10: Sqrt, 11: Div
-    input fpall_pkg::fp_fmt_e fmt, // 
+    input fp_op_e opcode, //00: Add, 01: Mul, 10: Sqrt, 11: Div
+    input fp_fmt_e fmt, // 
     input logic [31:0] X,
     input logic [31:0] Y,
     output logic [31:0] R
 );
-    import fpall_pkg::*;
     // ========================================================================
     // for multiprecision
     // Design Policy:
