@@ -2,7 +2,7 @@
 module area_opt(
     input logic clk,
     input logic [1:0] opcode, //00: Add, 01: Mul, 10: Sqrt, 11: Div
-    // input logic fmt, // 0: FP32, 1: FP16
+    input logic fmt, // 0: FP32, 1: FP16
     input logic [31:0] X,
     input logic [31:0] Y,
     output logic [31:0] R
@@ -338,7 +338,7 @@ module area_opt(
     // Gen 2
     logic [26:0] shared_as_x2, shared_as_y2;
     logic shared_as_sub2;
-    logic [26:0] shared_as_r2, sub_mask2, y_xor2, cin_vec2;
+    logic [26:0] shared_as_r2;
     
     // Gen 3
     logic [26:0] shared_as_x3, shared_as_y3;
@@ -353,7 +353,7 @@ module area_opt(
     // Gen 5
     logic [26:0] shared_as_x5, shared_as_y5;
     logic shared_as_sub5;
-    logic [26:0] shared_as_r5, sub_mask5, y_xor5, cin_vec5;
+    logic [26:0] shared_as_r5;
     
     // Gen 6
     logic [26:0] shared_as_x6, shared_as_y6;
@@ -419,7 +419,7 @@ module area_opt(
     // FPAdd Logic
     // =================================================================================
 
-    assign swap = (X[30:0] < Y[30:0]) ? 1'b1 : 1'b0; //comparator
+    assign swap = (X[30:0] < Y[30:0]); //comparator
     // input swap so that |X|>|Y| 
     assign newX = (swap == 1'b0) ? X : Y; 
     assign newY = (swap == 1'b0) ? Y : X; 
@@ -433,7 +433,7 @@ module area_opt(
     
     assign fracY = {1'b1, newY[22:0]};
     
-    assign shiftedOut = (expDiff > 25) ? 1'b1 : 1'b0;
+    assign shiftedOut = (expDiff > 8'd25) ? 1'b1 : 1'b0;
     assign shiftVal = (shiftedOut == 1'b0) ? expDiff[4:0] : 5'd26;
 
     RightShifterSticky24_by_max_26_Freq1_uid4 RightShifterComponent (
@@ -511,9 +511,9 @@ module area_opt(
     assign sigProdExt = (norm == 1'b1) ? {sigProd[46:0], 1'b0} : {sigProd[45:0], 2'b00};
     assign expSig = {expPostNorm, sigProdExt[47:25]};
     assign mul_guard_bit = sigProdExt[24];
-    assign mul_sticky = (sigProdExt[23:0] == 24'd0) ? 1'b0 : 1'b1;
+    assign mul_sticky = |sigProdExt[23:0];
     assign mul_lsb = sigProdExt[25];
-    assign mul_round = mul_guard_bit & ((mul_sticky & (~mul_lsb)) | mul_lsb);
+    assign mul_round = mul_guard_bit & (mul_sticky | mul_lsb);
     
     // Connect to Shared Rounding Adder
     assign mul_ra_X =  expSig; 
@@ -1194,10 +1194,7 @@ module area_opt(
     assign shared_as_y2 = (opcode[0] == 1'b1) ? absq3D : {1'b0, U21};
     assign shared_as_sub2 = (opcode[0] == 1'b1) ? ~q3[2] : d21;
     
-    assign sub_mask2 = {27{shared_as_sub2}}; // 26 downto 0 is 27 bits
-    assign y_xor2 = shared_as_y2 ^ sub_mask2;
-    assign cin_vec2 = {26'd0, shared_as_sub2};
-    assign shared_as_r2 = shared_as_x2 + y_xor2 + cin_vec2;
+    assign shared_as_r2 = (shared_as_sub2 == 1'b1) ? (shared_as_x2 - shared_as_y2) : (shared_as_x2 + shared_as_y2);
 
     // Step 3
     assign shared_as_x3 = (opcode[0] == 1'b1) ? betaw4 : {2'b00, T20s_h};
