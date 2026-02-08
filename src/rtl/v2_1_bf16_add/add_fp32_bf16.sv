@@ -23,6 +23,7 @@ module add_fp32_bf16(
     // FPAdd signals
     logic [32:0] excExpFracX, excExpFracY;
     logic swap;
+    logic swap_h, swap_l;
     logic [7:0] expDiff_h;
     logic [7:0] expDiff_l;
     fp_vec_u newX, newY;
@@ -61,7 +62,8 @@ module add_fp32_bf16(
     logic [31:0] add_R_fp32;
     logic [31:0] add_R_fp16;
 
-
+    logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
+    logic add_fracAdder_Cin;
     logic [35:0] add_expFrac;
     logic add_round_h, add_round_l, add_round;
 
