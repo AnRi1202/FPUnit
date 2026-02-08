@@ -11,7 +11,17 @@ module fpall_shared_logic_wrapper(
     input logic [31:0] Y,
     output logic [31:0] R
 );
-`ifdef V1_1_FP32_ADD
+
+`ifdef V1_AREA_OPT
+    area_opt u_dut (
+        .clk(clk),
+        .opcode(opcode_in),
+        .fmt(fmt_in),
+        .X(X),
+        .Y(Y),
+        .R(R)
+    );
+`elsif V1_1_FP32_ADD
     add_fp32_base u_dut (
         .clk(clk),
         .fmt(fp_fmt_e'(fmt_in)),
