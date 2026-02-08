@@ -61,14 +61,6 @@ architecture arch of area_opt is
              Y : out  std_logic_vector(2 downto 0)   );
    end component;
 
-   -- FPShared --
-    component IntAdder_34_Freq1_uid11 is
-       port ( clk : in std_logic;
-              X : in  std_logic_vector(33 downto 0);
-              Y : in  std_logic_vector(33 downto 0);
-              Cin : in  std_logic;
-              R : out  std_logic_vector(33 downto 0)   );
-    end component;
     
     component IntAdder_27_Freq1_uid6 is
        port ( clk : in std_logic;
@@ -80,146 +72,63 @@ architecture arch of area_opt is
 
 -- FPAdd --
 
--- signal excExpFracX :  std_logic_vector(32 downto 0);
-   -- timing of excExpFracX: (c0, 0.000000ns)
--- signal excExpFracY :  std_logic_vector(32 downto 0);
-   -- timing of excExpFracY: (c0, 0.000000ns)
 signal swap :  std_logic;
-   -- timing of swap: (c0, 1.190000ns)
-signal eXmeY :  std_logic_vector(7 downto 0);
-   -- timing of eXmeY: (c0, 1.092000ns)
-signal eYmeX :  std_logic_vector(7 downto 0);
-   -- timing of eYmeX: (c0, 1.092000ns)
 signal expDiff :  std_logic_vector(7 downto 0);
-   -- timing of expDiff: (c0, 1.733000ns)
 signal newX :  std_logic_vector(31 downto 0);
-   -- timing of newX: (c0, 1.733000ns)
 signal newY :  std_logic_vector(31 downto 0);
-   -- timing of newY: (c0, 1.733000ns)
 signal add_expX :  std_logic_vector(7 downto 0);
-   -- timing of add_expX: (c0, 1.733000ns)
--- signal excX :  std_logic_vector(1 downto 0);
---    -- timing of excX: (c0, 1.733000ns)
--- signal excY :  std_logic_vector(1 downto 0);
---    -- timing of excY: (c0, 1.733000ns)
 signal signX :  std_logic;
-   -- timing of signX: (c0, 1.733000ns)
 signal signY :  std_logic;
-   -- timing of signY: (c0, 1.733000ns)
 signal EffSub :  std_logic;
-   -- timing of EffSub: (c0, 2.276000ns)
--- signal sXsYExnXY :  std_logic_vector(1 downto 0);
-   -- timing of sXsYExnXY: (c0, 1.733000ns)
--- signal sdExnXY :  std_logic_vector(3 downto 0);
-   -- timing of sdExnXY: (c0, 1.733000ns)
 signal fracY :  std_logic_vector(23 downto 0);
-   -- timing of fracY: (c0, 2.276000ns)
--- signal excRt :  std_logic_vector(1 downto 0);
-   -- timing of excRt: (c0, 2.352000ns)
-signal signR :  std_logic;
-   -- timing of signR: (c0, 2.276000ns)
 signal shiftedOut :  std_logic;
-   -- timing of shiftedOut: (c0, 2.300500ns)
 signal shiftVal :  std_logic_vector(4 downto 0);
-   -- timing of shiftVal: (c0, 2.843500ns)
 signal shiftedFracY :  std_logic_vector(25 downto 0);
-   -- timing of shiftedFracY: (c0, 3.929500ns)
 signal add_sticky :  std_logic;
-   -- timing of add_sticky: (c0, 6.211750ns)
 signal fracYpad :  std_logic_vector(26 downto 0);
-   -- timing of fracYpad: (c0, 3.929500ns)
 signal EffSubVector :  std_logic_vector(26 downto 0);
-   -- timing of EffSubVector: (c0, 2.276000ns)
 signal fracYpadXorOp :  std_logic_vector(26 downto 0);
-   -- timing of fracYpadXorOp: (c0, 4.472500ns)
 signal fracXpad :  std_logic_vector(26 downto 0);
-   -- timing of fracXpad: (c0, 1.733000ns)
 signal cInSigAdd :  std_logic;
-   -- timing of cInSigAdd: (c0, 6.754750ns)
 signal fracAddResult :  std_logic_vector(26 downto 0);
-   -- timing of fracAddResult: (c0, 8.042750ns)
 signal fracSticky :  std_logic_vector(27 downto 0);
-   -- timing of fracSticky: (c0, 8.042750ns)
 signal nZerosNew :  std_logic_vector(4 downto 0);
-   -- timing of nZerosNew: (c0, 13.040000ns)
 signal shiftedFrac :  std_logic_vector(27 downto 0);
-   -- timing of shiftedFrac: (c0, 13.583000ns)
 signal extendedExpInc :  std_logic_vector(8 downto 0);
-   -- timing of extendedExpInc: (c0, 2.825000ns)
-signal updatedExp :  std_logic_vector(9 downto 0);
-   -- timing of updatedExp: (c0, 14.132000ns)
-signal eqdiffsign :  std_logic;
-   -- timing of eqdiffsign: (c0, 13.040000ns)
--- signal expFrac :  std_logic_vector(33 downto 0);
-   -- timing of expFrac: (c0, 14.132000ns)
+signal updatedExp :  std_logic_vector(8 downto 0);
+
 signal stk :  std_logic;
-   -- timing of stk: (c0, 13.583000ns)
 signal rnd :  std_logic;
-   -- timing of rnd: (c0, 13.583000ns)
 signal lsb :  std_logic;
-   -- timing of lsb: (c0, 13.583000ns)
--- signal round :  std_logic;
-   -- timing of round: (c0, 14.126000ns)
-signal RoundedExpFrac :  std_logic_vector(33 downto 0);
-   -- timing of RoundedExpFrac: (c0, 15.518000ns)
--- signal upExc :  std_logic_vector(1 downto 0);
---    -- timing of upExc: (c0, 15.518000ns)
+signal RoundedExpFrac :  std_logic_vector(32 downto 0);
 signal fracR :  std_logic_vector(22 downto 0);
-   -- timing of fracR: (c0, 15.518000ns)
 signal expR :  std_logic_vector(7 downto 0);
-   -- timing of expR: (c0, 15.518000ns)
--- signal exExpExc :  std_logic_vector(3 downto 0);
-   -- timing of exExpExc: (c0, 15.518000ns)
--- signal excRt2 :  std_logic_vector(1 downto 0);
-   -- timing of excRt2: (c0, 16.061000ns)
--- signal excR :  std_logic_vector(1 downto 0);
-   -- timing of excR: (c0, 16.604000ns)
-signal signR2 :  std_logic;
-   -- timing of signR2: (c0, 13.583000ns)
--- signal computedR :  std_logic_vector(33 downto 0);
-   -- timing of computedR: (c0, 16.604000ns)
--- signal add_R: std_logic_vector(33 downto 0);
 
 -- FPMul --
 
 signal sign :  std_logic;
-   -- timing of sign: (c0, 0.043000ns)
 signal mul_expX :  std_logic_vector(7 downto 0);
-   -- timing of mul_expX: (c0, 0.000000ns)
 signal expY :  std_logic_vector(7 downto 0);
-   -- timing of expY: (c0, 0.000000ns)
 signal expSumPreSub :  std_logic_vector(9 downto 0);
-   -- timing of expSumPreSub: (c0, 1.092000ns)
 signal bias :  std_logic_vector(9 downto 0);
-   -- timing of bias: (c0, 0.000000ns)
 signal expSum :  std_logic_vector(9 downto 0);
-   -- timing of expSum: (c0, 2.184000ns)
 signal sigX :  std_logic_vector(23 downto 0);
-   -- timing of sigX: (c0, 0.000000ns)
 signal sigY :  std_logic_vector(23 downto 0);
-   -- timing of sigY: (c0, 0.000000ns)
 signal sigProd :  std_logic_vector(47 downto 0);
-   -- timing of sigProd: (c0, 4.870000ns)
-   -- signal excSel :  std_logic_vector(3 downto 0);
-   -- signal exc :  std_logic_vector(1 downto 0);
    signal norm :  std_logic;
    signal expPostNorm :  std_logic_vector(9 downto 0);
    signal sigProdExt :  std_logic_vector(47 downto 0);
    signal expSig :  std_logic_vector(32 downto 0);
+   signal mul_guard_bit :  std_logic;
    signal mul_sticky :  std_logic;
-   signal guard :  std_logic;
-   -- signal round :  std_logic;
+   signal mul_lsb :  std_logic;
    signal expSigPostRound :  std_logic_vector(30 downto 0);
-   -- signal excPostNorm :  std_logic_vector(1 downto 0);
-   -- signal finalExc :  std_logic_vector(1 downto 0);
--- signal mul_R: std_logic_vector(33 downto 0); --new
+
 -- FPDiv --
 signal fX :  std_logic_vector(23 downto 0);
 signal fY :  std_logic_vector(23 downto 0);
 signal expR0 :  std_logic_vector(9 downto 0);
 signal sR :  std_logic;
--- signal exnXY :  std_logic_vector(3 downto 0);
--- signal exnR0 :  std_logic_vector(1 downto 0);
 signal D :  std_logic_vector(23 downto 0);
 signal psX :  std_logic_vector(24 downto 0);
 signal betaw14 :  std_logic_vector(26 downto 0);
@@ -341,443 +250,231 @@ signal qM :  std_logic_vector(27 downto 0);
 signal quotient :  std_logic_vector(27 downto 0);
 signal div_mR :  std_logic_vector(25 downto 0);
 signal fRnorm :  std_logic_vector(23 downto 0);
--- signal div_round :  std_logic; --new
 signal expR1 :  std_logic_vector(9 downto 0);
--- signal expfrac :  std_logic_vector(32 downto 0);
 signal expfracR :  std_logic_vector(32 downto 0);
--- signal exnR :  std_logic_vector(1 downto 0);
--- signal exnRfinal :  std_logic_vector(1 downto 0);
--- signal div_R :std_logic_vector(33 downto 0); --new
 
 
 
 -- FPSqrt signals
 signal fracX :  std_logic_vector(22 downto 0);
-   -- timing of fracX: (c0, 0.000000ns)
 signal eRn0 :  std_logic_vector(7 downto 0);
-   -- timing of eRn0: (c0, 0.000000ns)
--- signal xsX :  std_logic_vector(2 downto 0);
-   -- timing of xsX: (c0, 0.000000ns)
 signal eRn1 :  std_logic_vector(7 downto 0);
-   -- timing of eRn1: (c0, 0.000000ns)
 signal fracXnorm :  std_logic_vector(26 downto 0);
-   -- timing of fracXnorm: (c0, 0.043000ns)
 signal S0 :  std_logic_vector(1 downto 0);
-   -- timing of S0: (c0, 0.000000ns)
 signal T1 :  std_logic_vector(26 downto 0);
-   -- timing of T1: (c0, 1.086000ns)
 signal d1 :  std_logic;
-   -- timing of d1: (c0, 1.086000ns)
 signal T1s :  std_logic_vector(27 downto 0);
-   -- timing of T1s: (c0, 1.086000ns)
 signal T1s_h :  std_logic_vector(5 downto 0);
-   -- timing of T1s_h: (c0, 1.086000ns)
 signal T1s_l :  std_logic_vector(21 downto 0);
-   -- timing of T1s_l: (c0, 1.086000ns)
 signal U1 :  std_logic_vector(5 downto 0);
-   -- timing of U1: (c0, 1.086000ns)
 signal T3_h :  std_logic_vector(5 downto 0);
-   -- timing of T3_h: (c0, 2.080000ns)
 signal T2 :  std_logic_vector(26 downto 0);
-   -- timing of T2: (c0, 2.080000ns)
 signal S1 :  std_logic_vector(2 downto 0);
-   -- timing of S1: (c0, 1.086000ns)
 signal d2 :  std_logic;
-   -- timing of d2: (c0, 2.080000ns)
 signal T2s :  std_logic_vector(27 downto 0);
-   -- timing of T2s: (c0, 2.080000ns)
 signal T2s_h :  std_logic_vector(6 downto 0);
-   -- timing of T2s_h: (c0, 2.080000ns)
 signal T2s_l :  std_logic_vector(20 downto 0);
-   -- timing of T2s_l: (c0, 2.080000ns)
 signal U2 :  std_logic_vector(6 downto 0);
-   -- timing of U2: (c0, 2.080000ns)
 signal T4_h :  std_logic_vector(6 downto 0);
-   -- timing of T4_h: (c0, 3.123000ns)
 signal T3 :  std_logic_vector(26 downto 0);
-   -- timing of T3: (c0, 3.123000ns)
 signal S2 :  std_logic_vector(3 downto 0);
-   -- timing of S2: (c0, 2.080000ns)
 signal d3 :  std_logic;
-   -- timing of d3: (c0, 3.123000ns)
 signal T3s :  std_logic_vector(27 downto 0);
-   -- timing of T3s: (c0, 3.123000ns)
 signal T3s_h :  std_logic_vector(7 downto 0);
-   -- timing of T3s_h: (c0, 3.123000ns)
 signal T3s_l :  std_logic_vector(19 downto 0);
-   -- timing of T3s_l: (c0, 3.123000ns)
 signal U3 :  std_logic_vector(7 downto 0);
-   -- timing of U3: (c0, 3.123000ns)
 signal T5_h :  std_logic_vector(7 downto 0);
-   -- timing of T5_h: (c0, 4.166000ns)
 signal T4 :  std_logic_vector(26 downto 0);
-   -- timing of T4: (c0, 4.166000ns)
 signal S3 :  std_logic_vector(4 downto 0);
-   -- timing of S3: (c0, 3.123000ns)
 signal d4 :  std_logic;
-   -- timing of d4: (c0, 4.166000ns)
 signal T4s :  std_logic_vector(27 downto 0);
-   -- timing of T4s: (c0, 4.166000ns)
 signal T4s_h :  std_logic_vector(8 downto 0);
-   -- timing of T4s_h: (c0, 4.166000ns)
 signal T4s_l :  std_logic_vector(18 downto 0);
-   -- timing of T4s_l: (c0, 4.166000ns)
 signal U4 :  std_logic_vector(8 downto 0);
-   -- timing of U4: (c0, 4.166000ns)
 signal T6_h :  std_logic_vector(8 downto 0);
-   -- timing of T6_h: (c0, 5.209000ns)
 signal T5 :  std_logic_vector(26 downto 0);
-   -- timing of T5: (c0, 5.209000ns)
 signal S4 :  std_logic_vector(5 downto 0);
-   -- timing of S4: (c0, 4.166000ns)
 signal d5 :  std_logic;
-   -- timing of d5: (c0, 5.209000ns)
 signal T5s :  std_logic_vector(27 downto 0);
-   -- timing of T5s: (c0, 5.209000ns)
 signal T5s_h :  std_logic_vector(9 downto 0);
-   -- timing of T5s_h: (c0, 5.209000ns)
 signal T5s_l :  std_logic_vector(17 downto 0);
-   -- timing of T5s_l: (c0, 5.209000ns)
 signal U5 :  std_logic_vector(9 downto 0);
-   -- timing of U5: (c0, 5.209000ns)
 signal T7_h :  std_logic_vector(9 downto 0);
-   -- timing of T7_h: (c0, 6.252000ns)
 signal T6 :  std_logic_vector(26 downto 0);
-   -- timing of T6: (c0, 6.252000ns)
 signal S5 :  std_logic_vector(6 downto 0);
-   -- timing of S5: (c0, 5.209000ns)
 signal d6 :  std_logic;
-   -- timing of d6: (c0, 6.252000ns)
 signal T6s :  std_logic_vector(27 downto 0);
-   -- timing of T6s: (c0, 6.252000ns)
 signal T6s_h :  std_logic_vector(10 downto 0);
-   -- timing of T6s_h: (c0, 6.252000ns)
 signal T6s_l :  std_logic_vector(16 downto 0);
-   -- timing of T6s_l: (c0, 6.252000ns)
 signal U6 :  std_logic_vector(10 downto 0);
-   -- timing of U6: (c0, 6.252000ns)
 signal T8_h :  std_logic_vector(10 downto 0);
-   -- timing of T8_h: (c0, 7.344000ns)
 signal T7 :  std_logic_vector(26 downto 0);
-   -- timing of T7: (c0, 7.344000ns)
 signal S6 :  std_logic_vector(7 downto 0);
-   -- timing of S6: (c0, 6.252000ns)
 signal d7 :  std_logic;
-   -- timing of d7: (c0, 7.344000ns)
 signal T7s :  std_logic_vector(27 downto 0);
-   -- timing of T7s: (c0, 7.344000ns)
 signal T7s_h :  std_logic_vector(11 downto 0);
-   -- timing of T7s_h: (c0, 7.344000ns)
 signal T7s_l :  std_logic_vector(15 downto 0);
-   -- timing of T7s_l: (c0, 7.344000ns)
 signal U7 :  std_logic_vector(11 downto 0);
-   -- timing of U7: (c0, 7.344000ns)
 signal T9_h :  std_logic_vector(11 downto 0);
-   -- timing of T9_h: (c0, 8.436000ns)
 signal T8 :  std_logic_vector(26 downto 0);
-   -- timing of T8: (c0, 8.436000ns)
 signal S7 :  std_logic_vector(8 downto 0);
-   -- timing of S7: (c0, 7.344000ns)
 signal d8 :  std_logic;
-   -- timing of d8: (c0, 8.436000ns)
 signal T8s :  std_logic_vector(27 downto 0);
-   -- timing of T8s: (c0, 8.436000ns)
 signal T8s_h :  std_logic_vector(12 downto 0);
-   -- timing of T8s_h: (c0, 8.436000ns)
 signal T8s_l :  std_logic_vector(14 downto 0);
-   -- timing of T8s_l: (c0, 8.436000ns)
 signal U8 :  std_logic_vector(12 downto 0);
-   -- timing of U8: (c0, 8.436000ns)
 signal T10_h :  std_logic_vector(12 downto 0);
-   -- timing of T10_h: (c0, 9.528000ns)
 signal T9 :  std_logic_vector(26 downto 0);
-   -- timing of T9: (c0, 9.528000ns)
 signal S8 :  std_logic_vector(9 downto 0);
-   -- timing of S8: (c0, 8.436000ns)
 signal d9 :  std_logic;
-   -- timing of d9: (c0, 9.528000ns)
 signal T9s :  std_logic_vector(27 downto 0);
-   -- timing of T9s: (c0, 9.528000ns)
 signal T9s_h :  std_logic_vector(13 downto 0);
-   -- timing of T9s_h: (c0, 9.528000ns)
 signal T9s_l :  std_logic_vector(13 downto 0);
-   -- timing of T9s_l: (c0, 9.528000ns)
 signal U9 :  std_logic_vector(13 downto 0);
-   -- timing of U9: (c0, 9.528000ns)
 signal T11_h :  std_logic_vector(13 downto 0);
-   -- timing of T11_h: (c0, 10.620000ns)
 signal T10 :  std_logic_vector(26 downto 0);
-   -- timing of T10: (c0, 10.620000ns)
 signal S9 :  std_logic_vector(10 downto 0);
-   -- timing of S9: (c0, 9.528000ns)
 signal d10 :  std_logic;
-   -- timing of d10: (c0, 10.620000ns)
 signal T10s :  std_logic_vector(27 downto 0);
-   -- timing of T10s: (c0, 10.620000ns)
 signal T10s_h :  std_logic_vector(14 downto 0);
-   -- timing of T10s_h: (c0, 10.620000ns)
 signal T10s_l :  std_logic_vector(12 downto 0);
-   -- timing of T10s_l: (c0, 10.620000ns)
 signal U10 :  std_logic_vector(14 downto 0);
-   -- timing of U10: (c0, 10.620000ns)
 signal T12_h :  std_logic_vector(14 downto 0);
-   -- timing of T12_h: (c0, 11.761000ns)
 signal T11 :  std_logic_vector(26 downto 0);
-   -- timing of T11: (c0, 11.761000ns)
 signal S10 :  std_logic_vector(11 downto 0);
-   -- timing of S10: (c0, 10.620000ns)
 signal d11 :  std_logic;
-   -- timing of d11: (c0, 11.761000ns)
 signal T11s :  std_logic_vector(27 downto 0);
-   -- timing of T11s: (c0, 11.761000ns)
 signal T11s_h :  std_logic_vector(15 downto 0);
-   -- timing of T11s_h: (c0, 11.761000ns)
 signal T11s_l :  std_logic_vector(11 downto 0);
-   -- timing of T11s_l: (c0, 11.761000ns)
 signal U11 :  std_logic_vector(15 downto 0);
-   -- timing of U11: (c0, 11.761000ns)
 signal T13_h :  std_logic_vector(15 downto 0);
-   -- timing of T13_h: (c0, 12.902000ns)
 signal T12 :  std_logic_vector(26 downto 0);
-   -- timing of T12: (c0, 12.902000ns)
 signal S11 :  std_logic_vector(12 downto 0);
-   -- timing of S11: (c0, 11.761000ns)
 signal d12 :  std_logic;
-   -- timing of d12: (c0, 12.902000ns)
 signal T12s :  std_logic_vector(27 downto 0);
-   -- timing of T12s: (c0, 12.902000ns)
 signal T12s_h :  std_logic_vector(16 downto 0);
-   -- timing of T12s_h: (c0, 12.902000ns)
 signal T12s_l :  std_logic_vector(10 downto 0);
-   -- timing of T12s_l: (c0, 12.902000ns)
 signal U12 :  std_logic_vector(16 downto 0);
-   -- timing of U12: (c0, 12.902000ns)
 signal T14_h :  std_logic_vector(16 downto 0);
-   -- timing of T14_h: (c0, 14.043000ns)
 signal T13 :  std_logic_vector(26 downto 0);
-   -- timing of T13: (c0, 14.043000ns)
 signal S12 :  std_logic_vector(13 downto 0);
-   -- timing of S12: (c0, 12.902000ns)
 signal d13 :  std_logic;
-   -- timing of d13: (c0, 14.043000ns)
 signal T13s :  std_logic_vector(27 downto 0);
-   -- timing of T13s: (c0, 14.043000ns)
 signal T13s_h :  std_logic_vector(17 downto 0);
-   -- timing of T13s_h: (c0, 14.043000ns)
 signal T13s_l :  std_logic_vector(9 downto 0);
-   -- timing of T13s_l: (c0, 14.043000ns)
 signal U13 :  std_logic_vector(17 downto 0);
-   -- timing of U13: (c0, 14.043000ns)
 signal T15_h :  std_logic_vector(17 downto 0);
-   -- timing of T15_h: (c0, 15.184000ns)
 signal T14 :  std_logic_vector(26 downto 0);
-   -- timing of T14: (c0, 15.184000ns)
 signal S13 :  std_logic_vector(14 downto 0);
-   -- timing of S13: (c0, 14.043000ns)
 signal d14 :  std_logic;
-   -- timing of d14: (c0, 15.184000ns)
 signal T14s :  std_logic_vector(27 downto 0);
-   -- timing of T14s: (c0, 15.184000ns)
 signal T14s_h :  std_logic_vector(18 downto 0);
-   -- timing of T14s_h: (c0, 15.184000ns)
 signal T14s_l :  std_logic_vector(8 downto 0);
-   -- timing of T14s_l: (c0, 15.184000ns)
 signal U14 :  std_logic_vector(18 downto 0);
-   -- timing of U14: (c0, 15.184000ns)
 signal T16_h :  std_logic_vector(18 downto 0);
-   -- timing of T16_h: (c0, 16.374000ns)
 signal T15 :  std_logic_vector(26 downto 0);
-   -- timing of T15: (c0, 16.374000ns)
 signal S14 :  std_logic_vector(15 downto 0);
-   -- timing of S14: (c0, 15.184000ns)
 signal d15 :  std_logic;
-   -- timing of d15: (c0, 16.374000ns)
 signal T15s :  std_logic_vector(27 downto 0);
-   -- timing of T15s: (c0, 16.374000ns)
 signal T15s_h :  std_logic_vector(19 downto 0);
-   -- timing of T15s_h: (c0, 16.374000ns)
 signal T15s_l :  std_logic_vector(7 downto 0);
-   -- timing of T15s_l: (c0, 16.374000ns)
 signal U15 :  std_logic_vector(19 downto 0);
-   -- timing of U15: (c0, 16.374000ns)
 signal T17_h :  std_logic_vector(19 downto 0);
-   -- timing of T17_h: (c0, 17.564000ns)
 signal T16 :  std_logic_vector(26 downto 0);
-   -- timing of T16: (c0, 17.564000ns)
 signal S15 :  std_logic_vector(16 downto 0);
-   -- timing of S15: (c0, 16.374000ns)
 signal d16 :  std_logic;
-   -- timing of d16: (c0, 17.564000ns)
 signal T16s :  std_logic_vector(27 downto 0);
-   -- timing of T16s: (c0, 17.564000ns)
 signal T16s_h :  std_logic_vector(20 downto 0);
-   -- timing of T16s_h: (c0, 17.564000ns)
 signal T16s_l :  std_logic_vector(6 downto 0);
-   -- timing of T16s_l: (c0, 17.564000ns)
 signal U16 :  std_logic_vector(20 downto 0);
-   -- timing of U16: (c0, 17.564000ns)
 signal T18_h :  std_logic_vector(20 downto 0);
-   -- timing of T18_h: (c0, 18.754000ns)
 signal T17 :  std_logic_vector(26 downto 0);
-   -- timing of T17: (c0, 18.754000ns)
 signal S16 :  std_logic_vector(17 downto 0);
-   -- timing of S16: (c0, 17.564000ns)
 signal d17 :  std_logic;
-   -- timing of d17: (c0, 18.754000ns)
 signal T17s :  std_logic_vector(27 downto 0);
-   -- timing of T17s: (c0, 18.754000ns)
 signal T17s_h :  std_logic_vector(21 downto 0);
-   -- timing of T17s_h: (c0, 18.754000ns)
 signal T17s_l :  std_logic_vector(5 downto 0);
-   -- timing of T17s_l: (c0, 18.754000ns)
 signal U17 :  std_logic_vector(21 downto 0);
-   -- timing of U17: (c0, 18.754000ns)
 signal T19_h :  std_logic_vector(21 downto 0);
-   -- timing of T19_h: (c0, 19.944000ns)
 signal T18 :  std_logic_vector(26 downto 0);
-   -- timing of T18: (c0, 19.944000ns)
 signal S17 :  std_logic_vector(18 downto 0);
-   -- timing of S17: (c0, 18.754000ns)
 signal d18 :  std_logic;
-   -- timing of d18: (c0, 19.944000ns)
 signal T18s :  std_logic_vector(27 downto 0);
-   -- timing of T18s: (c0, 19.944000ns)
 signal T18s_h :  std_logic_vector(22 downto 0);
-   -- timing of T18s_h: (c0, 19.944000ns)
 signal T18s_l :  std_logic_vector(4 downto 0);
-   -- timing of T18s_l: (c0, 19.944000ns)
 signal U18 :  std_logic_vector(22 downto 0);
-   -- timing of U18: (c0, 19.944000ns)
 signal T20_h :  std_logic_vector(22 downto 0);
-   -- timing of T20_h: (c0, 21.183000ns)
 signal T19 :  std_logic_vector(26 downto 0);
-   -- timing of T19: (c0, 21.183000ns)
 signal S18 :  std_logic_vector(19 downto 0);
-   -- timing of S18: (c0, 19.944000ns)
 signal d19 :  std_logic;
-   -- timing of d19: (c0, 21.183000ns)
 signal T19s :  std_logic_vector(27 downto 0);
-   -- timing of T19s: (c0, 21.183000ns)
 signal T19s_h :  std_logic_vector(23 downto 0);
-   -- timing of T19s_h: (c0, 21.183000ns)
 signal T19s_l :  std_logic_vector(3 downto 0);
-   -- timing of T19s_l: (c0, 21.183000ns)
 signal U19 :  std_logic_vector(23 downto 0);
-   -- timing of U19: (c0, 21.183000ns)
 signal T21_h :  std_logic_vector(23 downto 0);
-   -- timing of T21_h: (c0, 22.422000ns)
 signal T20 :  std_logic_vector(26 downto 0);
-   -- timing of T20: (c0, 22.422000ns)
 signal S19 :  std_logic_vector(20 downto 0);
-   -- timing of S19: (c0, 21.183000ns)
 signal d20 :  std_logic;
-   -- timing of d20: (c0, 22.422000ns)
 signal T20s :  std_logic_vector(27 downto 0);
-   -- timing of T20s: (c0, 22.422000ns)
 signal T20s_h :  std_logic_vector(24 downto 0);
-   -- timing of T20s_h: (c0, 22.422000ns)
 signal T20s_l :  std_logic_vector(2 downto 0);
-   -- timing of T20s_l: (c0, 22.422000ns)
 signal U20 :  std_logic_vector(24 downto 0);
-   -- timing of U20: (c0, 22.422000ns)
 signal T22_h :  std_logic_vector(24 downto 0);
-   -- timing of T22_h: (c0, 23.661000ns)
 signal T21 :  std_logic_vector(26 downto 0);
-   -- timing of T21: (c0, 23.661000ns)
 signal S20 :  std_logic_vector(21 downto 0);
-   -- timing of S20: (c0, 22.422000ns)
 signal d21 :  std_logic;
-   -- timing of d21: (c0, 23.661000ns)
 signal T21s :  std_logic_vector(27 downto 0);
-   -- timing of T21s: (c0, 23.661000ns)
 signal T21s_h :  std_logic_vector(25 downto 0);
-   -- timing of T21s_h: (c0, 23.661000ns)
 signal T21s_l :  std_logic_vector(1 downto 0);
-   -- timing of T21s_l: (c0, 23.661000ns)
 signal U21 :  std_logic_vector(25 downto 0);
-   -- timing of U21: (c0, 23.661000ns)
 signal T23_h :  std_logic_vector(25 downto 0);
-   -- timing of T23_h: (c0, 24.900000ns)
 signal T22 :  std_logic_vector(26 downto 0);
-   -- timing of T22: (c0, 24.900000ns)
 signal S21 :  std_logic_vector(22 downto 0);
-   -- timing of S21: (c0, 23.661000ns)
 signal d22 :  std_logic;
-   -- timing of d22: (c0, 24.900000ns)
 signal T22s :  std_logic_vector(27 downto 0);
-   -- timing of T22s: (c0, 24.900000ns)
 signal T22s_h :  std_logic_vector(26 downto 0);
-   -- timing of T22s_h: (c0, 24.900000ns)
 signal T22s_l :  std_logic_vector(0 downto 0);
-   -- timing of T22s_l: (c0, 24.900000ns)
 signal U22 :  std_logic_vector(26 downto 0);
-   -- timing of U22: (c0, 24.900000ns)
 signal T24_h :  std_logic_vector(26 downto 0);
-   -- timing of T24_h: (c0, 26.188000ns)
 signal T23 :  std_logic_vector(26 downto 0);
-   -- timing of T23: (c0, 26.188000ns)
 signal S22 :  std_logic_vector(23 downto 0);
-   -- timing of S22: (c0, 24.900000ns)
 signal d23 :  std_logic;
-   -- timing of d23: (c0, 26.188000ns)
 signal T23s :  std_logic_vector(27 downto 0);
-   -- timing of T23s: (c0, 26.188000ns)
 signal T23s_h :  std_logic_vector(27 downto 0);
-   -- timing of T23s_h: (c0, 26.188000ns)
 signal U23 :  std_logic_vector(27 downto 0);
-   -- timing of U23: (c0, 26.188000ns)
 signal T25_h :  std_logic_vector(27 downto 0);
-   -- timing of T25_h: (c0, 27.476000ns)
 signal T24 :  std_logic_vector(26 downto 0);
-   -- timing of T24: (c0, 27.476000ns)
 signal S23 :  std_logic_vector(24 downto 0);
-   -- timing of S23: (c0, 26.188000ns)
 signal d25 :  std_logic;
-   -- timing of d25: (c0, 27.476000ns)
 signal sqrt_mR :  std_logic_vector(25 downto 0);
-   -- timing of sqrt_mR: (c0, 27.476000ns)
 signal fR :  std_logic_vector(22 downto 0);
-   -- timing of fR: (c0, 27.476000ns)
--- signal sqrt_round :  std_logic;
-   -- timing of sqrt_round: (c0, 27.476000ns)
 signal fRrnd :  std_logic_vector(22 downto 0);
-   -- timing of fRrnd: (c0, 28.715000ns)
 signal Rn2 :  std_logic_vector(30 downto 0);
-   -- timing of Rn2: (c0, 28.715000ns)
--- signal xsR :  std_logic_vector(2 downto 0);
-   -- timing of xsR: (c0, 0.043000ns)
--- signal sqrt_R :std_logic_vector(33 downto 0); -- new
 
 
 -- FPShared --
     -- Add signals
     signal add_R : std_logic_vector(31 downto 0);
-    signal add_expFrac : std_logic_vector(33 downto 0);
+    signal add_expFrac : std_logic_vector(32 downto 0);
     signal add_round : std_logic;
-    -- signal add_ResultBack : std_logic_vector(33 downto 0);
     
     -- Mul signals
     signal mul_R : std_logic_vector(31 downto 0);
-    signal mul_expSig : std_logic_vector(32 downto 0);
     signal mul_round : std_logic;
-    -- signal mul_ResultBack : std_logic_vector(32 downto 0);
 
     -- Sqrt signals
     signal sqrt_R : std_logic_vector(31 downto 0);
     signal sqrt_expFrac : std_logic_vector(22 downto 0);
     signal sqrt_round : std_logic;
-    -- signal sqrt_ResultBack : std_logic_vector(22 downto 0);
 
     -- Div signals
     signal div_R : std_logic_vector(31 downto 0);
-    signal div_expfrac : std_logic_vector(32 downto 0);
     signal div_round : std_logic;
-    -- signal div_ResultBack : std_logic_vector(32 downto 0);
     
     -- Shared Adder signals
-    signal ra_X : std_logic_vector(33 downto 0);
+    signal ra_X : std_logic_vector(32 downto 0);
     signal ra_Cin : std_logic;
-    signal ra_R : std_logic_vector(33 downto 0);
+    signal ra_R : std_logic_vector(32 downto 0);
     
     -- Shared IntAdder_27 signals
     signal add_fracAdder_X : std_logic_vector(26 downto 0);
@@ -892,45 +589,37 @@ signal Rn2 :  std_logic_vector(30 downto 0);
 
 
 
+    signal add_ra_X : std_logic_vector(32 downto 0);
+    signal mul_ra_X : std_logic_vector(32 downto 0);
+    signal div_ra_X : std_logic_vector(32 downto 0);
+    signal sqrt_ra_X : std_logic_vector(32 downto 0);
 begin
 
 
 -- FPAdd --
-   -- excExpFracX <= "01" & X(30 downto 0);
-   -- excExpFracY <= "01" & Y(30 downto 0);
-   swap <= '1' when X(30 downto 0) < Y(30 downto 0) else '0'; -- x is lager then y
-   -- exponent difference
-   eXmeY <= (X(30 downto 23)) - (Y(30 downto 23));
-   eYmeX <= (Y(30 downto 23)) - (X(30 downto 23));
-   expDiff <= eXmeY when swap = '0' else eYmeX;
+   swap <= '1' when X(30 downto 0) < Y(30 downto 0) else '0'; -- comparator
    -- input swap so that |X|>|Y|
    newX <=  X when swap = '0' else Y;
    newY <= Y when swap = '0' else X;
+   expDiff <= newX(30 downto 23) - newY(30 downto 23);
    -- now we decompose the inputs into their sign, exponent, fraction
    add_expX<= newX(30 downto 23);
-   -- excX<= newX(33 downto 32); -- normal などの表示
-   -- excY<= newY(33 downto 32);
    signX<= newX(31);
    signY<= newY(31);
    EffSub <= signX xor signY;
-   -- sXsYExnXY <= signX & signY; -- !!!!!!!!!!!! can't distingish +0 and -0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-   -- fracY <= "000000000000000000000000" when excY="00" else ('1' & newY(22 downto 0));
+
    fracY <= '1' & newY(22 downto 0);
-   -- Exception management logic
-   -- with sXsYExnXY  select  
-   -- excRt <= "00" when "000000"|"010000"|"100000"|"110000",
-   --    "01" when "000101"|"010101"|"100101"|"110101"|"000100"|"010100"|"100100"|"110100"|"000001"|"010001"|"100001"|"110001",
-   --    "10" when "111010"|"001010"|"001000"|"011000"|"101000"|"111000"|"000010"|"010010"|"100010"|"110010"|"001001"|"011001"|"101001"|"111001"|"000110"|"010110"|"100110"|"110110", 
-   --    "11" when others;
-   signR<= signX;
+
    shiftedOut <= '1' when (expDiff > 25) else '0';
    shiftVal <= expDiff(4 downto 0) when shiftedOut='0' else CONV_STD_LOGIC_VECTOR(26,5);
+
    RightShifterComponent: RightShifterSticky24_by_max_26_Freq1_uid4
       port map ( clk  => clk,
-                 S => shiftVal, -- in
-                 X => fracY, --in 
-                 R => shiftedFracY, -- out
-                 Sticky => add_sticky); -- out shiftoutがどれか一つでも1なら1かな
+                 S => shiftVal, 
+                 X => fracY, 
+                 R => shiftedFracY, 
+                 Sticky => add_sticky); 
+
    fracYpad <= "0" & shiftedFracY; -- 27bit
    EffSubVector <= (26 downto 0 => EffSub); -- maskの役割
    fracYpadXorOp <= fracYpad xor EffSubVector; --27bit
@@ -942,45 +631,30 @@ begin
    add_fracAdder_Cin<= cInSigAdd;
    fracAddResult <= add_fracAdder_R;
    fracSticky<= fracAddResult & add_sticky; -- stickyありの計算結果
+
    LZCAndShifter: Normalizer_Z_28_28_28_Freq1_uid8 --オーバーフローを考えて28桁なってる
       port map ( clk  => clk,
                  X => fracSticky,
                  Count => nZerosNew, -- 先頭の0の数　maxで5桁
                  R => shiftedFrac); -- 1.　。。。の形をしている -28桁
+
    extendedExpInc<= ("0" & add_expX) + '1'; -- 28桁でやってる分1をプラスしてる
-   updatedExp <= ("0" &extendedExpInc) - ("00000" & nZerosNew); -- 5桁だったので、8と+2で10. 11. . .って時は1になろうようにして、減らす量を調整してる
-   -- updatedExpが最終的なexp.あとは丸め誤差用
-   eqdiffsign <= '1' when nZerosNew="11111" else '0'; --完全に0になったパターン
-   add_expFrac<= updatedExp & shiftedFrac(26 downto 3); -- 
+   updatedExp <= (extendedExpInc) - ("0000" & nZerosNew); -- 5桁だったので、8と+2で10. 11. . .って時は1になろうようにして、減らす量を調整してる
+
+   add_expFrac<= updatedExp & shiftedFrac(26 downto 3);
    stk<= shiftedFrac(2) or shiftedFrac(1) or shiftedFrac(0); 
    rnd<= shiftedFrac(3);
    lsb<= shiftedFrac(4);
+   -- Connect to Shared Rounding Adder
+   add_ra_X <= add_expFrac;
    add_round<= '1' when (rnd='1' and stk='1') or (rnd='1' and stk='0' and lsb='1')
   else '0';
-   -- roundingAdder: IntAdder_34_Freq1_uid11
-   --    port map ( clk  => clk,
-   --               Cin => round,
-   --               X => expFrac,
-   --               Y => "0000000000000000000000000000000000",
-   --               R => RoundedExpFrac);
-   -- possible update to exception bits
 
-   -- ここまでで一回外にでて、また外から戻ってくる
    RoundedExpFrac <= ra_R;
-   -- upExc <= RoundedExpFrac(33 downto 32); -- overflowで01, underflowで11になる
-   fracR <= RoundedExpFrac(23 downto 1); --23bit
-   expR <= RoundedExpFrac(31 downto 24); --8bit
-   -- exExpExc <= upExc & excRt;
-   -- with exExpExc  select  
-   -- -- upExc は00で正常。 01でover, 11でunder
-   -- -- excRtは00がzero, 01が正常、10が無限(overflow), 11がNan
-   -- excRt2<= "00" when "0000"|"0100"|"1000"|"1100"|"1001"|"1101",
-   --    "01" when "0001",
-   --    "10" when "0010"|"0110"|"1010"|"1110"|"0101",
-   --    "11" when others;
-   -- excR <= "00" when (eqdiffsign='1' and EffSub='1'  and not(excRt="11")) else excRt2;
-   signR2 <= '0' when (eqdiffsign='1' and EffSub='1') else signR;
-   add_R <=  signR2 & expR & fracR;
+   fracR <= RoundedExpFrac(23 downto 1); 
+   expR <= RoundedExpFrac(31 downto 24); 
+
+   add_R <=  signX & expR & fracR;
 
 -- FPMul --
    sign <= X(31) xor Y(31);
@@ -998,46 +672,23 @@ begin
    expSum <= expSumPreSub - bias;
    sigX <= "1" & X(22 downto 0);
    sigY <= "1" & Y(22 downto 0);
-   -- SignificandMultiplication: IntMultiplier_24x24_48_Freq1_uid5
-   --    port map ( clk  => clk,
-   --               X => sigX,
-   --               Y => sigY,
-   --               R => sigProd); -- 48bit
-   sigProd <= sigX * sigY;
-   -- excSel <= X(33 downto 32) & Y(33 downto 32);
-   -- with excSel  select  
-   -- exc <= "00" when  "0000" | "0001" | "0100", 
-   --        "01" when "0101",
-   --        "10" when "0110" | "1001" | "1010" ,
-   --        "11" when others;
 
-   norm <= sigProd(47); -- 最大桁
-   -- exponent update
+   sigProd <= sigX * sigY;
+   -- exponent update 
+   norm <= sigProd(47);
    expPostNorm <= expSum + ("000000000" & norm); -- 最上位が1ならexpを1つ挙げる. [1,2)同士の掛け算は[2,4), 11ならnormが1になるからexpを上げる
    -- significand normalization shift
    sigProdExt <= sigProd(46 downto 0) & "0" when norm='1' else
                          sigProd(45 downto 0) & "00"; --normが0なら01. . ってつづくから1でカットしていい
    expSig <= expPostNorm & sigProdExt(47 downto 25);
-   mul_sticky <= sigProdExt(24); -- addとは意味が違う sticky, guardの順番(addはguard, stickyだった)
-   guard <= '0' when sigProdExt(23 downto 0)="000000000000000000000000" else '1';
-   mul_round <= mul_sticky and ( (guard and not(sigProdExt(25))) or (sigProdExt(25) ))  ;
-   -- RoundingAdder: IntAdder_33_Freq1_uid280
-   --    port map ( clk  => clk,
-   --               Cin => round,
-   --               X => expSig,
-   --               Y => "000000000000000000000000000000000",
-   --               R => expSigPostRound);
-   mul_expSig <= expSig;
-   expSigPostRound <= ra_R(30 downto 0);
+   mul_guard_bit <= sigProdExt(24); 
+   mul_sticky <= '0' when sigProdExt(23 downto 0)="000000000000000000000000" else '1';
+   mul_lsb <= sigProdExt(25);
+   mul_round <= mul_guard_bit and ( (mul_sticky and not(mul_lsb)) or (mul_lsb))  ;
 
-   -- with expSigPostRound(32 downto 31)  select 
-   -- excPostNorm <=  "01"  when  "00",
-   --                             "10"             when "01", 
-   --                             "00"             when "11"|"10",
-   --                             "11"             when others;
-   -- with exc  select  
-   -- finalExc <= exc when  "11"|"10"|"00",
-   --                     excPostNorm when others; 
+   -- Connect to Shared Rounding Adder
+   mul_ra_X <= expSig;
+   expSigPostRound <= ra_R(30 downto 0);
    mul_R <= sign & expSigPostRound(30 downto 0);
 
 
@@ -1320,7 +971,7 @@ begin
            else div_mR(23 downto 0);
    div_round <= fRnorm(0); 
    expR1 <= expR0 + ("000" & (6 downto 1 => '1') & div_mR(25));
-   div_expfrac <= expR1 & fRnorm(23 downto 1) ;
+   div_ra_X <= expR1 & fRnorm(23 downto 1) ;
    
    expfracR <= ra_R(32 downto 0);
    -- exnR <=      "00"  when expfracR(32) = '1'
@@ -1594,7 +1245,7 @@ begin
    fR <= sqrt_mR(23 downto 1);-- removing leading 1
    sqrt_round <= sqrt_mR(0); -- round bit
 
-   sqrt_expfrac <= fR;
+   sqrt_ra_X <= "0000000000" & fR;
    -- fRrnd <= fR + ((22 downto 1 => '0') & round); -- rounding sqrt never changes exponents 
    
    -- Output to shared rounding adder
@@ -1757,15 +1408,16 @@ begin
    -- Output to shared div_rounding adder
     -- Multiplex inputs to Shared Rounding Adder
     -- opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
-    ra_X <= add_expFrac when opcode="00" else 
-            ('0' & mul_expSig) when opcode="01" else
-            ('0' & div_expfrac) when opcode="11" else
-             "00000000000" & sqrt_expfrac; -- For both Sqrt and Div
+    ra_X <= add_ra_X when opcode="00" else 
+            mul_ra_X when opcode="01" else
+            div_ra_X when opcode="11" else
+            sqrt_ra_X; -- For both Sqrt and Div
             
     ra_Cin <= add_round when opcode="00" else 
               mul_round when opcode="01" else
               div_round when opcode="11" else
               sqrt_round;
+    ra_R <= ra_X + ra_Cin;
 
     -- Multiplex inputs to Shared IntAdder_27
     -- opcode: 00=Add (fracAdder), 01=Mul (expAdder), others unused
@@ -1791,15 +1443,6 @@ begin
         Y => ia27_Y,
         Cin => ia27_Cin,
         R => ia27_R
-    );
-
-    U_SHARED_RA: IntAdder_34_Freq1_uid11
-    port map (
-        clk => clk,
-        X => ra_X,
-        Y => (others => '0'),
-        Cin => ra_Cin,
-        R => ra_R
     );
 
     R <= add_R when opcode="00" else 
