@@ -246,6 +246,30 @@ if {$TASK == "all" || $TASK == "4" || $TASK == "FPSqrt"} {
     run_synth_common "FPSqrt_8_23" "FPSqrt"
 }
 
+
+# Task 5: Baseline addmul_only
+if {$TASK == "all" || $TASK == "5"} {
+    puts "--- Task 5: Addmul_only ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$origin_dir/FPAdd_Kin_f1_origin.vhdl"
+    analyze -library WORK -format vhdl "$origin_dir/FPMult_Kin_f1_origin.vhdl"
+    analyze -library WORK -format vhdl "$origin_dir/FPALL_origin.vhdl"
+    run_synth_common "fpaddmul_only_origin" "fpaddmul_only_origin"
+}
+
+# Task 6: Baseline FPALL
+if {$TASK == "all" || $TASK == "6"} {
+    puts "--- Task 6: FPALL ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$origin_dir/FPAdd_Kin_f1_origin.vhdl"
+    analyze -library WORK -format vhdl "$origin_dir/FPMult_Kin_f1_origin.vhdl"
+    analyze -library WORK -format vhdl "$origin_dir/FPDiv_Kin_f1_origin.vhdl"
+    analyze -library WORK -format vhdl "$origin_dir/FPSqrt_Kin_f1_origin.vhdl"
+    analyze -library WORK -format vhdl "$origin_dir/FPALL_origin.vhdl"
+    run_synth_common "FPALL_origin" "FPALL_origin"
+}
+
+
 ########################  v_  ####################################
 
 set rtl_pkg    "$ROOT/src/rtl/v2_bf16_full/fpall_pkg.sv"
