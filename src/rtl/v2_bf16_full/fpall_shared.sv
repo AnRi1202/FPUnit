@@ -4,7 +4,7 @@
 module fpall_shared(
     input logic clk,
     input fp_op_e opcode, //00: Add, 01: Mul, 10: Sqrt, 11: Div
-    input fp_fmt_e fmt, // 
+    input fp_fmt_e fmt, 
     input logic [31:0] X,
     input logic [31:0] Y,
     output logic [31:0] R
@@ -18,21 +18,17 @@ module fpall_shared(
     fp_vec_u x, y;
     assign x.raw = X;
     assign y.raw = Y;
-    // assign R     = r.raw;
         
     // FPAdd signals
-    logic [32:0] excExpFracX, excExpFracY;
-    logic swap;
+    logic swap_h,swap_l;
     logic [7:0] expDiff_h;
     logic [7:0] expDiff_l;
     fp_vec_u newX, newY;
-    // logic [31:0] newX, newY;
     logic [7:0] add_expX_h,add_expX_l;
     logic signX_h, signY_h, EffSub_h;
     logic signX_l, signY_l, EffSub_l;
     logic [23:0] fracY;
     logic [7:0] fracY_h, fracY_l;
-    logic [1:0] excRt;
     logic shiftedOut_h, shiftedOut_l;
     logic [4:0] shiftVal_h_fp32;
     logic [3:0] shiftVal_h_fp16, shiftVal_l_fp16;
@@ -50,14 +46,10 @@ module fpall_shared(
     logic [8:0] extendedExpInc_h, extendedExpInc_l;
     logic [8:0] normShift_h, normShift_l;   
     logic [9:0] updatedExp_h, updatedExp_l;
-    logic eqdiffsign_h, eqdiffsign_l;
     logic stk_h, rnd_h, lsb_h;
     logic stk_l, rnd_l, lsb_l;
     logic [35 :0] round_vec;
     logic [35:0] add_RoundedExpFrac;
-    logic [22:0] fracR;
-    logic [7:0] expR;
-    logic [1:0] excR;
     logic [31:0] add_R_fp32;
     logic [31:0] add_R_fp16;
 
@@ -68,8 +60,6 @@ module fpall_shared(
     logic [9:0] expSumPreSub_h, expSumPreSub_l, bias, expSum_h, expSum_l;
     logic [24:0] sigX, sigY;
     logic [49:0] sigProd;
-    logic [3:0] excSel;
-    logic [1:0] exc;
     logic norm_h, norm_l;
     logic [7:0] expPostNorm_h, expPostNorm_l;
     logic [47:0] sigProdExt;
@@ -84,8 +74,6 @@ module fpall_shared(
     logic [23:0] fX, fY;
     logic [9:0] expR0;
     logic sR;
-    logic [3:0] exnXY;
-    logic [1:0] exnR0;
     logic [23:0] D;
     logic [24:0] psX;
     
@@ -177,7 +165,6 @@ module fpall_shared(
     // FPSqrt signals
     logic [22:0] fracX;
     logic [7:0] eRn0;
-    logic [2:0] xsX;
     logic [7:0] eRn1;
     logic [26:0] fracXnorm;
     
@@ -349,7 +336,6 @@ module fpall_shared(
     logic sqrt_round;
     logic [22:0] fRrnd;
     logic [30:0] Rn2;
-    logic [2:0] xsR;
     logic [31:0] sqrt_R;
     logic [22:0] sqrt_expFrac;
 
@@ -382,7 +368,7 @@ module fpall_shared(
     // Gen 5
     logic [26:0] shared_as_x5, shared_as_y5;
     logic shared_as_sub5;
-    logic [26:0] shared_as_r5, sub_mask5, y_xor5, cin_vec5;
+    logic [26:0] shared_as_r5;
     
     // Gen 6
     logic [26:0] shared_as_x6, shared_as_y6;
@@ -434,7 +420,6 @@ module fpall_shared(
     logic ra_Cin;
     
     logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
-    logic add_fracAdder_Cin;
     
     logic [7:0] mul_expAdder_X, mul_expAdder_Y;
     logic mul_expAdder_Cin;
@@ -544,7 +529,6 @@ module fpall_shared(
     // Connect to Shared IntAdder_27 (TODO: not conneced now. separated from other op)
     assign add_fracAdder_X = fracXpad;       // Connect padded X fraction
     assign add_fracAdder_Y = fracYpadXorOp;  // Connect prepared Y fraction
-    assign add_fracAdder_Cin = cInSigAdd_l;    // Carry-in accounting for subtraction and sticky bit
 
     // Vectorize Carry-in for Shared Adder 
     assign cin_vec =
@@ -1053,7 +1037,6 @@ module fpall_shared(
 
     assign fracX = X[22:0]; // fraction
     assign eRn0 = {1'b0, X[30:24]}; // exponent
-    // xsX <= X(33 downto 31); -- exception and sign (handled differently in this SV)
     
     assign eRn1 = eRn0 + {2'b00, 6'b111111} + {7'd0, X[23]}; 
     
@@ -1343,11 +1326,7 @@ module fpall_shared(
     assign fRrnd = ra_R[22:0]; // rounding sqrt never changes exponents (handled in shared adder) 
     assign Rn2 = {eRn1, fRrnd};
     // sign and exception processing
-    assign xsR = (xsX == 3'b010) ? 3'b010 : // normal
-                 (xsX == 3'b100) ? 3'b100 : // +infty
-                 (xsX == 3'b000) ? 3'b000 : // +0
-                 (xsX == 3'b001) ? 3'b001 : // sqrt(-0)=-0
-                                   3'b110;  // return NaN
+
     assign sqrt_R = {X[31], Rn2};
 
 

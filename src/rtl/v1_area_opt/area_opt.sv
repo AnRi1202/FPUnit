@@ -2,6 +2,7 @@
 module area_opt(
     input logic clk,
     input logic [1:0] opcode, //00: Add, 01: Mul, 10: Sqrt, 11: Div
+    input logic fmt,
     input logic [31:0] X,
     input logic [31:0] Y,
     output logic [31:0] R
@@ -145,7 +146,6 @@ module area_opt(
     // FPSqrt signals
     logic [22:0] fracX;
     logic [7:0] eRn0;
-    logic [2:0] xsX;
     logic [7:0] eRn1;
     logic [26:0] fracXnorm;
     
@@ -317,7 +317,6 @@ module area_opt(
     logic sqrt_round;
     logic [22:0] fRrnd;
     logic [30:0] Rn2;
-    logic [2:0] xsR;
     logic [31:0] sqrt_R;
     logic [22:0] sqrt_expFrac;
 
@@ -861,7 +860,6 @@ module area_opt(
 
     assign fracX = X[22:0]; // fraction
     assign eRn0 = {1'b0, X[30:24]}; // exponent
-    // xsX <= X(33 downto 31); -- exception and sign (handled differently in this SV)
     
     assign eRn1 = eRn0 + {2'b00, 6'b111111} + {7'd0, X[23]}; 
     
@@ -1151,11 +1149,7 @@ module area_opt(
     assign fRrnd = ra_R[22:0]; // rounding sqrt never changes exponents (handled in shared adder) 
     assign Rn2 = {eRn1, fRrnd};
     // sign and exception processing
-    assign xsR = (xsX == 3'b010) ? 3'b010 : // normal
-                 (xsX == 3'b100) ? 3'b100 : // +infty
-                 (xsX == 3'b000) ? 3'b000 : // +0
-                 (xsX == 3'b001) ? 3'b001 : // sqrt(-0)=-0
-                                   3'b110;  // return NaN
+
     assign sqrt_R = {X[31], Rn2};
 
 
@@ -1289,16 +1283,30 @@ module area_opt(
 
     // Multiplex inputs to Shared Rounding Adder
     // opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
-    // Multiplex inputs to Shared Rounding Adder
-    // opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
-    assign ra_X = (opcode == 2'b00) ? add_ra_X :
-                  (opcode == 2'b01) ? mul_ra_X :
-                  (opcode == 2'b11) ? div_ra_X :
-                                      sqrt_ra_X;                                   
-    assign ra_Cin = (opcode == 2'b00) ? add_round :
-                    (opcode == 2'b01) ? mul_round :
-                    (opcode == 2'b11) ? div_round :
-                                        sqrt_round;
+    always_comb begin
+        unique case (opcode)
+            2'b00: begin
+                ra_X   = add_ra_X;
+                ra_Cin = add_round;
+            end
+            2'b01: begin
+                ra_X   = mul_ra_X;
+                ra_Cin = mul_round;
+            end
+            2'b11: begin
+                ra_X   = div_ra_X;
+                ra_Cin = div_round;
+            end
+            2'b10: begin
+                ra_X   = sqrt_ra_X;
+                ra_Cin = sqrt_round;
+            end
+            default: begin
+                ra_X   = 'x;
+                ra_Cin = 'x;
+            end
+        endcase
+    end
     assign ra_R = ra_X + ra_Cin;
     // Multiplex inputs to Shared IntAdder_27
     // opcode: 00=Add (fracAdder), 01=Mul (expAdder), others unused
@@ -1321,10 +1329,15 @@ module area_opt(
         .R(ia27_R)
     );
 
-    assign R = (opcode == 2'b00) ? add_R :  // Add Result
-               (opcode == 2'b01) ? mul_R :  // Mul Result
-               (opcode == 2'b10) ? sqrt_R : // Sqrt Result
-                                   div_R;   // Div Result
+    always_comb begin
+        unique case (opcode)
+            2'b00: R = add_R;
+            2'b01: R = mul_R;
+            2'b10: R = sqrt_R;
+            2'b11: R = div_R;
+            default: R = 'x;
+        endcase
+    end
 
 
 endmodule

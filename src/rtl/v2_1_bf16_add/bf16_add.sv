@@ -18,16 +18,13 @@ module bf16_add(
     fp_vec_u x, y;
     assign x.raw = X;
     assign y.raw = Y;
-    // assign R     = r.raw;
         
     // FPAdd signals
-    logic [32:0] excExpFracX, excExpFracY;
     logic swap;
     logic swap_h, swap_l;
     logic [7:0] expDiff_h;
     logic [7:0] expDiff_l;
     fp_vec_u newX, newY;
-    // logic [31:0] newX, newY;
     logic [7:0] add_expX_h,add_expX_l;
     logic signX_h, signY_h, EffSub_h;
     logic signX_l, signY_l, EffSub_l;
