@@ -93,6 +93,11 @@ begin
 end architecture;
 
 
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+
 entity fpaddmul_only_origin is
     port (
         clk : in std_logic;
@@ -103,7 +108,7 @@ entity fpaddmul_only_origin is
     );
 end entity;
 
-architecture arch of FPALL_origin is
+architecture arch of fpaddmul_only_origin is
     component FPAdd_8_23_Freq1_uid2 is
         port (clk : in std_logic;
             X : in  std_logic_vector(8+23+2 downto 0);

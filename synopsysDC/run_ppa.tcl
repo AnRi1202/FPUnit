@@ -49,9 +49,9 @@ close $f
 proc run_synth_common {entity_name label} {
     global rpt_file run_dir
     # # for vhdl
-    # elaborate $entity_name -library WORK
-    # # for sv
     elaborate $entity_name -library WORK
+    # # for sv
+    # elaborate $entity_name -library WORK
     
     link
 
