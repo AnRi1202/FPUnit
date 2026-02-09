@@ -57,7 +57,8 @@ module fpall_shared(
     logic sign_h;
     logic sign_l;
     logic [7:0] mult_expX, mult_expY;
-    logic [9:0] expSumPreSub_h, expSumPreSub_l, bias, expSum_h, expSum_l;
+    logic [8:0] expSumPreSub_h, expSumPreSub_l, bias; 
+    logic [9:0] expSum_h, expSum_l;
     logic [24:0] sigX, sigY;
     logic [49:0] sigProd;
     logic norm_h, norm_l;

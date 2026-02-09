@@ -165,10 +165,14 @@ module tb_fpadd_bf16x2;
     fmt    = FP16;
     opcode = OP_ADD;
     X = '0; Y = '0;
-    repeat (LAT) @(posedge clk);
     // -----------------------------
-    // Random normal-only tests
+    // Boundary & Random tests
     // -----------------------------
+    $display("Running boundary test (High lanes equal, Low lane borrow)...");
+    // Lane High: X=1.0, Y=1.0 (swap_h should be 0)
+    // Lane Low : X=1.0, Y=2.0 (X < Y, generates borrow c16=0)
+    run_one(32'h3F80_3F80, 32'h3F80_4000, "boundary_bf16x2");
+
     run_random_normal_only(N_RANDOM);
 
     $display("PASS: bf16x2 ADD normal-only tests completed");

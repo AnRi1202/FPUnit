@@ -15,18 +15,16 @@ module abs_comparator (
     // A<B  <=> carry_out == 0  <=> ~carry_out
     // -----------------------
 
-    logic [15:0] x_lo, x_hi;
-    logic [15:0] y_lo, y_hi;
+    logic [15:0] x_lo;
+    logic [14:0] x_hi;
+    logic [15:0] y_lo;
+    logic [14:0] y_hi;
 
     always_comb begin
         x_lo = x.lanes.lo;
-        x_hi = x.lanes.hi;
+        x_hi = x.lanes.hi[14:0];
         y_lo = y.lanes.lo;
-        y_hi = y.lanes.hi;
-
-        // Mask sign bits for absolute comparison
-        x_hi[15] = 1'b0; 
-        y_hi[15] = 1'b0;
+        y_hi = y.lanes.hi[14:0];
         
         if (fmt == FP16) begin
             x_lo[15] = 1'b0;
@@ -43,11 +41,11 @@ module abs_comparator (
     logic cin_hi;
     assign cin_hi = (fmt == FP16) ? 1'b1 : c16; // Key shared logic: carry propagation control
 
-    logic [16:0] sub_hi;
+    logic [15:0] sub_hi;
     logic        c32;
 
-    assign sub_hi = {1'b0, x_hi} + {1'b0, ~y_hi} + {16'd0, cin_hi};
-    assign c32    = sub_hi[16];
+    assign sub_hi = {1'b0, x_hi} + {1'b0, ~y_hi} + {15'd0, cin_hi};
+    assign c32    = sub_hi[15];
 
     // borrow = ~carry_out
     assign swap_l = ~c16; // lane.lo: a_lo < b_lo

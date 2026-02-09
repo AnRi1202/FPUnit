@@ -134,11 +134,12 @@ module tb_fpadd_fp32;
     fmt    = FP32;
     opcode = OP_ADD;
     X = '0; Y = '0;
-    repeat (LAT) @(posedge clk);
+    // -----------------------------
+    // Boundary & Random tests
+    // -----------------------------
+    $display("Running boundary test (X=1.0, Y=-(1.0+eps))...");
+    run_one(32'h3F80_0000, 32'hBF80_0001, "boundary_fp32"); // for abs_comparator. cin_hi
 
-    // -----------------------------
-    // Random normal-only tests
-    // -----------------------------
     run_random_normal_only(N_RANDOM);
 
     $display("PASS: fp32 ADD normal-only tests completed");
