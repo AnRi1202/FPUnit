@@ -359,12 +359,12 @@ module fpall_shared(
     // Gen 3
     logic [26:0] shared_as_x3, shared_as_y3;
     logic shared_as_sub3;
-    logic [26:0] shared_as_r3;
+    logic [26:0] shared_as_r3, sub_mask3, y_xor3, cin_vec3;
     
     // Gen 4
     logic [26:0] shared_as_x4, shared_as_y4;
     logic shared_as_sub4;
-    logic [26:0] shared_as_r4;
+    logic [26:0] shared_as_r4, sub_mask4, y_xor4, cin_vec4;
     
     // Gen 5
     logic [26:0] shared_as_x5, shared_as_y5;
@@ -380,7 +380,7 @@ module fpall_shared(
     logic [26:0] shared_as_x7, shared_as_y7;
     logic shared_as_sub7;
     logic [26:0] shared_as_r7;
-    
+
     // Gen 8
     logic [26:0] shared_as_x8, shared_as_y8;
     logic shared_as_sub8;
@@ -410,6 +410,7 @@ module fpall_shared(
     logic [26:0] shared_as_x13, shared_as_y13;
     logic shared_as_sub13;
     logic [26:0] shared_as_r13, sub_mask13, y_xor13, cin_vec13;
+
 
     // Shared Output Signals
     logic [31:0] add_R, mul_R;
@@ -1373,14 +1374,20 @@ module fpall_shared(
     assign shared_as_y3 = (opcode[0] == 1'b1) ? absq4D : {2'b00, U20};
     assign shared_as_sub3 = (opcode[0] == 1'b1) ? ~q4[2] : d20;
     
-    assign shared_as_r3 = (shared_as_sub3 == 1'b1) ? (shared_as_x3 - shared_as_y3) : (shared_as_x3 + shared_as_y3);
+    assign sub_mask3 = {27{shared_as_sub3}};
+    assign y_xor3 = shared_as_y3 ^ sub_mask3;
+    assign cin_vec3 = {26'd0, shared_as_sub3};
+    assign shared_as_r3 = shared_as_x3 + y_xor3 + cin_vec3;
 
     // Step 4
     assign shared_as_x4 = (opcode[0] == 1'b1) ? betaw5 : {3'b000, T19s_h};
     assign shared_as_y4 = (opcode[0] == 1'b1) ? absq5D : {3'b000, U19};
     assign shared_as_sub4 = (opcode[0] == 1'b1) ? ~q5[2] : d19;
     
-    assign shared_as_r4 = (shared_as_sub4 == 1'b1) ? (shared_as_x4 - shared_as_y4) : (shared_as_x4 + shared_as_y4);
+    assign sub_mask4 = {27{shared_as_sub4}};
+    assign y_xor4 = shared_as_y4 ^ sub_mask4;
+    assign cin_vec4 = {26'd0, shared_as_sub4};
+    assign shared_as_r4 = shared_as_x4 + y_xor4 + cin_vec4;
 
     // Step 5
     assign shared_as_x5 = (opcode[0] == 1'b1) ? betaw6 : {4'd0, T18s_h};
@@ -1447,7 +1454,6 @@ module fpall_shared(
     assign y_xor13 = shared_as_y13 ^ sub_mask13;
     assign cin_vec13 = {26'd0, shared_as_sub13};
     assign shared_as_r13 = shared_as_x13 + y_xor13 + cin_vec13;
-
 
     // =================================================================================
     // Shared Resources & Output Mux
