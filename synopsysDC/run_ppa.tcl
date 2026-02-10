@@ -180,6 +180,122 @@ proc run_synth_common {entity_name label} {
    # =============================== 
 }
 
+proc run_synth_retime {entity_name label} {
+    global rpt_file run_dir
+    # # for vhdl
+    elaborate $entity_name -library WORK
+    # # for sv
+    # elaborate $entity_name -library WORK
+    
+    link
+
+    check_design
+
+    # ----------------------------------------------------------------------
+    # Clocks (from compile.tcl)
+    # ----------------------------------------------------------------------
+    create_clock -name CGRA_Clock  -period 2.0  [get_ports clk]
+
+    # ----------------------------------------------------------------------
+    # Basic I/O timing (from compile.tcl)
+    # ----------------------------------------------------------------------
+    set inputs_no_clk  [remove_from_collection [all_inputs] [get_ports clk]]
+    set_input_delay  -clock CGRA_Clock 0.20 $inputs_no_clk
+    set_output_delay -clock CGRA_Clock 0.20 [all_outputs]
+
+    # ----------------------------------------------------------------------
+    # RETIMING: high-effort compile with retime enabled
+    # ----------------------------------------------------------------------
+    compile_ultra -retime 
+
+    set rpt_dir  "$run_dir/report/new" 
+    set out_dir  "$run_dir/output/new"
+
+    set rpt_area "$rpt_dir/${label}_area.rpt"
+    set rpt_pwr "$rpt_dir/${label}_power.rpt"
+    set rpt_time "$rpt_dir/${label}_timing.rpt"
+    set rpt_ref "$rpt_dir/${label}_reference.rpt"
+
+    #--------------------
+    # Report QoR:
+    #--------------------
+    report_qor
+
+    set bus_inference_style "%s\[%d\]"
+    set bus_naming_style "%s\[%d\]"
+    set hdlout_internal_busses true
+
+    change_names -hierarchy -rule verilog
+    define_name_rules name_rule -allowed "a-z A-Z 0-9 _" -max_length 255 -type cell
+    define_name_rules name_rule -allowed "a-z A-Z 0-9 _[]" -max_length 255 -type net
+    define_name_rules name_rule -map {{"\*cell\*" "cell"}}
+    define_name_rules name_rule -case_insensitive
+    change_names -hierarchy -rules name_rule
+    set verilogout_higher_designs_first true
+
+    #--------------------
+    # Writing output: 
+    #--------------------
+    write -format verilog -hierarchy -output $out_dir/post-synth.v
+    write -format ddc     -hierarchy -output $out_dir/post-synth.ddc
+    write_sdc -nosplit $out_dir/post-synth.sdc
+    write_sdf $out_dir/post-synth.sdf
+
+    #--------------------
+    # Reporting PPA:
+    #--------------------
+    report_area -hierarchy > $rpt_area
+    report_power > $rpt_pwr
+    report_timing > $rpt_time
+    report_reference > $rpt_ref
+
+    # ==============================
+    # summarize csv
+    # =============================== 
+    set area 0.0
+    set leak_power 0.0
+    set dyn_power 0.0
+    set slack "N/A"
+
+    if {[file exists $rpt_area]} {
+        set fp [open $rpt_area r]
+        while {[gets $fp line] >= 0} {
+             if {[regexp {Total cell area:\s+([0-9\.]+)} $line match val]} {
+                 set area $val
+             }
+        }
+        close $fp
+    }
+    
+    if {[file exists $rpt_pwr]} {
+        set fp [open $rpt_pwr r]
+        while {[gets $fp line] >= 0} {
+             if {[regexp {Cell Leakage Power\s+=\s+([0-9\.eE+-]+)} $line match val]} {
+                 set leak_power $val
+             }
+             if {[regexp {Total Dynamic Power\s+=\s+([0-9\.eE+-]+)} $line match val]} {
+                 set dyn_power $val
+             }
+        }
+        close $fp
+    }
+    
+    if {[file exists $rpt_time]} {
+         set fp [open $rpt_time r]
+         while {[gets $fp line] >= 0} {
+              if {[regexp {slack \(.*\)\s+([0-9\.\-]+)} $line match val]} {
+                  set slack $val
+              }
+         }
+         close $fp
+    }
+    
+    set f [open $rpt_file a]
+    puts $f "$label,$area,$leak_power,$dyn_power,$slack"
+    close $f
+    puts "Done $label: Area=$area, Slack=$slack"
+}
+
 proc analyze_filelist {filelist_path format} {
     global ROOT
     if {![file exists $filelist_path]} {
@@ -208,9 +324,6 @@ proc analyze_filelist {filelist_path format} {
 #----------------------------------------------------------------------------------------------#
 #--------------------------------- CHOOSE DESIGNS     -----------------------------------------#
 #----------------------------------------------------------------------------------------------#
-
-
-
 
 # #########################     Original     ################################################# 
 set origin_dir "$ROOT/src/rtl/original"
@@ -259,7 +372,7 @@ if {$TASK == "all" || $TASK == "5"} {
 
 # Task 6: Baseline FPALL
 if {$TASK == "all" || $TASK == "6"} {
-    puts "--- Task 6: FPALL ---"
+    puts "--- Task $TASK: FPALL ---"
     remove_design -all
     analyze -library WORK -format vhdl "$origin_dir/FPAdd_Kin_f1_origin.vhdl"
     analyze -library WORK -format vhdl "$origin_dir/FPMult_Kin_f1_origin.vhdl"
@@ -291,9 +404,12 @@ if {$TASK == "all" || $TASK == "0"} {
         analyze_filelist "$ROOT/simulation/filelists/${VER}_vhdl.f" vhdl
     }
    
-    run_synth_common "$TOP" "$TOP"
+    if {[info exists env(RETIME)] && $env(RETIME) == "1"} {
+        puts ">>> Running synthesis with Retiming flow"
+        run_synth_retime "$TOP" "$TOP"
+    } else {
+        run_synth_common "$TOP" "$TOP"
+    }
 }
 
 exit
-
-

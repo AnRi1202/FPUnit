@@ -29,6 +29,8 @@ synopsysDC/run-*/
 synopsysDC/filenames.log
 synopsysDC/command.log
 synopsysDC/default.svf
+synopsysDC/ARCH/
+synopsysDC/ENTI/
 
 # Cadence Innovus
 cadenceInnovus/enc/output/
