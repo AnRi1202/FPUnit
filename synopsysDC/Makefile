@@ -20,6 +20,9 @@ baseline:
 	mkdir WORK
 	dc_shell-xg-t -x "set VER $(VER); set ROOT $(ROOT)" -f run_baseline.tcl -o run_baseline.log
 
+pipe:
+	dc_shell-xg-t -f ret.tcl -o ret.log
+
 clean:
 	rm -rf output/* *.pvl *.log *.svf *.syn *.sdc alib-52 command.log default.svf *.mr
 	mkdir -p output

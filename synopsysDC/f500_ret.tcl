@@ -10,10 +10,24 @@ remove_design -all
 # ----------------------------------------------------------------------
 # Using paths and libraries from synopsysDC/compile.tcl as requested
 set search_path "/autofs/fs1.ece/fs1.eecg.janders/bgrady/asic_tools/technology/nanGate/NangateOpenCellLibrary_PDKv1_3_v2010_12/Front_End/Liberty /autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files"
-set link_library   "NangateOpenCellLibrary.db"
-set target_library "NangateOpenCellLibrary.db"
-set symbol_library ""
+# Set link library
+set link_library "[list \
+$cell_lib/Front_End/Liberty/NangateOpenCellLibrary_typical_CCS.db \
+/autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_6baddress_lib.db \
+/autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_7baddress_lib.db \
+/autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_8baddress_lib.db \
+/autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_9baddress_lib.db ]"
 
+# Set target library
+set target_library "[list \
+$cell_lib/Front_End/Liberty/NangateOpenCellLibrary_typical_CCS.db \
+/autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_6baddress_lib.db \
+/autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_7baddress_lib.db \
+/autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_8baddress_lib.db \
+/autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_9baddress_lib.db ]"
+
+# Set symbol library (if required)
+set symbol_library ""
 # ----------------------------------------------------------------------
 # Analyze & Elaborate
 # ----------------------------------------------------------------------
@@ -24,7 +38,7 @@ set original_dir "../src/rtl"
 analyze -library WORK -format vhdl "$original_dir/v2_bf16_full/utils.vhdl"
 
 # Analyze the main SystemVerilog file
-analyze -library WORK -format sverilog "$v1_dir/area_opt.sv"
+analyze -library WORK -format sverilog "$v1_dir/area_opt_f500.sv"
 
 # Elaborate top-level
 elaborate area_opt -library WORK
@@ -48,25 +62,25 @@ set_output_delay -clock clk 0.20 [all_outputs]
 set_app_var compile_enable_register_merging true
 set_app_var compile_sequential_area_recovery true
 
-compile_ultra
+# compile_ultra
 
 # Set up result folders (using timestamp like f500.tcl)
 set tag [clock format [clock seconds] -format "%Y%m%d-%H%M%S"]  ;# ex: 20251216-141905
 set run_dir "run-f500-ret-$tag"
 file mkdir $run_dir
 
-# Export baseline netlist & reports
-write_file -format verilog -hierarchy -output "$run_dir/out_beforeRetime.v"
-write_file -format ddc -hierarchy -output "$run_dir/design_beforeRetime.ddc"
+# # Export baseline netlist & reports
+# write_file -format verilog -hierarchy -output "$run_dir/out_beforeRetime.v"
+# write_file -format ddc -hierarchy -output "$run_dir/design_beforeRetime.ddc"
 
-report_exceptions      > $run_dir/exceptions_beforeRetime.rpt
-check_timing           > $run_dir/check_timing_beforeRetime.rpt
-report_area  -hierarchy > $run_dir/area_beforeRetime.rpt
-report_power           > $run_dir/power_beforeRetime.rpt
-report_timing -delay_type max -max_paths 20 -transition_time -path full_clock \
-  > $run_dir/timing_setup_beforeRetime.rpt
-report_timing -delay_type min -max_paths 20 -transition_time -path full_clock \
-  > $run_dir/timing_hold_beforeRetime.rpt
+# report_exceptions      > $run_dir/exceptions_beforeRetime.rpt
+# check_timing           > $run_dir/check_timing_beforeRetime.rpt
+# report_area  -hierarchy > $run_dir/area_beforeRetime.rpt
+# report_power           > $run_dir/power_beforeRetime.rpt
+# report_timing -delay_type max -max_paths 20 -transition_time -path full_clock \
+#   > $run_dir/timing_setup_beforeRetime.rpt
+# report_timing -delay_type min -max_paths 20 -transition_time -path full_clock \
+#   > $run_dir/timing_hold_beforeRetime.rpt
 
 
 # Enable retiming infrastructure 
@@ -75,13 +89,15 @@ set_optimize_registers true
 # ----------------------------------------------------------------------
 # RETIMING: high-effort compile with retime enabled
 # ----------------------------------------------------------------------
-compile_ultra -retime
+set_max_area 0
+
+compile_ultra -retime -no_autoungroup -no_boundary_optimization
 
 # Export retimed netlist & reports
 write_file -format verilog -hierarchy -output "$run_dir/out_afterRetime.v"
 write_file -format ddc -hierarchy -output "$run_dir/design_afterRetime.ddc"
 
-report_exceptions       > $run_dir/exceptions_afterRetime.rpt
+# report_exceptions       > $run_dir/exceptions_afterRetime.rpt
 check_timing            > $run_dir/check_timing_afterRetime.rpt
 report_area   -hierarchy > $run_dir/area_afterRetime.rpt
 report_power            > $run_dir/power_afterRetime.rpt
@@ -89,6 +105,8 @@ report_timing -delay_type max -max_paths 20 -transition_time -path full_clock \
   > $run_dir/timing_setup_afterRetime.rpt
 report_timing -delay_type min -max_paths 20 -transition_time -path full_clock \
   > $run_dir/timing_hold_afterRetime.rpt
+report_register > $run_dir/registers_afterRetime.rpt
+report_reference -hierarchy > $run_dir/reference_afterRetime.rpt
 
 # ----------------------------------------------------------------------
 # END

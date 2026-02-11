@@ -39,13 +39,13 @@ set symbol_library ""
 #----------------------------------------------------------------------------------------------#
 
 # Analyze and Elaborate
-set f100_dir "../src/rtl/base_f100"
-    analyze -library WORK -format vhdl "$f100_dir/fpadd_f100.vhdl"
-    analyze -library WORK -format vhdl "$f100_dir/fpmult_f100.vhdl"
-    analyze -library WORK -format vhdl "$f100_dir/fpdiv_f100.vhdl"
-    analyze -library WORK -format vhdl "$f100_dir/fpsqrt_f100.vhdl"
-    analyze -library WORK -format vhdl "$f100_dir/f100_fpall_origin.vhdl"
-elaborate f100_fpall_origin -architecture arch -library WORK
+set f400_dir "../src/rtl/base_f400"
+    analyze -library WORK -format vhdl "$f400_dir/fpadd_f400.vhdl"
+    analyze -library WORK -format vhdl "$f400_dir/fpmult_f400.vhdl"
+    analyze -library WORK -format vhdl "$f400_dir/fpdiv_f400.vhdl"
+    analyze -library WORK -format vhdl "$f400_dir/fpsqrt_f400.vhdl"
+    analyze -library WORK -format vhdl "$f400_dir/f400_fpall_origin.vhdl"
+elaborate f400_fpall_origin -architecture arch -library WORK
 
 # Check design and compile:
 link
@@ -60,8 +60,8 @@ check_design
 set_max_area 0
 
 ## ---- Clock constraints ---- 
-#1 ns -> 1GHz
-set main_clock_period 10
+#2.5 ns -> 400MHz
+set main_clock_period 2.5
 set percentage_delay 0.10
 create_clock -name clock -period $main_clock_period clk
 
@@ -117,7 +117,7 @@ set verilogout_higher_designs_first true
 # Writing output:
 #--------------------
 set tag [clock format [clock seconds] -format "%Y%m%d-%H%M%S"]  ;# ex: 20251216-141905
-set run_dir "run-f100-$tag"
+set run_dir "run-f400-$tag"
 file mkdir $run_dir
 
 
@@ -152,10 +152,6 @@ while {[gets $fileId line] >= 0} {
 
 close $fileId
 
-if {$new_constraint == ""} {
-    puts "Warning: Could not extract slack from timing report. Using default 1.0"
-    set new_constraint 1.0
-}
 
 #----------------------------------------------------------------------------------------------#
 puts "Method Vimal/Omar: 40% Reduction critical path delay"
@@ -164,7 +160,7 @@ puts "New constraint with 40% Reduction critical path delay critical path delay:
 #----------------------------------------------------------------------------------------------#
 
 #elaborate design for area optimization
-elaborate f100_fpall_origin -architecture arch -library WORK
+elaborate f400_fpall_origin -architecture arch -library WORK
 
 # Check design and compile:
 link

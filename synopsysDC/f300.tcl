@@ -39,13 +39,13 @@ set symbol_library ""
 #----------------------------------------------------------------------------------------------#
 
 # Analyze and Elaborate
-set f100_dir "../src/rtl/base_f100"
-    analyze -library WORK -format vhdl "$f100_dir/fpadd_f100.vhdl"
-    analyze -library WORK -format vhdl "$f100_dir/fpmult_f100.vhdl"
-    analyze -library WORK -format vhdl "$f100_dir/fpdiv_f100.vhdl"
-    analyze -library WORK -format vhdl "$f100_dir/fpsqrt_f100.vhdl"
-    analyze -library WORK -format vhdl "$f100_dir/f100_fpall_origin.vhdl"
-elaborate f100_fpall_origin -architecture arch -library WORK
+set f300_dir "../src/rtl/base_f300"
+    analyze -library WORK -format vhdl "$f300_dir/fpadd_f300.vhdl"
+    analyze -library WORK -format vhdl "$f300_dir/fpmult_f300.vhdl"
+    analyze -library WORK -format vhdl "$f300_dir/fpdiv_f300.vhdl"
+    analyze -library WORK -format vhdl "$f300_dir/fpsqrt_f300.vhdl"
+    analyze -library WORK -format vhdl "$f300_dir/f300_fpall_origin.vhdl"
+elaborate f300_fpall_origin -architecture arch -library WORK
 
 # Check design and compile:
 link
@@ -60,8 +60,8 @@ check_design
 set_max_area 0
 
 ## ---- Clock constraints ---- 
-#1 ns -> 1GHz
-set main_clock_period 10
+#3.3 ns -> 300MHz
+set main_clock_period 3.33
 set percentage_delay 0.10
 create_clock -name clock -period $main_clock_period clk
 
@@ -117,7 +117,7 @@ set verilogout_higher_designs_first true
 # Writing output:
 #--------------------
 set tag [clock format [clock seconds] -format "%Y%m%d-%H%M%S"]  ;# ex: 20251216-141905
-set run_dir "run-f100-$tag"
+set run_dir "run-f300-$tag"
 file mkdir $run_dir
 
 
@@ -164,7 +164,7 @@ puts "New constraint with 40% Reduction critical path delay critical path delay:
 #----------------------------------------------------------------------------------------------#
 
 #elaborate design for area optimization
-elaborate f100_fpall_origin -architecture arch -library WORK
+elaborate f300_fpall_origin -architecture arch -library WORK
 
 # Check design and compile:
 link
