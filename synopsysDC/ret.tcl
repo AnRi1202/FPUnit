@@ -6,11 +6,11 @@ set_host_options -max_cores 8
 
 remove_design -all
 
-set num_pipe 20
-set period 1
+set num_pipe 14
+set main_clock_period 0.5
 
 set tag [clock format [clock seconds] -format "%m%d-%H%M"]
-set run_dir [file normalize "run-pipe${num_pipe}-T${period}-ret-${tag}"]
+set run_dir [file normalize "run-pipe${num_pipe}-T${main_clock_period}-ret-${tag}"]
 set WORK_DIR [file normalize "${run_dir}/WORK"]
 
 file mkdir $run_dir
@@ -62,19 +62,28 @@ analyze -library WORK -format sverilog "$v1_dir/pipe/area_opt_$num_pipe.sv"
 # Elaborate top-level
 elaborate area_opt -library WORK
 
+link
+check_design
+set_max_area 0
 # ----------------------------------------------------------------------
 # Clocks
 # ----------------------------------------------------------------------
 # Target period of 1.0ns (1GHz) as used in compile.tcl baseline
-create_clock -name clk  -period $period  [get_ports clk]
+create_clock -name clk  -period $main_clock_period  [get_ports clk]
 
 
 # ----------------------------------------------------------------------
 # Basic I/O timing
 # ----------------------------------------------------------------------
-set inputs_no_clk  [remove_from_collection [all_inputs] [get_ports clk]]
-set_input_delay  -clock clk 0.20 $inputs_no_clk
-set_output_delay -clock clk 0.20 [all_outputs]
+
+
+
+set inputs_no_clk [remove_from_collection [all_inputs] [get_ports clk]]
+
+set_input_delay      -clock clk 0.20 $inputs_no_clk
+set_output_delay     -clock clk 0.20 [all_outputs]
+set_input_transition 0.20 $inputs_no_clk
+set_load 0.1 [all_outputs]
 
 # ----------------------------------------------------------------------
 # Before retiming: baseline compile & reports
@@ -107,9 +116,9 @@ set_optimize_registers true
 # ----------------------------------------------------------------------
 # RETIMING: high-effort compile with retime enabled
 # ----------------------------------------------------------------------
-set_max_area 0
 
-compile_ultra -retime -no_autoungroup -no_boundary_optimization
+
+compile_ultra -retime 
 
 # Export retimed netlist & reports
 write_file -format verilog -hierarchy -output "$run_dir/out_afterRetime.v"

@@ -61,29 +61,25 @@ set_max_area 0
 
 ## ---- Clock constraints ---- 
 #2.5 ns -> 400MHz
-set main_clock_period 2.5
+set main_clock_period 2.8
 set percentage_delay 0.10
 create_clock -name clock -period $main_clock_period clk
 
-# Input delay and output delay for clock
-set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
-puts $input_ports
-set_input_delay [expr $percentage_delay * $main_clock_period]  -clock clock [get_ports $input_ports]
 
-set output_ports [all_outputs]
-puts $output_ports
-set_output_delay [expr $percentage_delay * $main_clock_period] -clock clock $output_ports
+set inputs_no_clk [remove_from_collection [all_inputs] [get_ports clk]]
 
-set_input_transition [expr $percentage_delay * $main_clock_period] [remove_from_collection [all_inputs] [get_ports clk]]
-
+set_input_delay      -clock clk 0.20 $inputs_no_clk
+set_output_delay     -clock clk 0.20 [all_outputs]
+set_input_transition 0.20 $inputs_no_clk
+set_load 0.1 [all_outputs]
 ################################################################################
 # Enviornement attribute constraint
 ################################################################################
 # Load on the output ports
-set_max_transition 1.0000 [current_design]
-set_max_capacitance 0.2000 [current_design]
-set_max_fanout 10.0000 [current_design]
-set_load 0.1 [all_outputs]
+# set_max_transition 1.0000 [current_design]
+# set_max_capacitance 0.2000 [current_design]
+# set_max_fanout 10.0000 [current_design]
+# set_load 0.1 [all_outputs]
 
 #Setting max_Delay for the critical path:
 # get_nets ce

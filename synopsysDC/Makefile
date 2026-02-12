@@ -23,6 +23,9 @@ baseline:
 pipe:
 	dc_shell-xg-t -f ret.tcl -o ret.log
 
+ret_ppa:
+	dc_shell-xg-t -f ret_ppa.tcl -o ret_ppa.log
+
 clean:
 	rm -rf output/* *.pvl *.log *.svf *.syn *.sdc alib-52 command.log default.svf *.mr
 	mkdir -p output
