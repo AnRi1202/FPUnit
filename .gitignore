@@ -59,11 +59,13 @@ primetime/output/
 *.swp
 .nfs*
 
-# Root level specific
+# Result
 run.log
 
 run/
+run_*/
 
+*.csv
 
 # cocotb
 **/__pycache__

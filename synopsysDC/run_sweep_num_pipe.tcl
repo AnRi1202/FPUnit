@@ -38,9 +38,14 @@ for {set p 1} {$p <= 17} {incr p} {
     
     remove_design -all
     
-    # Prepare directories for this run (optional but good for debugging)
+    # Prepare directories for this run
     set run_dir "run_sweep_pipe${p}"
+    set work_dir "${run_dir}/WORK"
     file mkdir $run_dir
+    file mkdir $work_dir
+    
+    define_design_lib WORK -path $work_dir
+    set_app_var alib_library_analysis_path $work_dir
     
     # Analyze supporting VHDL components (FloPoCo-generated primitives)
     analyze -library WORK -format vhdl "$original_dir/v2_bf16_full/utils.vhdl"
@@ -70,6 +75,8 @@ for {set p 1} {$p <= 17} {incr p} {
     # ------------------------------------------------------------------
     # Synthesis with Retiming
     # ------------------------------------------------------------------
+    set_app_var compile_enable_register_merging true
+    set_app_var compile_sequential_area_recovery true
     set_optimize_registers true
     compile_ultra -retime
     
