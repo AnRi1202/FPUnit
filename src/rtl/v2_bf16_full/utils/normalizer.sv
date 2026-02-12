@@ -82,11 +82,14 @@ module normalizer(
         // Stage 3: shift by 8
         count3_h = ~(|level4_h[13:6]);
         count3_l = (fmt ==FP32) ? count3_h :~(|level4_l[11:4]);
-        if (fmt == FP32) begin
-            level3_h = count3_h ? {level4_h[5:0],  level4_l[13:6]}: level4_h;
-        end else begin 
-            level3_h = count3_h ? {level4_h[5:2], 8'b0, 2'b0} : level4_h;
-        end
+        // if (fmt == FP32) begin
+        //     level3_h = count3_h ? {level4_h[5:0],  level4_l[13:6]}: level4_h;
+        // end else begin 
+        //     level3_h = count3_h ? {level4_h[5:2], 8'b0, 2'b0} : level4_h;
+        // end
+        level3_h[13:10] = count3_h ? level4_h[5:2] : level4_h[13:10];
+        level3_h[9:0] = count3_h ? ({level4_h[1:0], level4_l[13:6]} & {10{fmt==FP32}}) : level4_h[9:0];
+
         level3_l = count3_l ? {level4_l[5:0], 8'b0} : level4_l;
 
         // Stage 2: shift by 4            

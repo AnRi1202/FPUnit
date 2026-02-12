@@ -327,6 +327,7 @@ proc analyze_filelist {filelist_path format} {
 
 # #########################     Original     ################################################# 
 set origin_dir "$ROOT/src/rtl/original"
+set rtl_dir "$ROOT/src/rtl"
 # Task 1: Baseline FPAdd
 if {$TASK == "all" || $TASK == "1" || $TASK == "FPAdd_VHDL"} {
     puts "--- Task 1: FPAdd ---"
@@ -380,6 +381,21 @@ if {$TASK == "all" || $TASK == "6"} {
     analyze -library WORK -format vhdl "$origin_dir/FPSqrt_Kin_f1_origin.vhdl"
     analyze -library WORK -format vhdl "$origin_dir/FPALL_origin.vhdl"
     run_synth_common "FPALL_origin" "FPALL_origin"
+}
+
+# Task 7: utils 
+if {$TASK == "all" || $TASK == "7"} {
+    puts "--- Task 7: utils---"
+    remove_design -all
+    analyze -library WORK -format verilog "$rtl_dir/v2_bf16_full/utils/barrel_shifter.sv"
+    run_synth_common "barrel_shifter" "barrel_shifter"
+}
+# Task 8: utils 
+if {$TASK == "all" || $TASK == "8"} {
+    puts "--- Task 7: utils---"
+    remove_design -all
+    analyze -library WORK -format verilog "$rtl_dir/v2_bf16_full/utils/normalizer.sv"
+    run_synth_common "normalizer" "normalizer"
 }
 
 

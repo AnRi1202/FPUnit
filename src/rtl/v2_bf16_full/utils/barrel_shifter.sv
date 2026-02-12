@@ -93,41 +93,50 @@ module barrel_shifter(
         // Upper half shift
         level3_h = steps_h[3] ? {8'b0, level4_h[12:8]} : level4_h;
         // Lower half shift
-        if (fmt ==FP32) begin
-            level3_l = steps_l[3] ? {level4_h[7:0], level4_l[12:8]} : level4_l;
-        end else begin
-            level3_l = steps_l[3] ? {8'b0, level4_l[12:8]} : level4_l;
-        end
+        // if (fmt ==FP32) begin
+        //     level3_l = steps_l[3] ? {level4_h[7:0], level4_l[12:8]} : level4_l;
+        // end else begin
+        //     level3_l = steps_l[3] ? {8'b0, level4_l[12:8]} : level4_l;
+        // end
+
+        level3_l[12:5] = steps_l[3] ? (level4_h[7:0] & {8{fmt == FP32}}): level4_l[12:5];
+        level3_l[4:0] = steps_l[3] ? level4_l[12:8] : level4_l[4:0];
 
         // Stage 2: shift by 4
         stk2_h   = stk3_h | ((fmt == FP16) && steps_h[2] && (|level3_h[3:0]));
         stk2_l   = stk3_l | (steps_l[2] & (|level3_l[3:0]));
         level2_h = steps_h[2] ? {4'b0, level3_h[12:4]} : level3_h;
-        if (fmt == FP32) begin
-            level2_l = steps_l[2] ? {level3_h[3:0], level3_l[12:4]} : level3_l;
-        end else begin
-            level2_l = steps_l[2] ? {4'b0, level3_l[12:4]} : level3_l;
-        end
+        // if (fmt == FP32) begin
+        //     level2_l = steps_l[2] ? {level3_h[3:0], level3_l[12:4]} : level3_l;
+        // end else begin
+        //     level2_l = steps_l[2] ? {4'b0, level3_l[12:4]} : level3_l;
+        // end
+        level2_l[12:9] = steps_l[2] ? (level3_h[3:0] & {4{fmt == FP32}}): level3_l[12:9];
+        level2_l[8:0] = steps_l[2] ? level3_l[12:4] : level3_l[8:0];
 
         // Stage 1: shift by 2
         stk1_h   = stk2_h | ((fmt == FP16) && steps_h[1] && (|level2_h[1:0]));
         stk1_l   = stk2_l | (steps_l[1] & (|level2_l[1:0]));
         level1_h = steps_h[1] ? {2'b0, level2_h[12:2]} : level2_h;
-        if (fmt == FP32) begin
-            level1_l = steps_l[1] ? {level2_h[1:0], level2_l[12:2]} : level2_l;
-        end else begin
-            level1_l = steps_l[1] ? {2'b0, level2_l[12:2]} : level2_l;
-        end
+        // if (fmt == FP32) begin
+        //     level1_l = steps_l[1] ? {level2_h[1:0], level2_l[12:2]} : level2_l;
+        // end else begin
+        //     level1_l = steps_l[1] ? {2'b0, level2_l[12:2]} : level2_l;
+        // end
+        level1_l[12:11] = steps_l[1] ? (level2_h[1:0] & {2{fmt == FP32}}): level2_l[12:11];
+        level1_l[10:0] = steps_l[1] ? level2_l[12:2] : level2_l[10:0];
 
         // Stage 0: shift by 1
         stk0_h   = stk1_h | ((fmt == FP16) && steps_h[0] && (|level1_h[0]));
         stk0_l   = stk1_l | (steps_l[0] & level1_l[0]);
         level0_h = steps_h[0] ? {1'b0, level1_h[12:1]} : level1_h;
-        if (fmt == FP32) begin
-            level0_l = steps_l[0] ? {level1_h[0], level1_l[12:1]} : level1_l;
-        end else begin
-            level0_l = steps_l[0] ? {1'b0, level1_l[12:1]} : level1_l;
-        end
+        // if (fmt == FP32) begin
+        //     level0_l = steps_l[0] ? {level1_h[0], level1_l[12:1]} : level1_l;
+        // end else begin
+        //     level0_l = steps_l[0] ? {1'b0, level1_l[12:1]} : level1_l;
+        // end
+        level0_l[12] = steps_l[0] ? (level1_h[0] & {1{fmt == FP32}}): level2_l[12];
+        level0_l[11:0] = steps_l[0] ? level1_l[12:1] : level2_l[11:0];
 
         // In FP16 mode, lower 3 bits of upper lane are masked (lane width = 10b)
         level0_h_out = level0_h;
