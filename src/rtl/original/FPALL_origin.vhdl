@@ -16,7 +16,7 @@ use ieee.std_logic_1164.all;
 
 entity FPALL_origin is
     generic (
-        NUM_OPS : integer := 6 -- 2: Add/Mul, 4: +Sqrt/Div, 6: +BF16
+        NUM_OPS : integer := 6 -- 1: Add, 3: Mul, 2: Add/Mul, 4: +Sqrt/Div, 6: +BF16
     );
     port (
         clk    : in  std_logic;
@@ -56,9 +56,21 @@ architecture arch of FPALL_origin is
     signal X_bf_l, Y_bf_l : std_logic_vector(17 downto 0);
     
 begin
-    -- FP32 Add/Mul (Always instantiated for comparison consistency)
-    U_ADD: FPAdd_8_23_Freq1_uid2 port map(clk=>clk, X=>X, Y=>Y, R=>add_R);
-    U_MUL: FPMult_8_23_uid2_Freq1_uid3 port map(clk=>clk, X=>X, Y=>Y, R=>mul_R);
+    -- FP32 Add (Present unless NUM_OPS=3 for Mul Only)
+    GEN_ADD: if NUM_OPS /= 3 generate
+        U_ADD: FPAdd_8_23_Freq1_uid2 port map(clk=>clk, X=>X, Y=>Y, R=>add_R);
+    end generate;
+    GEN_NO_ADD: if NUM_OPS = 3 generate
+        add_R <= (others => '0');
+    end generate;
+
+    -- FP32 Mul (Present unless NUM_OPS=1 for Add Only)
+    GEN_MUL: if NUM_OPS /= 1 generate
+        U_MUL: FPMult_8_23_uid2_Freq1_uid3 port map(clk=>clk, X=>X, Y=>Y, R=>mul_R);
+    end generate;
+    GEN_NO_MUL: if NUM_OPS = 1 generate
+        mul_R <= (others => '0');
+    end generate;
 
     -- Sqrt/Div (Present for NUM_OPS >= 4)
     GEN_SQRT_DIV: if NUM_OPS >= 4 generate
