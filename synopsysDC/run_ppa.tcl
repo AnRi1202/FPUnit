@@ -398,6 +398,21 @@ if {$TASK == "all" || $TASK == "8"} {
     run_synth_common "normalizer" "normalizer"
 }
 
+# Task 9: Baseline FPALL_6op
+if {$TASK == "all" || $TASK == "9"} {
+    puts "--- Task $TASK: FPALL_6op ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$origin_dir/FPAdd_Kin_f1_origin.vhdl"
+    analyze -library WORK -format vhdl "$origin_dir/FPMult_Kin_f1_origin.vhdl"
+    analyze -library WORK -format vhdl "$origin_dir/FPDiv_Kin_f1_origin.vhdl"
+    analyze -library WORK -format vhdl "$origin_dir/FPSqrt_Kin_f1_origin.vhdl"
+    analyze -library WORK -format vhdl "$origin_dir/fpadd_bf16_f1.vhdl"
+    analyze -library WORK -format vhdl "$origin_dir/fpmult_bf16_f1.vhdl"
+    analyze -library WORK -format vhdl "$origin_dir/FPALL_6op_origin.vhdl"
+    run_synth_common "fpall_6op_origin" "fpall_6op_origin"
+}
+
+
 
 ########################  v_  ####################################
 
