@@ -7,7 +7,7 @@ set_host_options -max_cores 8
 remove_design -all
 
 # --- Pipeline Stage Selection ---
-set num_pipe_am 2
+set num_pipe_am 10
 set num_pipe_ds 12
 set main_clock_period 0.5
 
@@ -81,7 +81,7 @@ compile_ultra -retime
 write_file -format verilog -hierarchy -output "$run_dir/out_afterRetime.v"
 report_area  -hierarchy > $run_dir/area.rpt
 report_power            > $run_dir/power.rpt
-report_timing -delay_type max -max_paths 5 > $run_dir/timing_setup.rpt
+report_timing -delay_type max -max_paths 1 > $run_dir/timing_setup.rpt
 report_register         > $run_dir/registers.rpt
 
 exit

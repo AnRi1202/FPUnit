@@ -11,6 +11,8 @@ set_app_var alib_library_analysis_path ./WORK
 # Prevent scattering by setting default output directory
 set_app_var search_path ". $search_path"
 
+set NUM_OPS 6
+
 set cell_lib "/autofs/fs1.ece/fs1.eecg.janders/bhilareo/form_files/NanGate_45nm_OCL_v2010_12/pdk_v1.3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12"
 
 set search_path "$cell_lib/Front_End/Liberty /autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files"
@@ -44,8 +46,10 @@ set f600_dir "../src/rtl/base_f600"
     analyze -library WORK -format vhdl "$f600_dir/fpmult_f600.vhdl"
     analyze -library WORK -format vhdl "$f600_dir/fpdiv_f600.vhdl"
     analyze -library WORK -format vhdl "$f600_dir/fpsqrt_f600.vhdl"
+    analyze -library WORK -format vhdl "$f600_dir/fpadd_bf16_f600.vhdl"
+    analyze -library WORK -format vhdl "$f600_dir/fpmult_bf16_f600.vhdl"
     analyze -library WORK -format vhdl "$f600_dir/f600_fpall_origin.vhdl"
-elaborate f600_fpall_origin -architecture arch -library WORK
+elaborate f600_fpall_origin -architecture arch -library WORK -parameters "NUM_OPS=${NUM_OPS}"
 
 # Check design and compile:
 link

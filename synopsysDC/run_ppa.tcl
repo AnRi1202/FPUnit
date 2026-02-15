@@ -180,6 +180,89 @@ proc run_synth_common {entity_name label} {
    # =============================== 
 }
 
+proc run_synth_common_param {entity_name label params} {
+    global rpt_file run_dir
+    elaborate $entity_name -library WORK -parameters $params
+    
+    link
+    check_design
+    set_max_area 0
+    compile_ultra -no_autoungroup -no_boundary_optimization
+    
+    set rpt_dir "$run_dir/report/new" 
+    set out_dir "$run_dir/output/new"
+    set rpt_area "$rpt_dir/${label}_area.rpt"
+    set rpt_pwr "$rpt_dir/${label}_power.rpt"
+    set rpt_time "$rpt_dir/${label}_timing.rpt"
+    set rpt_ref "$rpt_dir/${label}_reference.rpt"
+
+    report_qor
+
+    set bus_inference_style "%s\[%d\]"
+    set bus_naming_style "%s\[%d\]"
+    set hdlout_internal_busses true
+    change_names -hierarchy -rule verilog
+    define_name_rules name_rule -allowed "a-z A-Z 0-9 _" -max_length 255 -type cell
+    define_name_rules name_rule -allowed "a-z A-Z 0-9 _[]" -max_length 255 -type net
+    define_name_rules name_rule -map {{"\*cell\*" "cell"}}
+    define_name_rules name_rule -case_insensitive
+    change_names -hierarchy -rules name_rule
+    set verilogout_higher_designs_first true
+
+    write -format verilog -hierarchy -output $out_dir/post-synth.v
+    write -format ddc     -hierarchy -output $out_dir/post-synth.ddc
+    write_sdc -nosplit $out_dir/post-synth.sdc
+    write_sdf $out_dir/post-synth.sdf
+
+    report_area -hierarchy > $rpt_area
+    report_power > $rpt_pwr
+    report_timing > $rpt_time
+    report_reference > $rpt_ref
+
+    set area 0.0
+    set leak_power 0.0
+    set dyn_power 0.0
+    set slack "N/A"
+
+    if {[file exists $rpt_area]} {
+        set fp [open $rpt_area r]
+        while {[gets $fp line] >= 0} {
+             if {[regexp {Total cell area:\s+([0-9\.]+)} $line match val]} {
+                 set area $val
+             }
+        }
+        close $fp
+    }
+    
+    if {[file exists $rpt_pwr]} {
+        set fp [open $rpt_pwr r]
+        while {[gets $fp line] >= 0} {
+             if {[regexp {Cell Leakage Power\s+=\s+([0-9\.eE+-]+)} $line match val]} {
+                 set leak_power $val
+             }
+              if {[regexp {Total Dynamic Power\s+=\s+([0-9\.eE+-]+)} $line match val]} {
+                 set dyn_power $val
+             }
+        }
+        close $fp
+    }
+    
+    if {[file exists $rpt_time]} {
+         set fp [open $rpt_time r]
+         while {[gets $fp line] >= 0} {
+              if {[regexp {slack \(.*\)\s+([0-9\.\-]+)} $line match val]} {
+                  set slack $val
+              }
+         }
+         close $fp
+    }
+    
+    set f [open $rpt_file a]
+    puts $f "$label,$area,$leak_power,$dyn_power,$slack"
+    close $f
+    puts "Done $label: Area=$area, Slack=$slack"
+}
+
 proc run_synth_retime {entity_name label} {
     global rpt_file run_dir
     # # for vhdl
@@ -368,7 +451,7 @@ if {$TASK == "all" || $TASK == "5"} {
     analyze -library WORK -format vhdl "$origin_dir/FPAdd_Kin_f1_origin.vhdl"
     analyze -library WORK -format vhdl "$origin_dir/FPMult_Kin_f1_origin.vhdl"
     analyze -library WORK -format vhdl "$origin_dir/FPALL_origin.vhdl"
-    run_synth_common "fpaddmul_only_origin" "fpaddmul_only_origin"
+    run_synth_common_param "FPALL_origin" "fpaddmul_only_origin" "NUM_OPS=2"
 }
 
 # Task 6: Baseline FPALL
@@ -380,7 +463,7 @@ if {$TASK == "all" || $TASK == "6"} {
     analyze -library WORK -format vhdl "$origin_dir/FPDiv_Kin_f1_origin.vhdl"
     analyze -library WORK -format vhdl "$origin_dir/FPSqrt_Kin_f1_origin.vhdl"
     analyze -library WORK -format vhdl "$origin_dir/FPALL_origin.vhdl"
-    run_synth_common "FPALL_origin" "FPALL_origin"
+    run_synth_common_param "FPALL_origin" "FPALL_origin" "NUM_OPS=4"
 }
 
 # Task 7: utils 
@@ -408,8 +491,8 @@ if {$TASK == "all" || $TASK == "9"} {
     analyze -library WORK -format vhdl "$origin_dir/FPSqrt_Kin_f1_origin.vhdl"
     analyze -library WORK -format vhdl "$origin_dir/fpadd_bf16_f1.vhdl"
     analyze -library WORK -format vhdl "$origin_dir/fpmult_bf16_f1.vhdl"
-    analyze -library WORK -format vhdl "$origin_dir/FPALL_6op_origin.vhdl"
-    run_synth_common "fpall_6op_origin" "fpall_6op_origin"
+    analyze -library WORK -format vhdl "$origin_dir/FPALL_origin.vhdl"
+    run_synth_common_param "FPALL_origin" "fpall_6op_origin" "NUM_OPS=6"
 }
 
 

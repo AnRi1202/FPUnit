@@ -81,7 +81,7 @@ compile_ultra -retime
 write_file -format verilog -hierarchy -output "$run_dir/out_afterRetime.v"
 report_area  -hierarchy > $run_dir/area.rpt
 report_power            > $run_dir/power.rpt
-report_timing -delay_type max -max_paths 5 > $run_dir/timing_setup.rpt
+report_timing -delay_type max -max_paths 1 > $run_dir/timing_setup.rpt
 report_register         > $run_dir/registers.rpt
 
 exit
