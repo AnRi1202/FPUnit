@@ -95,29 +95,39 @@ module normalizer(
         // Stage 2: shift by 4            
         count2_h = ~(|level3_h[13:10]);
         count2_l = (fmt ==FP32) ? count2_h : ~(|level3_l[11:8]);
-        if (fmt == FP32) begin
-            level2_h = count2_h ? {level3_h[9:0],  level3_l[13:10]} :level3_h;
-        end else begin 
-            level2_h = count2_h ? {level3_h[9:2], 4'b0, 2'b0} : level3_h;
-        end
+        // if (fmt == FP32) begin
+        //     level2_h = count2_h ? {level3_h[9:0],  level3_l[13:10]} :level3_h;
+        // end else begin 
+        //     level2_h = count2_h ? {level3_h[9:2], 4'b0, 2'b0} : level3_h;
+        // end
+        level2_h[13:6] = count2_h ? level3_h[9:2] : level3_h[13:6];
+        level2_h[5:0] = count2_h ? ({level3_h[1:0], level3_l[13:10]} & {6{fmt==FP32}}) : level3_h[5:0];
+
+
         level2_l = count2_l ? {level3_l[9:0], 4'b0} : level3_l;
         // Stage 1: shift by 2
         count1_h = ~(|level2_h[13:12]);
         count1_l = (fmt ==FP32) ? count1_h :~(|level2_l[11:10]);
-        if (fmt == FP32) begin
-            level1_h = count1_h ? {level2_h[11:0],  level2_l[13:12]} : level2_h;
-        end else begin 
-            level1_h = count1_h ? {level2_h[11:2], 2'b0, 2'b0} : level2_h;
-        end
+        // if (fmt == FP32) begin
+        //     level1_h = count1_h ? {level2_h[11:0],  level2_l[13:12]} : level2_h;
+        // end else begin 
+        //     level1_h = count1_h ? {level2_h[11:2], 2'b0, 2'b0} : level2_h;
+        // end
+        level1_h[13:4] = count1_h ? level2_h[11:2] : level2_h[13:4];
+        level1_h[3:0] = count1_h ? ({level2_h[1:0], level2_l[13:12]} & {4{fmt==FP32}}) : level2_h[3:0];
+ 
         level1_l = count1_l ? {level2_l[11:0], 2'b0} : level2_l;
         // Stage 0: shift by 1
         count0_h = ~(|level1_h[13]);
         count0_l = (fmt ==FP32) ? count0_h : ~(|level1_l[11]);
-        if (fmt == FP32) begin
-            level0_h = count0_h ? {level1_h[12:0],  level1_l[13]}: level1_h;
-        end else begin 
-            level0_h = count0_h ? {level1_h[12:2], 1'b0, 2'b0} : level1_h;
-        end
+        // if (fmt == FP32) begin
+        //     level0_h = count0_h ? {level1_h[12:0],  level1_l[13]}: level1_h;
+        // end else begin 
+        //     level0_h = count0_h ? {level1_h[12:2], 1'b0, 2'b0} : level1_h;
+        // end
+        level0_h[13:3] = count0_h ? level1_h[12:2] : level1_h[13:3];
+        level0_h[2:0] = count0_h ? ({level1_h[1:0], level1_l[13]} & {3{fmt==FP32}}) : level1_h[2:0];
+ 
         level0_l = count0_l ? {level1_l[12:0], 1'b0} : level1_l;
 
 

@@ -61,7 +61,7 @@ set_max_area 0
 
 ## ---- Clock constraints ---- 
 #1 ns -> 1GHz
-set main_clock_period 2
+set main_clock_period 0.5
 set percentage_delay 0.10
 create_clock -name clock -period $main_clock_period clk
 

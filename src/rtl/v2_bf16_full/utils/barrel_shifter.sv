@@ -135,8 +135,8 @@ module barrel_shifter(
         // end else begin
         //     level0_l = steps_l[0] ? {1'b0, level1_l[12:1]} : level1_l;
         // end
-        level0_l[12] = steps_l[0] ? (level1_h[0] & {1{fmt == FP32}}): level2_l[12];
-        level0_l[11:0] = steps_l[0] ? level1_l[12:1] : level2_l[11:0];
+        level0_l[12] = steps_l[0] ? (level1_h[0] & {1{fmt == FP32}}): level1_l[12];
+        level0_l[11:0] = steps_l[0] ? level1_l[12:1] : level1_l[11:0];
 
         // In FP16 mode, lower 3 bits of upper lane are masked (lane width = 10b)
         level0_h_out = level0_h;

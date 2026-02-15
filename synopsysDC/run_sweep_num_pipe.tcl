@@ -85,8 +85,8 @@ for {set p 1} {$p <= 17} {incr p} {
     # ------------------------------------------------------------------
     
     # Extract total area
-    set area_val [get_attribute [get_designs area_opt] total_area]
-    
+    current_design area_opt
+    set area_val [get_attribute [current_design] total_area]
     # Extract max arrival time (critical path)
     set timing_path [get_timing_paths -delay_type max -max_paths 1]
     set arrival_time [get_attribute $timing_path arrival]

@@ -6,7 +6,7 @@ set_host_options -max_cores 8
 
 remove_design -all
 
-set num_pipe 14
+set num_pipe 16
 set main_clock_period 0.5
 
 set tag [clock format [clock seconds] -format "%m%d-%H%M"]
@@ -128,15 +128,15 @@ report_exceptions       > $run_dir/exceptions_afterRetime.rpt
 check_timing            > $run_dir/check_timing_afterRetime.rpt
 report_area   -hierarchy > $run_dir/area_afterRetime.rpt
 report_power            > $run_dir/power_afterRetime.rpt
-report_timing -delay_type max -max_paths 20 -transition_time -path full_clock \
+report_timing -delay_type max -max_paths 1 -transition_time -path full_clock \
   > $run_dir/timing_setup_afterRetime.rpt
 report_register > $run_dir/registers_afterRetime.rpt
-report_timing -delay_type min -max_paths 20 -transition_time -path full_clock \
+report_timing -delay_type min -max_paths 1 -transition_time -path full_clock \
   > $run_dir/timing_hold_afterRetime.rpt
 
 report_timing -delay_type max \
   -from [all_inputs] -to [all_outputs] \
-  -max_paths 50 -transition_time -path full \
+  -max_paths 1 -transition_time -path full \
   > $run_dir/timing_io_setup_afterRetime.rpt
 # ----------------------------------------------------------------------
 # END

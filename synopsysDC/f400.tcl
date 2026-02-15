@@ -61,7 +61,7 @@ set_max_area 0
 
 ## ---- Clock constraints ---- 
 #2.5 ns -> 400MHz
-set main_clock_period 2.8
+set main_clock_period 0.5
 set percentage_delay 0.10
 create_clock -name clock -period $main_clock_period clk
 
@@ -129,115 +129,115 @@ report_area -hierarchy > $run_dir/area_firstpass_45.rpt
 report_power > $run_dir/power_firstpass_45.rpt
 report_timing > $run_dir/timing_firstpass_45.rpt
 
-reset_design
-remove_design -all
+# reset_design
+# remove_design -all
 
-set filename "$run_dir/timing_firstpass_45.rpt"
-set fileId [open $filename r]
-set new_constraint ""
+# set filename "$run_dir/timing_firstpass_45.rpt"
+# set fileId [open $filename r]
+# set new_constraint ""
 
-while {[gets $fileId line] >= 0} {
-    if {[regexp {slack \((VIOLATED(?:[^)]*)|MET)\)\s+(-?\d+\.\d+)} $line -> status slack]} {
-        set slack_val [expr {$slack}]
-        set new_constraint [expr {$main_clock_period - $slack_val}]
-        puts "Slack: $slack_val"
-        puts "New constraint: $new_constraint"
-        break
-    }
-}
+# while {[gets $fileId line] >= 0} {
+#     if {[regexp {slack \((VIOLATED(?:[^)]*)|MET)\)\s+(-?\d+\.\d+)} $line -> status slack]} {
+#         set slack_val [expr {$slack}]
+#         set new_constraint [expr {$main_clock_period - $slack_val}]
+#         puts "Slack: $slack_val"
+#         puts "New constraint: $new_constraint"
+#         break
+#     }
+# }
 
-close $fileId
+# close $fileId
 
 
-#----------------------------------------------------------------------------------------------#
-puts "Method Vimal/Omar: 40% Reduction critical path delay"
-set new_constraint [expr {0.6 * $new_constraint}]
-puts "New constraint with 40% Reduction critical path delay critical path delay: $new_constraint"
-#----------------------------------------------------------------------------------------------#
+# #----------------------------------------------------------------------------------------------#
+# puts "Method Vimal/Omar: 40% Reduction critical path delay"
+# set new_constraint [expr {0.6 * $new_constraint}]
+# puts "New constraint with 40% Reduction critical path delay critical path delay: $new_constraint"
+# #----------------------------------------------------------------------------------------------#
 
-#elaborate design for area optimization
-elaborate f400_fpall_origin -architecture arch -library WORK
+# #elaborate design for area optimization
+# elaborate f400_fpall_origin -architecture arch -library WORK
 
-# Check design and compile:
-link
-#current_design
-check_design
+# # Check design and compile:
+# link
+# #current_design
+# check_design
 
-#----------------------------------------------------------------------------------------------#
-#---------------------------------------- Constraints -----------------------------------------#
-#----------------------------------------------------------------------------------------------#
+# #----------------------------------------------------------------------------------------------#
+# #---------------------------------------- Constraints -----------------------------------------#
+# #----------------------------------------------------------------------------------------------#
 
-#Going for the minimum-area:
-set_max_area 0
+# #Going for the minimum-area:
+# set_max_area 0
 
-## ---- Clock constraints ---- 
-#1 ns -> 1GHz
-set main_clock_period $new_constraint
-set percentage_delay 0.10
-create_clock -name clock -period $main_clock_period clk
+# ## ---- Clock constraints ---- 
+# #1 ns -> 1GHz
+# set main_clock_period $new_constraint
+# set percentage_delay 0.10
+# create_clock -name clock -period $main_clock_period clk
 
-# Input delay and output delay for clock
-set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
-puts $input_ports
-set_input_delay [expr $percentage_delay * $main_clock_period]  -clock clock [get_ports $input_ports]
+# # Input delay and output delay for clock
+# set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
+# puts $input_ports
+# set_input_delay [expr $percentage_delay * $main_clock_period]  -clock clock [get_ports $input_ports]
 
-set output_ports [all_outputs]
-puts $output_ports
-set_output_delay [expr $percentage_delay * $main_clock_period] -clock clock $output_ports
+# set output_ports [all_outputs]
+# puts $output_ports
+# set_output_delay [expr $percentage_delay * $main_clock_period] -clock clock $output_ports
 
-set_input_transition [expr $percentage_delay * $main_clock_period] [remove_from_collection [all_inputs] [get_ports clk]]
+# set_input_transition [expr $percentage_delay * $main_clock_period] [remove_from_collection [all_inputs] [get_ports clk]]
 
-################################################################################
-# Enviornement attribute constraint
-################################################################################
-# Load on the output ports
-set_max_transition 1.0000 [current_design]
-set_max_capacitance 0.2000 [current_design]
-set_max_fanout 10.0000 [current_design]
-set_load 0.1 [all_outputs]
+# ################################################################################
+# # Enviornement attribute constraint
+# ################################################################################
+# # Load on the output ports
+# set_max_transition 1.0000 [current_design]
+# set_max_capacitance 0.2000 [current_design]
+# set_max_fanout 10.0000 [current_design]
+# set_load 0.1 [all_outputs]
 
-#Setting max_Delay for the critical path:
-# get_nets ce
-# set_max_delay 1.0 -from [get_ports ce] -to [all_registers]
+# #Setting max_Delay for the critical path:
+# # get_nets ce
+# # set_max_delay 1.0 -from [get_ports ce] -to [all_registers]
 
-# For some reason, compile ultra does not work with the FP IPs..
-compile_ultra -no_autoungroup -no_boundary_optimization
+# # For some reason, compile ultra does not work with the FP IPs..
+# compile_ultra -no_autoungroup -no_boundary_optimization
 
-#--------------------
-# Report QoR:
-#--------------------
-report_qor
+# #--------------------
+# # Report QoR:
+# #--------------------
+# report_qor
 
-#--------------------
-#  Change Naming Rule
-#--------------------
+# #--------------------
+# #  Change Naming Rule
+# #--------------------
 
-set bus_inference_style "%s\[%d\]"
-set bus_naming_style "%s\[%d\]"
-set hdlout_internal_busses true
+# set bus_inference_style "%s\[%d\]"
+# set bus_naming_style "%s\[%d\]"
+# set hdlout_internal_busses true
 
-change_names -hierarchy -rule verilog
-define_name_rules name_rule -allowed "a-z A-Z 0-9 _" -max_length 255 -type cell
-define_name_rules name_rule -allowed "a-z A-Z 0-9 _[]" -max_length 255 -type net
-define_name_rules name_rule -map {{"\*cell\*" "cell"}}
-define_name_rules name_rule -case_insensitive
-change_names -hierarchy -rules name_rule
-set verilogout_higher_designs_first true
+# change_names -hierarchy -rule verilog
+# define_name_rules name_rule -allowed "a-z A-Z 0-9 _" -max_length 255 -type cell
+# define_name_rules name_rule -allowed "a-z A-Z 0-9 _[]" -max_length 255 -type net
+# define_name_rules name_rule -map {{"\*cell\*" "cell"}}
+# define_name_rules name_rule -case_insensitive
+# change_names -hierarchy -rules name_rule
+# set verilogout_higher_designs_first true
 
-#--------------------
-# Writing output:
-#--------------------
-write -format verilog -hierarchy -output $run_dir/post-synth.v
-write -format ddc     -hierarchy -output $run_dir/post-synth.ddc
-write_sdc -nosplit $run_dir/post-synth.sdc
-write_sdf $run_dir/post-synth.sdf
+# #--------------------
+# # Writing output:
+# #--------------------
+# write -format verilog -hierarchy -output $run_dir/post-synth.v
+# write -format ddc     -hierarchy -output $run_dir/post-synth.ddc
+# write_sdc -nosplit $run_dir/post-synth.sdc
+# write_sdf $run_dir/post-synth.sdf
 
-#--------------------
-# Reporting PPA:
-#--------------------
-report_area -hierarchy > $run_dir/area_secondpass_45.rpt
-report_timing > $run_dir/timing_secondpass_45.rpt
-report_power > $run_dir/power_secondpass_45.rpt
+# #--------------------
+# # Reporting PPA:
+# #--------------------
+# report_area -hierarchy > $run_dir/area_secondpass_45.rpt
+# report_timing > $run_dir/timing_secondpass_45.rpt
+# report_power > $run_dir/power_secondpass_45.rpt
 
-# exit the synopsys design compiler:
+# # exit the synopsys design compiler:
 exit
