@@ -5,6 +5,7 @@ set_host_options -max_cores 8
 
 # Libraries in search_path will be prioritized
 set cell_lib "/autofs/fs1.ece/fs1.eecg.janders/bhilareo/form_files/NanGate_45nm_OCL_v2010_12/pdk_v1.3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12"
+set ROOT ".."
 
 set search_path "$cell_lib/Front_End/Liberty /autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files"
 
@@ -31,7 +32,7 @@ set symbol_library ""
 #--------------------------------- Set up result folders --------------------------------------#
 #----------------------------------------------------------------------------------------------#
 set tag [clock format [clock seconds] -format "%Y%m%d-%H%M%S"]  ;# 例: 20251216-141905
-set run_dir "run-$VER-$tag"
+set run_dir "run-$VER-$TASK-$tag"
 
 file mkdir $run_dir/output/new
 file mkdir $run_dir/report/new
@@ -65,21 +66,21 @@ proc run_synth_common {entity_name label} {
     create_clock -name clock -period $main_clock_period clk
     
     set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
-    set_input_delay [expr $percentage_delay * $main_clock_period] -clock clock $input_ports
+    set_input_delay 0.0 -clock clock $input_ports
     
     set output_ports [all_outputs]
-    set_output_delay [expr $percentage_delay * $main_clock_period] -clock clock $output_ports
+    set_output_delay 0.0 -clock clock $output_ports
     
-    set_input_transition [expr $percentage_delay * $main_clock_period] [remove_from_collection [all_inputs] [get_ports clk]]
+    set_input_transition 0.0 [remove_from_collection [all_inputs] [get_ports clk]]
 
     # set_max_transition 1.0000 [current_design]
     # set_max_capacitance 0.2000 [current_design]
     # set_max_fanout 10.0000 [current_design]
-    # set_load 0.1 [all_outputs]
+    set_load 0.1 [all_outputs]
 
     # set_max_delay 1000 -from [all_inputs] -to [all_outputs]
     # Compile
-    compile_ultra -no_autoungroup  -no_boundary_optimization
+    compile_ultra 
     
 
 
@@ -161,20 +162,22 @@ proc run_synth_common {entity_name label} {
         close $fp
     }
     
+    set dat "N/A"
+    
     if {[file exists $rpt_time]} {
          set fp [open $rpt_time r]
          while {[gets $fp line] >= 0} {
-              if {[regexp {slack \(.*\)\s+([0-9\.\-]+)} $line match val]} {
-                  set slack $val
+              if {[regexp {data arrival time\s+([0-9\.\-]+)} $line match val]} {
+                  set dat $val
               }
          }
          close $fp
     }
     
     set f [open $rpt_file a]
-    puts $f "$label,$area,$leak_power,$dyn_power,$slack"
+    puts $f "$label,$area,$leak_power,$dyn_power,$dat"
     close $f
-    puts "Done $label: Area=$area, Slack=$slack"
+    puts "Done $label: Area=$area, DAT=$dat"
    # ==============================
    # summarize csv
    # =============================== 
@@ -187,6 +190,18 @@ proc run_synth_common_param {entity_name label params} {
     link
     check_design
     set_max_area 0
+    # 1000 ns = 1 us 1MHz
+    set main_clock_period 0.5 
+    set percentage_delay 0.10
+    create_clock -name clock -period $main_clock_period clk
+    
+    set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
+    set_input_delay 0.0 -clock clock $input_ports
+    
+    set output_ports [all_outputs]
+    set_output_delay 0.0 -clock clock $output_ports
+    
+    set_input_transition 0.0 [remove_from_collection [all_inputs] [get_ports clk]]
     compile_ultra -no_autoungroup -no_boundary_optimization
     
     set rpt_dir "$run_dir/report/new" 
@@ -247,20 +262,22 @@ proc run_synth_common_param {entity_name label params} {
         close $fp
     }
     
+    set dat "N/A"
+    
     if {[file exists $rpt_time]} {
          set fp [open $rpt_time r]
          while {[gets $fp line] >= 0} {
-              if {[regexp {slack \(.*\)\s+([0-9\.\-]+)} $line match val]} {
-                  set slack $val
+              if {[regexp {data arrival time\s+([0-9\.\-]+)} $line match val]} {
+                  set dat $val
               }
          }
          close $fp
     }
     
     set f [open $rpt_file a]
-    puts $f "$label,$area,$leak_power,$dyn_power,$slack"
+    puts $f "$label,$area,$leak_power,$dyn_power,$dat"
     close $f
-    puts "Done $label: Area=$area, Slack=$slack"
+    puts "Done $label: Area=$area, DAT=$dat"
 }
 
 proc run_synth_retime {entity_name label} {
@@ -363,20 +380,22 @@ proc run_synth_retime {entity_name label} {
         close $fp
     }
     
+    set dat "N/A"
+    
     if {[file exists $rpt_time]} {
          set fp [open $rpt_time r]
          while {[gets $fp line] >= 0} {
-              if {[regexp {slack \(.*\)\s+([0-9\.\-]+)} $line match val]} {
-                  set slack $val
+              if {[regexp {data arrival time\s+([0-9\.\-]+)} $line match val]} {
+                  set dat $val
               }
          }
          close $fp
     }
     
     set f [open $rpt_file a]
-    puts $f "$label,$area,$leak_power,$dyn_power,$slack"
+    puts $f "$label,$area,$leak_power,$dyn_power,$dat"
     close $f
-    puts "Done $label: Area=$area, Slack=$slack"
+    puts "Done $label: Area=$area, DAT=$dat"
 }
 
 proc analyze_filelist {filelist_path format} {
@@ -422,8 +441,49 @@ if {$TASK == "all" || $TASK == "1_1" || $TASK == "FPAdd_VHDL"} {
     puts "--- Task 1_1: FPAdd f100 ---"
     remove_design -all
     analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f100/fpadd_f100.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f100/fpadd_bf16_f100.vhdl"
     analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f100/f100_fracadd_origin.vhdl"
     run_synth_common "f100_fracadd_origin" "FPAdd_f100_VHDL"
+}
+if {$TASK == "all" || $TASK == "1_2" || $TASK == "FPAdd_VHDL"} {
+    puts "--- Task 1_2: FPAdd f200 ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f200/fpadd_f200.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f200/fpadd_bf16_f200.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f200/f200_fracadd_origin.vhdl"
+    run_synth_common "f200_fracadd_origin" "FPAdd_f200_VHDL"
+}
+if {$TASK == "all" || $TASK == "1_3" || $TASK == "FPAdd_VHDL"} {
+    puts "--- Task 1_3: FPAdd f300 ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f300/fpadd_f300.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f300/fpadd_bf16_f300.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f300/f300_fracadd_origin.vhdl"
+    run_synth_common "f300_fracadd_origin" "FPAdd_f300_VHDL"
+}
+if {$TASK == "all" || $TASK == "1_4" || $TASK == "FPAdd_VHDL"} {
+    puts "--- Task 1_4: FPAdd f400 ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f400/fpadd_f400.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f400/fpadd_bf16_f400.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f400/f400_fracadd_origin.vhdl"
+    run_synth_common "f400_fracadd_origin" "FPAdd_f400_VHDL"
+}
+if {$TASK == "all" || $TASK == "1_5" || $TASK == "FPAdd_VHDL"} {
+    puts "--- Task 1_5: FPAdd f500 ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f500/fpadd_f500.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f500/fpadd_bf16_f500.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f500/f500_fracadd_origin.vhdl"
+    run_synth_common "f500_fracadd_origin" "FPAdd_f500_VHDL"
+}
+if {$TASK == "all" || $TASK == "1_6" || $TASK == "FPAdd_VHDL"} {
+    puts "--- Task 1_6: FPAdd f600 ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f600/fpadd_f600.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f600/fpadd_bf16_f600.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f600/f600_fracadd_origin.vhdl"
+    run_synth_common "f600_fracadd_origin" "FPAdd_f600_VHDL"
 }
 
 # Task 2: Baseline FPMult
@@ -433,12 +493,53 @@ if {$TASK == "all" || $TASK == "2" || $TASK == "FPMult"} {
     analyze -library WORK -format vhdl "$origin_dir/FPMult_Kin_f1_origin.vhdl"
     run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
 }
-if {$TASK == "all" || $TASK == "2_2" || $TASK == "FPMult"} {
-    puts "--- Task 2: FPMult f100 ---"
+if {$TASK == "all" || $TASK == "2_1" || $TASK == "FPMult"} {
+    puts "--- Task 2_1: FPMult f100 ---"
     remove_design -all
     analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f100/fpmult_f100.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f100/fpmult_bf16_f100.vhdl"
     analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f100/f100_fracmult_origin.vhdl"
     run_synth_common "f100_fracmult_origin" "FPMult_f100_VHDL"
+}
+if {$TASK == "all" || $TASK == "2_2" || $TASK == "FPMult"} {
+    puts "--- Task 2_2: FPMult f200 ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f200/fpmult_f200.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f200/fpmult_bf16_f200.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f200/f200_fracmult_origin.vhdl"
+    run_synth_common "f200_fracmult_origin" "FPMult_f200_VHDL"
+}
+if {$TASK == "all" || $TASK == "2_3" || $TASK == "FPMult"} {
+    puts "--- Task 2_3: FPMult f300 ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f300/fpmult_f300.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f300/fpmult_bf16_f300.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f300/f300_fracmult_origin.vhdl"
+    run_synth_common "f300_fracmult_origin" "FPMult_f300_VHDL"
+}
+if {$TASK == "all" || $TASK == "2_4" || $TASK == "FPMult"} {
+    puts "--- Task 2_4: FPMult f400 ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f400/fpmult_f400.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f400/fpmult_bf16_f400.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f400/f400_fracmult_origin.vhdl"
+    run_synth_common "f400_fracmult_origin" "FPMult_f400_VHDL"
+}
+if {$TASK == "all" || $TASK == "2_5" || $TASK == "FPMult"} {
+    puts "--- Task 2_5: FPMult f500 ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f500/fpmult_f500.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f500/fpmult_bf16_f500.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f500/f500_fracmult_origin.vhdl"
+    run_synth_common "f500_fracmult_origin" "FPMult_f500_VHDL"
+}
+if {$TASK == "all" || $TASK == "2_6" || $TASK == "FPMult"} {
+    puts "--- Task 2_6: FPMult f600 ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f600/fpmult_f600.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f600/fpmult_bf16_f600.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f600/f600_fracmult_origin.vhdl"
+    run_synth_common "f600_fracmult_origin" "FPMult_f600_VHDL"
 }
 
 # Task 3: Baseline FPDiv

@@ -7,7 +7,11 @@ set_host_options -max_cores 8
 remove_design -all
 
 # --- Pipeline Stage Selection ---
-set num_pipe 11
+if {[info exists env(PIPE)]} {
+    set num_pipe $env(PIPE)
+} else {
+    set num_pipe 11
+}
 set main_clock_period 0.5
 
 set tag [clock format [clock seconds] -format "%m%d-%H%M"]
@@ -45,9 +49,7 @@ set v2_2_dir "$rtl_dir/v2_2_bf16_mult"
 # Analyze supporting files (from v2_bf16_full as they are shared/imported)
 analyze -library WORK -format sverilog "$v2_dir/fpall_pkg.sv"
 analyze -library WORK -format vhdl     "$v2_dir/utils.vhdl"
-analyze -library WORK -format sverilog "$v2_dir/utils/abs_comparator.sv"
-analyze -library WORK -format sverilog "$v2_dir/utils/barrel_shifter.sv"
-analyze -library WORK -format sverilog "$v2_dir/utils/normalizer.sv"
+
 
 # Analyze the main SystemVerilog files
 analyze -library WORK -format sverilog "$v2_2_dir/bf16_mult.sv"
@@ -63,13 +65,14 @@ set_max_area 0
 # ----------------------------------------------------------------------
 # Clocks & Constraints
 # ----------------------------------------------------------------------
-create_clock -name clk -period $main_clock_period [get_ports clk]
-
-set inputs_no_clk [remove_from_collection [all_inputs] [get_ports clk]]
-set_input_delay      -clock clk 0.20 $inputs_no_clk
-set_output_delay     -clock clk 0.20 [all_outputs]
-set_input_transition 0.20 $inputs_no_clk
-set_load 0.1 [all_outputs]
+create_clock -name clk -period $main_clock_period 
+set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
+set_input_delay 0.0 -clock clock $input_ports
+    
+set output_ports [all_outputs]
+set_output_delay 0.0 -clock clock $output_ports
+    
+set_input_transition 0.0 [remove_from_collection [all_inputs] [get_ports clk]]
 
 # Enable retiming infrastructure 
 set_optimize_registers true
@@ -79,10 +82,7 @@ set_app_var compile_sequential_area_recovery true
 # ----------------------------------------------------------------------
 # RETIMING Synthesis
 # ----------------------------------------------------------------------
-ungroup -all -flatten
-remove_attribute [get_cells -hier] dont_touch
-compile_ultra 
-optimize_registers -clock clk 
+compile_ultra  -retime
 
 
 # Export reports
@@ -91,5 +91,31 @@ report_area  -hierarchy > $run_dir/area.rpt
 report_power            > $run_dir/power.rpt
 report_timing -delay_type max -max_paths 1 > $run_dir/timing_setup.rpt
 report_register         > $run_dir/registers.rpt
+
+# Parsing results for summary
+set area 0.0
+set dat "N/A"
+
+if {[file exists "$run_dir/area.rpt"]} {
+    set fp [open "$run_dir/area.rpt" r]
+    while {[gets $fp line] >= 0} {
+        if {[regexp {Total cell area:\s+([0-9\.]+)} $line match val]} {
+            set area $val
+        }
+    }
+    close $fp
+}
+
+if {[file exists "$run_dir/timing_setup.rpt"]} {
+    set fp [open "$run_dir/timing_setup.rpt" r]
+    while {[gets $fp line] >= 0} {
+        if {[regexp {data arrival time\s+([0-9\.\-]+)} $line match val]} {
+            set dat $val
+        }
+    }
+    close $fp
+}
+
+puts "Done bf16_mult_ret_pipe${num_pipe}: Area=$area, DAT=$dat"
 
 exit

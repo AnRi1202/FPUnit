@@ -58,7 +58,7 @@ architecture arch of f600_fpall_origin is
 begin
     -- FP32 Add (Present unless Mul Only modes: 3 or 7)
     GEN_ADD: if NUM_OPS /= 3 and NUM_OPS /= 7 generate
-        U_ADD: FPAdd_8_23_Freq600_uid2 port map(clk=>clk, X=>X, Y=>Y, R=>add_R);
+    U_ADD: FPAdd_8_23_Freq600_uid2 port map(clk=>clk, X=>X, Y=>Y, R=>add_R);
     end generate;
     GEN_NO_ADD: if NUM_OPS = 3 or NUM_OPS = 7 generate
         add_R <= (others => '0');
@@ -66,7 +66,7 @@ begin
 
     -- FP32 Mul (Present unless Add Only modes: 1 or 5)
     GEN_MUL: if NUM_OPS /= 1 and NUM_OPS /= 5 generate
-        U_MUL: FPMult_8_23_uid2_Freq600_uid3 port map(clk=>clk, X=>X, Y=>Y, R=>mul_R);
+    U_MUL: FPMult_8_23_uid2_Freq600_uid3 port map(clk=>clk, X=>X, Y=>Y, R=>mul_R);
     end generate;
     GEN_NO_MUL: if NUM_OPS = 1 or NUM_OPS = 5 generate
         mul_R <= (others => '0');
@@ -89,10 +89,10 @@ begin
 
         -- BF16 ADD (Modes 5 and 6)
         GEN_BF_ADD: if NUM_OPS = 5 or NUM_OPS = 6 generate
-            -- Upper lane [33:16]
-            U_BFADD_H: FPAdd_8_7_Freq600_uid2 port map(clk=>clk, X=>X(33 downto 16), Y=>Y(33 downto 16), R=>bfadd_h);
+        -- Upper lane [33:16]
+        U_BFADD_H: FPAdd_8_7_Freq600_uid2 port map(clk=>clk, X=>X(33 downto 16), Y=>Y(33 downto 16), R=>bfadd_h);
             -- Lower lane [15:0]
-            U_BFADD_L: FPAdd_8_7_Freq600_uid2 port map(clk=>clk, X=>X_bf_l, Y=>Y_bf_l, R=>bfadd_l);
+        U_BFADD_L: FPAdd_8_7_Freq600_uid2 port map(clk=>clk, X=>X_bf_l, Y=>Y_bf_l, R=>bfadd_l);
             bfadd_R  <= bfadd_h  & bfadd_l(15 downto 0);
         end generate;
         
@@ -108,7 +108,7 @@ begin
             U_BFMUL_H: FPMult_8_7_uid2_Freq600_uid3 port map(clk=>clk, X=>X(33 downto 16), Y=>Y(33 downto 16), R=>bfmul_h);
             -- Lower lane [15:0]
             U_BFMUL_L: FPMult_8_7_uid2_Freq600_uid3 port map(clk=>clk, X=>X_bf_l, Y=>Y_bf_l, R=>bfmul_l);
-            bfmult_R <= bfmul_h & bfmul_l(15 downto 0);
+        bfmult_R <= bfmul_h & bfmul_l(15 downto 0);
         end generate;
 
         GEN_NO_BF_MUL: if NUM_OPS = 5 generate
@@ -117,7 +117,7 @@ begin
             bfmul_l  <= (others => '0');
         end generate;
     end generate;
-    
+
     GEN_NO_BF16: if NUM_OPS < 5 generate
          bfadd_R <= (others => '0');
          bfmult_R <= (others => '0');
@@ -151,13 +151,13 @@ begin
     
     -- For mixed operations (2, 4, 6), use the Full Mux
     GEN_OUT_MUX: if NUM_OPS = 2 or NUM_OPS = 4 or NUM_OPS = 6 generate
-        with opcode select
-            R <= add_R    when "000",
-                 mul_R    when "001",
-                 sqrt_R   when "010",
-                 div_R    when "011",
-                 bfadd_R  when "100",
-                 bfmult_R when "101",
-                 (others => '0') when others;
+    with opcode select
+        R <= add_R    when "000",
+             mul_R    when "001",
+             sqrt_R   when "010",
+             div_R    when "011",
+             bfadd_R  when "100",
+             bfmult_R when "101",
+             (others => '0') when others;
     end generate;
 end architecture;

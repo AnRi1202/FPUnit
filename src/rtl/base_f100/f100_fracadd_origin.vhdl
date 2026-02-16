@@ -17,7 +17,7 @@ end entity;
 
 
 architecture arch of f100_fracadd_origin is 
-    component FPAdd_8_23_Freq1_uid2 is
+    component FPAdd_8_23_Freq100_uid2 is
         port (clk : in std_logic;
             X : in  std_logic_vector(8+23+2 downto 0);
             Y : in  std_logic_vector(8+23+2 downto 0);
@@ -44,7 +44,7 @@ architecture arch of f100_fracadd_origin is
     --       R : out  std_logic_vector(8+23+2 downto 0)   );
     -- end component; 
 
-    component FPAdd_8_7_Freq1_uid2 is 
+    component FPAdd_8_7_Freq100_uid2 is 
     port (clk : in std_logic;
           X : in  std_logic_vector(8+7+2 downto 0);
           Y : in  std_logic_vector(8+7+2 downto 0);
@@ -74,7 +74,7 @@ architecture arch of f100_fracadd_origin is
 
     begin
     -- FP32 units
-    U_ADD: FPAdd_8_23_Freq1_uid2
+    U_ADD: FPAdd_8_23_Freq100_uid2
     port map(clk=>clk, X=>X, Y=>Y, R=>add_R);
 
     -- U_MUL: FPMult_8_23_uid2_Freq1_uid3
@@ -87,7 +87,7 @@ architecture arch of f100_fracadd_origin is
     -- port map(clk=>clk, X=>X, Y=>Y, R=>div_R);
 
     -- upper lane
-    U_BFADD_H: FPAdd_8_7_Freq1_uid2
+    U_BFADD_H: FPAdd_8_7_Freq100_uid2
     port map(
         clk => clk,
         X   => X(33 downto 16),
@@ -106,7 +106,7 @@ architecture arch of f100_fracadd_origin is
     Y_bf_l <= "00" & Y(15 downto 0);
 
     -- lower lane
-    U_BFADD_L: FPAdd_8_7_Freq1_uid2
+    U_BFADD_L: FPAdd_8_7_Freq100_uid2
     port map(
         clk => clk,
         X => X_bf_l,
