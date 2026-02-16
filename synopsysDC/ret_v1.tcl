@@ -6,13 +6,15 @@ set_host_options -max_cores 8
 
 remove_design -all
 
-# --- Pipeline Stage Selection ---
-set num_pipe_am 10
-set num_pipe_ds 12
+# --- Pipeline Stage Selection (Env vars or defaults) ---
+set num_pipe_a [expr {[info exists env(PIPE_A)] ? $env(PIPE_A) : 5}]
+set num_pipe_m [expr {[info exists env(PIPE_M)] ? $env(PIPE_M) : 6}]
+set num_pipe_d [expr {[info exists env(PIPE_D)] ? $env(PIPE_D) : 9}]
+set num_pipe_s [expr {[info exists env(PIPE_S)] ? $env(PIPE_S) : 9}]
 set main_clock_period 0.5
 
 set tag [clock format [clock seconds] -format "%m%d-%H%M"]
-set run_dir [file normalize "run-v1_ret-AM${num_pipe_am}-DS${num_pipe_ds}-T${main_clock_period}-${tag}"]
+set run_dir [file normalize "run-v1_ret-A${num_pipe_a}M${num_pipe_m}-D${num_pipe_d}S${num_pipe_s}-T${main_clock_period}-${tag}"]
 set WORK_DIR [file normalize "${run_dir}/WORK"]
 
 file mkdir $run_dir
@@ -50,7 +52,7 @@ analyze -library WORK -format vhdl "$v2_dir/utils.vhdl"
 analyze -library WORK -format sverilog "$v1_dir/area_opt_ret.sv"
 
 # Elaborate top-level with parameters
-elaborate area_opt_ret -library WORK -parameters "PARAM_PIPE_AM=${num_pipe_am}, PARAM_PIPE_DS=${num_pipe_ds}"
+elaborate area_opt_ret -library WORK -parameters "PARAM_PIPE_A=${num_pipe_a}, PARAM_PIPE_M=${num_pipe_m}, PARAM_PIPE_D=${num_pipe_d}, PARAM_PIPE_S=${num_pipe_s}"
 
 link
 check_design
@@ -69,8 +71,8 @@ set_load 0.1 [all_outputs]
 
 # Enable retiming infrastructure 
 set_optimize_registers true
-set_app_var compile_enable_register_merging true
-set_app_var compile_sequential_area_recovery true
+set_app_var compile_enable_register_merging false 
+set_app_var compile_sequential_area_recovery false
 
 # ----------------------------------------------------------------------
 # RETIMING Synthesis

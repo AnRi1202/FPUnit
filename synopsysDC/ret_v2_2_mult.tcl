@@ -1,17 +1,17 @@
 # ======================================================================
-# DC script (retiming for bf16_add_ret.sv)
-# This script supports variable pipeline stages for BF16 Add.
+# DC script (retiming for bf16_mult_ret.sv)
+# This script supports variable pipeline stages for BF16 Mult.
 # ======================================================================
 set_host_options -max_cores 8
 
 remove_design -all
 
 # --- Pipeline Stage Selection ---
-set num_pipe 10
+set num_pipe 11
 set main_clock_period 0.5
 
 set tag [clock format [clock seconds] -format "%m%d-%H%M"]
-set run_dir [file normalize "run-bf16_add_ret-P${num_pipe}-T${main_clock_period}-${tag}"]
+set run_dir [file normalize "run-bf16_mult_ret-P${num_pipe}-T${main_clock_period}-${tag}"]
 set WORK_DIR [file normalize "${run_dir}/WORK"]
 
 file mkdir $run_dir
@@ -40,7 +40,7 @@ set target_library $link_library
 # ----------------------------------------------------------------------
 set rtl_dir "../src/rtl"
 set v2_dir "$rtl_dir/v2_bf16_full"
-set v2_1_dir "$rtl_dir/v2_1_bf16_add"
+set v2_2_dir "$rtl_dir/v2_2_bf16_mult"
 
 # Analyze supporting files (from v2_bf16_full as they are shared/imported)
 analyze -library WORK -format sverilog "$v2_dir/fpall_pkg.sv"
@@ -50,11 +50,11 @@ analyze -library WORK -format sverilog "$v2_dir/utils/barrel_shifter.sv"
 analyze -library WORK -format sverilog "$v2_dir/utils/normalizer.sv"
 
 # Analyze the main SystemVerilog files
-analyze -library WORK -format sverilog "$v2_1_dir/bf16_add.sv"
-analyze -library WORK -format sverilog "$v2_1_dir/bf16_add_ret.sv"
+analyze -library WORK -format sverilog "$v2_2_dir/bf16_mult.sv"
+analyze -library WORK -format sverilog "$v2_2_dir/bf16_mult_ret.sv"
 
 # Elaborate top-level with parameters
-elaborate bf16_add_ret -library WORK -parameters "PARAM_PIPE=${num_pipe}"
+elaborate bf16_mult_ret -library WORK -parameters "PARAM_PIPE=${num_pipe}"
 
 link
 check_design

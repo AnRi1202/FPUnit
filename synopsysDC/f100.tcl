@@ -94,7 +94,7 @@ set_load 0.1 [all_outputs]
 # set_max_delay 1.0 -from [get_ports ce] -to [all_registers]
 
 # For some reason, compile ultra does not work with the FP IPs..
-compile_ultra -no_autoungroup -no_boundary_optimization
+compile_ultra 
 
 #--------------------
 # Report QoR:
@@ -121,7 +121,7 @@ set verilogout_higher_designs_first true
 # Writing output:
 #--------------------
 set tag [clock format [clock seconds] -format "%Y%m%d-%H%M%S"]  ;# ex: 20251216-141905
-set run_dir "run-f100-$tag"
+set run_dir "run-f100-$NUM_OPS-$tag"
 file mkdir $run_dir
 
 

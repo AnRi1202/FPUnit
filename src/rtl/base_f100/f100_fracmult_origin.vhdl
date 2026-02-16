@@ -4,7 +4,7 @@ use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
 
-entity f100_fpall_origin is
+entity f100_fracmult_origin is
     port(
         clk: in std_logic;
         op: in std_logic_vector(2 downto 0); -- add, mult, div, sqrt, bfadd, bfmult
@@ -16,7 +16,7 @@ end entity;
 
 
 
-architecture arch of f100_fpall_origin is 
+architecture arch of f100_fracmult_origin is 
     component FPAdd_8_23_Freq100_uid2 is
         port (clk : in std_logic;
             X : in  std_logic_vector(8+23+2 downto 0);
@@ -126,8 +126,7 @@ architecture arch of f100_fpall_origin is
     bfmult_R <= bfmult_R_h & bfmult_R_l(15 downto 0);
 
     with op select
-    R <= add_R    when "000",
-        mul_R    when "001",
+    R <= mul_R    when "001",
         div_R    when "010",
         sqrt_R   when "011",
         bfadd_R  when "100",

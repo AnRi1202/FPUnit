@@ -11,7 +11,7 @@ set_app_var alib_library_analysis_path ./WORK
 # Prevent scattering by setting default output directory
 set_app_var search_path ". $search_path"
 
-set NUM_OPS 6
+set NUM_OPS 5
 
 set cell_lib "/autofs/fs1.ece/fs1.eecg.janders/bhilareo/form_files/NanGate_45nm_OCL_v2010_12/pdk_v1.3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12"
 
@@ -64,7 +64,7 @@ check_design
 set_max_area 0
 
 ## ---- Clock constraints ---- 
-#1 ns -> 1GHz
+# 1.67 ns -> 600MHz (Matching Freq600)
 set main_clock_period 0.5
 set percentage_delay 0.10
 create_clock -name clock -period $main_clock_period clk
@@ -91,7 +91,7 @@ set_load 0.1 [all_outputs]
 # set_max_delay 1.0 -from [get_ports ce] -to [all_registers]
 
 # For some reason, compile ultra does not work with the FP IPs..
-compile_ultra -no_autoungroup -no_boundary_optimization
+compile_ultra 
 
 #--------------------
 # Report QoR:
@@ -118,7 +118,7 @@ set verilogout_higher_designs_first true
 # Writing output:
 #--------------------
 set tag [clock format [clock seconds] -format "%Y%m%d-%H%M%S"]  ;# ex: 20251216-141905
-set run_dir "run-f600-$tag"
+set run_dir "run-f600-$NUM_OPS-$tag"
 file mkdir $run_dir
 
 

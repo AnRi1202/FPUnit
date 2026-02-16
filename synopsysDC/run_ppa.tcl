@@ -59,18 +59,18 @@ proc run_synth_common {entity_name label} {
 
     # Constraints 
     set_max_area 0
-    # # 1000 ns = 1 us 1MHz
-    # set main_clock_period 1000 
-    # set percentage_delay 0.10
-    # create_clock -name clock -period $main_clock_period clk
+    # 1000 ns = 1 us 1MHz
+    set main_clock_period 0.5 
+    set percentage_delay 0.10
+    create_clock -name clock -period $main_clock_period clk
     
-    # set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
-    # set_input_delay [expr $percentage_delay * $main_clock_period] -clock clock $input_ports
+    set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
+    set_input_delay [expr $percentage_delay * $main_clock_period] -clock clock $input_ports
     
-    # set output_ports [all_outputs]
-    # set_output_delay [expr $percentage_delay * $main_clock_period] -clock clock $output_ports
+    set output_ports [all_outputs]
+    set_output_delay [expr $percentage_delay * $main_clock_period] -clock clock $output_ports
     
-    # set_input_transition [expr $percentage_delay * $main_clock_period] [remove_from_collection [all_inputs] [get_ports clk]]
+    set_input_transition [expr $percentage_delay * $main_clock_period] [remove_from_collection [all_inputs] [get_ports clk]]
 
     # set_max_transition 1.0000 [current_design]
     # set_max_capacitance 0.2000 [current_design]
@@ -418,6 +418,13 @@ if {$TASK == "all" || $TASK == "1" || $TASK == "FPAdd_VHDL"} {
     analyze -library WORK -format vhdl "$origin_dir/FPAdd_Kin_f1_origin.vhdl"
     run_synth_common "FPAdd_8_23_Freq1_uid2" "FPAdd_VHDL"
 }
+if {$TASK == "all" || $TASK == "1_1" || $TASK == "FPAdd_VHDL"} {
+    puts "--- Task 1_1: FPAdd f100 ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f100/fpadd_f100.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f100/f100_fracadd_origin.vhdl"
+    run_synth_common "f100_fracadd_origin" "FPAdd_f100_VHDL"
+}
 
 # Task 2: Baseline FPMult
 if {$TASK == "all" || $TASK == "2" || $TASK == "FPMult"} {
@@ -425,6 +432,13 @@ if {$TASK == "all" || $TASK == "2" || $TASK == "FPMult"} {
     remove_design -all
     analyze -library WORK -format vhdl "$origin_dir/FPMult_Kin_f1_origin.vhdl"
     run_synth_common "FPMult_8_23_uid2_Freq1_uid3" "FPMult"
+}
+if {$TASK == "all" || $TASK == "2_2" || $TASK == "FPMult"} {
+    puts "--- Task 2: FPMult f100 ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f100/fpmult_f100.vhdl"
+    analyze -library WORK -format vhdl "$ROOT/src/rtl/base_f100/f100_fracmult_origin.vhdl"
+    run_synth_common "f100_fracmult_origin" "FPMult_f100_VHDL"
 }
 
 # Task 3: Baseline FPDiv
