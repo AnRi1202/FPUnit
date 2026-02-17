@@ -75,3 +75,6 @@ synopsysDC/_sweep_*.tcl
 
 # cocotb
 **/__pycache__
+
+# Archives
+synopsysDC/csv_archive/

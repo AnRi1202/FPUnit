@@ -91,7 +91,19 @@ def parse_results(run_dir):
                         break
     return area, data_arrival
 
+# Load existing results for skipping
 results = []
+done_keys = set()
+csv_file = "sweep_summary_flopoco_all.csv"
+if os.path.exists(csv_file):
+    with open(csv_file, "r") as f:
+        lines = f.readlines()[1:] # skip header
+        for line in lines:
+            parts = line.strip().split(',')
+            if len(parts) >= 5:
+                # Freq,Type,Variant,Area,MaxDataArrival
+                results.append((parts[0], parts[1], parts[2], parts[3], parts[4]))
+                done_keys.add((str(parts[0]), str(parts[1]), str(parts[2])))
 
 print("Starting F100-F600 Sweep...")
 
@@ -101,10 +113,10 @@ for freq in frequencies:
     # We want to sweep both standard (FP32) and BF16, and now FPALL (Combined)
     # Mapping: (Type, VariantLabel, num_ops)
     sweep_targets = [
-        ("fpall", "4OPS", 4),
-        ("fpall", "5OPS", 5),
-        ("fpall", "6OPS", 6),
-        ("fpall", "7OPS", 7),
+        ("fpall", "4OPS", 4), # vs v1 (area opt)/ v3(addmult) + v3_1 (divsqrt) 
+        ("fpall", "5OPS", 5), # vs v2_1 (frac add)
+        ("fpall", "6OPS", 6), # vs v2 (6ops) / vs v2_3(faddmult) + v2_4 (divsqrt)
+        ("fpall", "7OPS", 7), # vs v2_2 (frac_addmult)
         ("add", "FP32", None),
         ("add", "BF16", None),
         ("mult", "FP32", None),
@@ -138,15 +150,14 @@ for freq in frequencies:
         
         entity_name = None
         if t == "fpall":
-            for e in entities:
-                 if e.lower() == entity_prefix.lower():
-                     entity_name = e
-                     break
+            entity_name = f"{entity_prefix}_NUM_OPS{num_ops}"
         else:
-            # Usually the top level starts with PFAdd/FPMult and is near the end or matches prefix
-            for e in entities:
-                 if e.lower().startswith(entity_prefix.lower()):
-                     entity_name = e
+            # Match FPAdd_8_23_Freq1_uid2
+            pattern = rf"{entity_prefix}_8_23_Freq\d+_uid\d+"
+            for ent in entities:
+                if re.match(pattern, ent):
+                    entity_name = ent
+                    break
                  
         if not entity_name:
              print(f"Warning: No matching entity found in {abs_file_path}. Found: {entities}. Skipping.")
@@ -155,11 +166,9 @@ for freq in frequencies:
         run_name = f"run-f{freq}-{t}-{variant_label}"
         run_dir = os.path.abspath(run_name)
         
-        # Check if done
-        area, arrival = parse_results(run_dir)
-        if area != "N/A":
-             print(f"Skipping f{freq} {t} {variant_label} (Done). Area={area}, Arrival={arrival}")
-             results.append((freq, t, variant_label, area, arrival))
+        # Skip if already in CSV
+        if (str(freq), str(t), str(variant_label)) in done_keys:
+             print(f"Skipping f{freq} {t} {variant_label} (already in {csv_file})")
              continue
 
         print(f"Running f{freq} {t} {variant_label} (Entity: {entity_name}, params: {params})")

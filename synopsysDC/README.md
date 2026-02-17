@@ -40,6 +40,8 @@
 watch -n 1 'ls -ltr logs/*.log | tail -n 10'
 ```
 
+なお、csvが残ってる場合はskipされます。
+
 ---
 
 ## ディレクトリ構成
@@ -48,5 +50,7 @@ watch -n 1 'ls -ltr logs/*.log | tail -n 10'
 - `src/rtl/`: アーキテクチャ別のソースコード
 - `run-*/`: 合成実行ごとの詳細データ (area.rpt, timing.rpt等)
 - `launch_*.sh`: 実行用シェルスクリプト
-- `run_*.py`: 合成自動化用 Python スクリプト
+- `run_*.py`: 合成自動化用 Python スクリプト。以下の2種類の構造があります：
+    - **TCL動的生成型** (`run_sweep_flopoco_all.py` 等): ターゲット（周波数や演算）ごとにファイルパスやエンティティ名が変わるため、Python側でテンプレートを埋めてその都度TCLを作成・実行します。
+    - **TCL固定参照型** (`run_sweep_v2_3_addmul.py` 等): 対象ファイルは固定ですが、環境変数（例：`PARAM_PIPE`）を切り替えながら共通の `ret_*.tcl` を呼び出します。
 - `ret_*.tcl`: Synopsys DC 合成スクリプト

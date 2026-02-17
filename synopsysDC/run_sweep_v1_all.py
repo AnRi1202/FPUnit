@@ -110,7 +110,21 @@ def parse_results(run_dir):
                         break
     return area, data_arrival
 
+# Load existing results for skipping
 results = []
+done_stages = set()
+csv_file = "sweep_summary_v1_all.csv"
+if os.path.exists(csv_file):
+    with open(csv_file, "r") as f:
+        lines = f.readlines()[1:] # skip header
+        for line in lines:
+            parts = line.strip().split(',')
+            if len(parts) >= 3:
+                # PipelineStages,Area,MaxDataArrival
+                results.append((parts[0], parts[1], parts[2]))
+                if parts[0].isdigit():
+                    done_stages.add(int(parts[0]))
+
 print("Starting v1_area_opt Pipeline Sweep...")
 
 abs_v1_dir = os.path.abspath(v1_dir)
@@ -121,11 +135,9 @@ for pipe in pipeline_stages:
     run_dir_name = f"run-{label}-P{pipe}-T{clock_period}"
     run_dir = os.path.abspath(run_dir_name)
     
-    # Check if done
-    area, arrival = parse_results(run_dir)
-    if area != "N/A":
-         print(f"Skipping P{pipe} (Done). Area={area}, Arrival={arrival}")
-         results.append((pipe, area, arrival))
+    # Skip if already in CSV
+    if pipe in done_stages:
+         print(f"Skipping P{pipe} (already in {csv_file})")
          continue
     
     print(f"Running P{pipe}")

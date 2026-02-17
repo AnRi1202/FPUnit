@@ -1,5 +1,5 @@
 # ======================================================================
-# DC script (retiming for addmul_only_ret.sv)
+# DC script (retiming for addmul_only_ret.sv - V3)
 # ======================================================================
 set_host_options -max_cores 8
 
@@ -42,6 +42,7 @@ set v3_dir "$rtl_dir/v3_addmul_only"
 set v2_dir "$rtl_dir/v2_bf16_full"
 
 analyze -library WORK -format vhdl "$v2_dir/utils.vhdl"
+analyze -library WORK -format sverilog "$v3_dir/fpall_pkg.sv"
 analyze -library WORK -format sverilog "$v3_dir/addmul_only.sv"
 analyze -library WORK -format sverilog "$v3_dir/addmul_only_ret.sv"
 
@@ -71,7 +72,6 @@ set_app_var compile_sequential_area_recovery true
 # ----------------------------------------------------------------------
 # Compile
 # ----------------------------------------------------------------------
-# compile_ultra -retime -timing_high_effort_script
 compile_ultra -retime
 
 # Export reports

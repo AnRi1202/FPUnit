@@ -43,6 +43,9 @@ set v2_full_dir "$rtl_dir/v2_bf16_full"
 
 analyze -library WORK -format vhdl "$v2_full_dir/utils.vhdl"
 analyze -library WORK -format sverilog "$v2_3_dir/fpall_pkg.sv"
+analyze -library WORK -format sverilog "$v2_full_dir/utils/abs_comparator.sv"
+analyze -library WORK -format sverilog "$v2_full_dir/utils/barrel_shifter.sv"
+analyze -library WORK -format sverilog "$v2_full_dir/utils/normalizer.sv"
 analyze -library WORK -format sverilog "$v2_3_dir/addmul_only.sv"
 analyze -library WORK -format sverilog "$v2_3_dir/addmul_only_ret.sv"
 

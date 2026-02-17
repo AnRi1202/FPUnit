@@ -1,5 +1,5 @@
 # ======================================================================
-# DC script (retiming for divsqrt_only_ret.sv)
+# DC script (retiming for divsqrt_only_ret.sv - V3.1)
 # ======================================================================
 set_host_options -max_cores 8
 
@@ -42,6 +42,7 @@ set v3_1_dir "$rtl_dir/v3_1_divsqrt_only"
 set v2_dir "$rtl_dir/v2_bf16_full"
 
 analyze -library WORK -format vhdl "$v2_dir/utils.vhdl"
+analyze -library WORK -format sverilog "$v3_1_dir/fpall_pkg.sv"
 analyze -library WORK -format sverilog "$v3_1_dir/divsqrt_only.sv"
 analyze -library WORK -format sverilog "$v3_1_dir/divsqrt_only_ret.sv"
 
