@@ -60,22 +60,16 @@ proc run_synth_common {entity_name label} {
 
     # Constraints 
     set_max_area 0
-    # 1000 ns = 1 us 1MHz
     set main_clock_period 0.5 
-    set percentage_delay 0.10
-    create_clock -name clock -period $main_clock_period clk
+    create_clock -name clk -period $main_clock_period [get_ports clk]
     
     set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
-    set_input_delay 0.0 -clock clock $input_ports
+    set_input_delay 0.1 -clock clk $input_ports
     
     set output_ports [all_outputs]
-    set_output_delay 0.0 -clock clock $output_ports
+    set_output_delay 0.1 -clock clk $output_ports
     
-    set_input_transition 0.0 [remove_from_collection [all_inputs] [get_ports clk]]
-
-    # set_max_transition 1.0000 [current_design]
-    # set_max_capacitance 0.2000 [current_design]
-    # set_max_fanout 10.0000 [current_design]
+    set_input_transition 0.05 [remove_from_collection [all_inputs] [get_ports clk]]
     set_load 0.1 [all_outputs]
 
     # set_max_delay 1000 -from [all_inputs] -to [all_outputs]
@@ -188,20 +182,19 @@ proc run_synth_common_param {entity_name label params} {
     elaborate $entity_name -library WORK -parameters $params
     
     link
-    check_design
     set_max_area 0
-    # 1000 ns = 1 us 1MHz
     set main_clock_period 0.5 
-    set percentage_delay 0.10
-    create_clock -name clock -period $main_clock_period clk
+    create_clock -name clk -period $main_clock_period [get_ports clk]
     
     set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
-    set_input_delay 0.0 -clock clock $input_ports
+    set_input_delay 0.1 -clock clk $input_ports
     
     set output_ports [all_outputs]
-    set_output_delay 0.0 -clock clock $output_ports
+    set_output_delay 0.1 -clock clk $output_ports
     
-    set_input_transition 0.0 [remove_from_collection [all_inputs] [get_ports clk]]
+    set_input_transition 0.05 [remove_from_collection [all_inputs] [get_ports clk]]
+    set_load 0.1 [all_outputs]
+    
     compile_ultra -no_autoungroup -no_boundary_optimization
     
     set rpt_dir "$run_dir/report/new" 
@@ -292,16 +285,19 @@ proc run_synth_retime {entity_name label} {
     check_design
 
     # ----------------------------------------------------------------------
-    # Clocks (from compile.tcl)
+    # Clocks & Constraints
     # ----------------------------------------------------------------------
-    create_clock -name CGRA_Clock  -period 2.0  [get_ports clk]
+    set main_clock_period 0.5
+    create_clock -name clk -period $main_clock_period [get_ports clk]
 
-    # ----------------------------------------------------------------------
-    # Basic I/O timing (from compile.tcl)
-    # ----------------------------------------------------------------------
-    set inputs_no_clk  [remove_from_collection [all_inputs] [get_ports clk]]
-    set_input_delay  -clock CGRA_Clock 0.20 $inputs_no_clk
-    set_output_delay -clock CGRA_Clock 0.20 [all_outputs]
+    set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
+    set_input_delay 0.1 -clock clk $input_ports
+    
+    set output_ports [all_outputs]
+    set_output_delay 0.1 -clock clk $output_ports
+    
+    set_input_transition 0.05 [remove_from_collection [all_inputs] [get_ports clk]]
+    set_load 0.1 [all_outputs]
 
     # ----------------------------------------------------------------------
     # RETIMING: high-effort compile with retime enabled

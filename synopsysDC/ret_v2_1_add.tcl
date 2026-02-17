@@ -70,12 +70,13 @@ set_max_area 0
 create_clock -name clk -period $main_clock_period [get_ports clk]
 # set input/output delay
 set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
-set_input_delay 0.0 -clock clk $input_ports
+set_input_delay 0.1 -clock clk $input_ports
 
 set output_ports [all_outputs]
-set_output_delay 0.0 -clock clk $output_ports
+set_output_delay 0.1 -clock clk $output_ports
 
-set_input_transition 0.0 [remove_from_collection [all_inputs] [get_ports clk]]
+set_input_transition 0.05 [remove_from_collection [all_inputs] [get_ports clk]]
+set_load 0.1 [all_outputs]
 
 # Enable retiming infrastructure
 set_optimize_registers true

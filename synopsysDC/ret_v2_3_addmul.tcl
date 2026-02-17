@@ -1,18 +1,16 @@
 # ======================================================================
-# DC script (retiming for area_opt_ret.sv - v1_area_opt)
-# This script supports operation-specific pipeline stages.
+# DC script (retiming for addmul_only_ret.sv - V2.3)
 # ======================================================================
 set_host_options -max_cores 8
 
 remove_design -all
 
-# --- Pipeline Stage Selection (Env vars or defaults) ---
-set num_pipe_am [expr {[info exists env(PIPE_AM)] ? $env(PIPE_AM) : 7}]
-set num_pipe_ds [expr {[info exists env(PIPE_DS)] ? $env(PIPE_DS) : 12}]
+# --- Pipeline Stage Selection ---
+set num_pipe [expr {[info exists env(PARAM_PIPE)] ? $env(PARAM_PIPE) : 1}]
 set main_clock_period 0.5
 
 set tag [clock format [clock seconds] -format "%m%d-%H%M"]
-set run_dir [file normalize "run-v1_ret-AM${num_pipe_am}-DS${num_pipe_ds}-T${main_clock_period}-${tag}"]
+set run_dir [file normalize "run-v2_3_addmul-P${num_pipe}-T${main_clock_period}-${tag}"]
 set WORK_DIR [file normalize "${run_dir}/WORK"]
 
 file mkdir $run_dir
@@ -24,11 +22,11 @@ set_app_var alib_library_analysis_path $WORK_DIR
 # ----------------------------------------------------------------------
 # Libraries
 # ----------------------------------------------------------------------
-set cell_lib "/autofs/fs1.ece/fs1.eecg.janders/bhilareo/form_files/NanGate_45nm_OCL_v2010_12/pdk_v1.3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12"
-set search_path "$cell_lib/Front_End/Liberty /autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files"
+set cell_lib "/autofs/fs1.ece/fs1.eecg.janders/bhilareo/form_files/NanGate_45nm_OCL_v2010_12/pdk_v1.3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12/Front_End/Liberty/NangateOpenCellLibrary_typical_CCS.db"
+set search_path ". /autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files"
 
 set link_library "[list \
-$cell_lib/Front_End/Liberty/NangateOpenCellLibrary_typical_CCS.db \
+$cell_lib \
 /autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_6baddress_lib.db \
 /autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_7baddress_lib.db \
 /autofs/fs1.ece/fs1.eecg.janders/wangx517/library_compiler/db_files/cgrame_memUnit_32bdata_8baddress_lib.db \
@@ -40,26 +38,25 @@ set target_library $link_library
 # Analyze & Elaborate
 # ----------------------------------------------------------------------
 set rtl_dir "../src/rtl"
-set v1_dir "$rtl_dir/v1_area_opt"
-set v2_dir "$rtl_dir/v2_bf16_full"
+set v2_3_dir "$rtl_dir/v2_3_addmul_only"
+set v2_full_dir "$rtl_dir/v2_bf16_full"
 
-# Analyze supporting VHDL components (FloPoCo-generated primitives)
-analyze -library WORK -format vhdl "$v2_dir/utils.vhdl"
+analyze -library WORK -format vhdl "$v2_full_dir/utils.vhdl"
+analyze -library WORK -format sverilog "$v2_3_dir/fpall_pkg.sv"
+analyze -library WORK -format sverilog "$v2_3_dir/addmul_only.sv"
+analyze -library WORK -format sverilog "$v2_3_dir/addmul_only_ret.sv"
 
-# Analyze the main SystemVerilog file
-analyze -library WORK -format sverilog "$v1_dir/area_opt_ret.sv"
-
-# Elaborate top-level with parameters
-elaborate area_opt_ret -library WORK -parameters "PARAM_PIPE_AM=${num_pipe_am}, PARAM_PIPE_DS=${num_pipe_ds}"
+elaborate addmul_only_ret -parameters "PARAM_PIPE=${num_pipe}"
+current_design addmul_only_ret
 
 link
 check_design
-set_max_area 0
 
 # ----------------------------------------------------------------------
-# Clocks & Constraints
+# Constraints
 # ----------------------------------------------------------------------
 create_clock -name clk -period $main_clock_period [get_ports clk]
+set_clock_uncertainty 0.0 clk
 
 set inputs_no_clk [remove_from_collection [all_inputs] [get_ports clk]]
 set_input_delay      -clock clk 0.1 $inputs_no_clk
@@ -73,9 +70,9 @@ set_app_var compile_enable_register_merging true
 set_app_var compile_sequential_area_recovery true
 
 # ----------------------------------------------------------------------
-# RETIMING Synthesis
+# Compile
 # ----------------------------------------------------------------------
-compile_ultra -retime 
+compile_ultra -retime
 
 # Export reports
 write_file -format verilog -hierarchy -output "$run_dir/out_afterRetime.v"
@@ -83,5 +80,4 @@ report_area  -hierarchy > $run_dir/area.rpt
 report_power            > $run_dir/power.rpt
 report_timing -delay_type max -max_paths 1 > $run_dir/timing_setup.rpt
 report_register         > $run_dir/registers.rpt
-
 exit
