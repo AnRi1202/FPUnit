@@ -16,47 +16,28 @@
 
 ## 実行スクリプト一覧
 
-### 1. アーキテクチャ別にバックグラウンド実行 (tmux)
+### 1. 演算・アーキテクチャ別にバックグラウンド実行 (tmux)
 
-`launch_sweep_[arch].sh` を使用して、各アーキテクチャのスイープを `tmux` セッション（バックグラウンド）で開始します。
+`launch_sweep_[arch].sh` を使用して、各アーキテクチャのスイープを `tmux` 上で開始します。
+実行後、各アーキテクチャごとの **サマリ CSV** が直下に生成されます。
 
-| 対象アーキテクチャ | 実行コマンド | Tmux Session Name | 生成されるサマリ CSV |
+| 対象 | 実行コマンド | Tmux Session | 生成されるサマリ CSV |
 | :--- | :--- | :--- | :--- |
 | **FloPoCo Baseline** | `./launch_sweep_flopoco.sh` | `sweep_flopoco` | `sweep_summary_flopoco_all.csv` |
 | **V1 (Area Opt All)** | `./launch_sweep_v1.sh` | `sweep_v1` | `sweep_summary_v1_all.csv` |
 | **V2 (BF16 Full All)** | `./launch_sweep_v2.sh` | `sweep_v2` | `sweep_summary_v2_all.csv` |
-| **V2 Subunits (Add/Mul, Div/Sqrt)** | `./launch_sweep_v2_subunits.sh` | `v2_subunits_sweep` | `sweep_summary_v2_3/4_*.csv` |
-| **V3 Subunits (Add/Mul, Div/Sqrt)** | `./launch_sweep_v3_subunits.sh` | `v3_subunits_sweep` | `sweep_summary_v3_*.csv` |
+| **V2 Subunits** | `./launch_sweep_v2_subunits.sh` | `v2_subunits_sweep` | `sweep_summary_v2_*.csv` |
+| **V3 Subunits** | `./launch_sweep_v3_subunits.sh` | `v3_subunits_sweep` | `sweep_summary_v3_*.csv` |
+| **純粋組み合わせ遅延** | `./launch_baseline_comb.sh` | `comb_baseline` | `comb_baseline_dat_area.csv` |
 
-- **監視方法**: `tmux attach -t [Session Name]` で各セッションに接続できます。
-- **デバッグ**: 各セッション内で動作ログが表示されるほか、`logs/` ディレクトリに詳細ログが保存されます。
+- **監視方法**: `tmux attach -t [Session Name]` で各セッションに接続して進捗を確認できます。
 
 ### 2. 進捗モニタリング
 
-すべてのスイープの進捗（ログの更新状況）を一括で監視します。
+すべてのスイープのログ更新状況を一括で監視します。
 
 ```bash
 watch -n 1 'ls -ltr logs/*.log | tail -n 10'
-```
-
----
-
-## 補助ツール
-
-### 1. 組み合わせ（0段）ベースライン計測
-パイプラインを入れない状態での純粋な論理遅延と面積を計測します。
-
-```bash
-dc_shell-xg-t -f measure_comb_dat.tcl
-# 出力: comb_baseline_dat_area.csv
-```
-
-### 2. 全結果サマリ作成
-ディレクトリ内のすべての `.csv` または `.log` から最終的な比較表を作成します。
-
-```bash
-python3 summarize_results.py
-# 出力: final_summary.csv
 ```
 
 ---
@@ -65,7 +46,7 @@ python3 summarize_results.py
 
 - `logs/`: すべての合成ログ (.log)
 - `src/rtl/`: アーキテクチャ別のソースコード
-- `run-*/`: 合成実行ごとの中間結果 (area.rpt, timing.rpt等)
-- `launch_sweep_*.sh`: tmux 起動用シェルスクリプト
-- `run_sweep_*.py`: 合成自動化用 Python スクリプト
+- `run-*/`: 合成実行ごとの詳細データ (area.rpt, timing.rpt等)
+- `launch_*.sh`: 実行用シェルスクリプト
+- `run_*.py`: 合成自動化用 Python スクリプト
 - `ret_*.tcl`: Synopsys DC 合成スクリプト
