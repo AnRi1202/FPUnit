@@ -14,43 +14,28 @@
 
 ---
 
-## 実行スクリプト対応表 (Script Mapping)
+## 実行スクリプト一覧
 
-すべてのスイープスクリプトは `run_sweep_[Architecture]_[Operation].py` の形式で命名され、実行ログは `logs/` ディレクトリに集約されます。
+### 1. アーキテクチャ別にバックグラウンド実行 (tmux)
 
-| 対象アーキテクチャ | 実行スクリプト (Python) | 合成スクリプト (TCL) | 結果サマリ (CSV) | 実行ログ (Directory) |
-| :--- | :--- | :--- | :--- | :--- |
-| **FloPoCo Baseline** | `run_sweep_flopoco_all.py` | (Internal Template) | `sweep_summary_flopoco_all.csv` | `logs/sweep_f*_*.log` |
-| **V1 (Area Opt)** | `run_sweep_v1_all.py` | `ret_v1.tcl` | `sweep_summary_v1_all.csv` | `logs/sweep_v1_*.log` |
-| **V2 (BF16 Full)** | `run_sweep_v2_all.py` | `ret_v2.tcl` | `sweep_summary_v2_all.csv` | `logs/sweep_v2_*.log` |
-| **V2.3 (Add/Mul)** | `run_sweep_v2_3_addmul.py` | `ret_v2_3_addmul.tcl` | `sweep_summary_v2_3_addmul.csv` | `logs/sweep_v2_3_*.log` |
-| **V2.4 (Div/Sqrt)** | `run_sweep_v2_4_divsqrt.py` | `ret_v2_4_divsqrt.tcl` | `sweep_summary_v2_4_divsqrt.csv` | `logs/sweep_v2_4_*.log` |
-| **V3 (Modular AM)** | `run_sweep_v3_addmul.py` | `ret_v3_addmul.tcl` | `sweep_summary_v3_addmul.csv` | `logs/sweep_v3_addmul_*.log` |
-| **V3.1 (Modular DS)** | `run_sweep_v3_1_divsqrt.py` | `ret_v3_1_divsqrt.tcl` | `sweep_summary_v3_1_divsqrt.csv` | `logs/sweep_v3_1_divsqrt_*.log` |
+`launch_sweep_[arch].sh` を使用して、各アーキテクチャのスイープを `tmux` セッション（バックグラウンド）で開始します。
 
----
+| 対象アーキテクチャ | 実行コマンド | Tmux Session Name | 生成されるサマリ CSV |
+| :--- | :--- | :--- | :--- |
+| **FloPoCo Baseline** | `./launch_sweep_flopoco.sh` | `sweep_flopoco` | `sweep_summary_flopoco_all.csv` |
+| **V1 (Area Opt All)** | `./launch_sweep_v1.sh` | `sweep_v1` | `sweep_summary_v1_all.csv` |
+| **V2 (BF16 Full All)** | `./launch_sweep_v2.sh` | `sweep_v2` | `sweep_summary_v2_all.csv` |
+| **V2 Subunits (Add/Mul, Div/Sqrt)** | `./launch_sweep_v2_subunits.sh` | `v2_subunits_sweep` | `sweep_summary_v2_3/4_*.csv` |
+| **V3 Subunits (Add/Mul, Div/Sqrt)** | `./launch_sweep_v3_subunits.sh` | `v3_subunits_sweep` | `sweep_summary_v3_*.csv` |
 
-## 実行コマンド一覧
+- **監視方法**: `tmux attach -t [Session Name]` で各セッションに接続できます。
+- **デバッグ**: 各セッション内で動作ログが表示されるほか、`logs/` ディレクトリに詳細ログが保存されます。
 
-### 1. 全スイープの並行実行 (tmux)
-複数のアーキテクチャのスイープを `tmux` 上で同時に開始します。
+### 2. 進捗モニタリング
 
-```bash
-# V3 / V3.1 の並行実行
-./run_sweep_v3_v3_1_parallel.sh
-
-# V2.3 / V2.4 の並行実行
-./run_sweep_v2_3_v2_4_parallel.sh
-
-# 以前の統合ランチャー (Legacy)
-./launch_sweeps_tmux.sh
-```
-
-### 2. モニタリング
-ログファイルの進捗をリアルタイムで監視します。
+すべてのスイープの進捗（ログの更新状況）を一括で監視します。
 
 ```bash
-# logs/ ディレクトリ内の最新ログを確認
 watch -n 1 'ls -ltr logs/*.log | tail -n 10'
 ```
 
@@ -76,8 +61,11 @@ python3 summarize_results.py
 
 ---
 
-## 主要なディレクトリ構成
+## ディレクトリ構成
 
-- `logs/`: すべてのスイープ実行ログ (.log)
-- `src/rtl/`: 対象となる各アーキテクチャのソースコード
-- `run-*/`: 各合成実行の詳細な中間データ (`area.rpt`, `timing.rpt` 等)
+- `logs/`: すべての合成ログ (.log)
+- `src/rtl/`: アーキテクチャ別のソースコード
+- `run-*/`: 合成実行ごとの中間結果 (area.rpt, timing.rpt等)
+- `launch_sweep_*.sh`: tmux 起動用シェルスクリプト
+- `run_sweep_*.py`: 合成自動化用 Python スクリプト
+- `ret_*.tcl`: Synopsys DC 合成スクリプト
