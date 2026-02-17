@@ -67,7 +67,7 @@ for key, cfg in scripts.items():
         print(f"  Running P{pipe}...")
         sys.stdout.flush()
         
-        log_file = f"sweep_{cfg['label']}_P{pipe}.log"
+        log_file = f"logs/sweep_{cfg['label']}_P{pipe}.log"
         full_cmd = f"source ~/.cshrc; setenv PARAM_PIPE {pipe}; dc_shell-xg-t -f {cfg['tcl']} >& {log_file}"
         
         try:

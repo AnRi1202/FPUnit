@@ -1,6 +1,6 @@
 # FPU Synthesis and PPA Evaluation Environment
 
-このディレクトリには、FloPoCoベースのBaselineデザインと、リタイミングを適用した改良版（V2）デザインの PPA (Power, Performance, Area) を評価するためのスクリプト群が含まれています。
+このディレクトリには、FloPoCoベースのBaselineデザインと、改良版（V1, V2, V3）デザインの PPA (Power, Performance, Area) を評価するためのスクリプト群が含まれています。
 
 ## 統一合成制約 (Standardized Constraints)
 
@@ -14,93 +14,70 @@
 
 ---
 
+## 実行スクリプト対応表 (Script Mapping)
+
+すべてのスイープスクリプトは `run_sweep_[Architecture]_[Operation].py` の形式で命名され、実行ログは `logs/` ディレクトリに集約されます。
+
+| 対象アーキテクチャ | 実行スクリプト (Python) | 合成スクリプト (TCL) | 結果サマリ (CSV) | 実行ログ (Directory) |
+| :--- | :--- | :--- | :--- | :--- |
+| **FloPoCo Baseline** | `run_sweep_flopoco_all.py` | (Internal Template) | `sweep_summary_flopoco_all.csv` | `logs/sweep_f*_*.log` |
+| **V1 (Area Opt)** | `run_sweep_v1_all.py` | `ret_v1.tcl` | `sweep_summary_v1_all.csv` | `logs/sweep_v1_*.log` |
+| **V2 (BF16 Full)** | `run_sweep_v2_all.py` | `ret_v2.tcl` | `sweep_summary_v2_all.csv` | `logs/sweep_v2_*.log` |
+| **V2.3 (Add/Mul)** | `run_sweep_v2_3_addmul.py` | `ret_v2_3_addmul.tcl` | `sweep_summary_v2_3_addmul.csv` | `logs/sweep_v2_3_*.log` |
+| **V2.4 (Div/Sqrt)** | `run_sweep_v2_4_divsqrt.py` | `ret_v2_4_divsqrt.tcl` | `sweep_summary_v2_4_divsqrt.csv` | `logs/sweep_v2_4_*.log` |
+| **V3 (Modular AM)** | `run_sweep_v3_addmul.py` | `ret_v3_addmul.tcl` | `sweep_summary_v3_addmul.csv` | `logs/sweep_v3_addmul_*.log` |
+| **V3.1 (Modular DS)** | `run_sweep_v3_1_divsqrt.py` | `ret_v3_1_divsqrt.tcl` | `sweep_summary_v3_1_divsqrt.csv` | `logs/sweep_v3_1_divsqrt_*.log` |
+
+---
+
 ## 実行コマンド一覧
 
-### 1. 全スイープの並列実行 (推奨)
-Baseline の周波数スイープと V2 のパイプラインスイープを `tmux` 上で同時に開始します。
+### 1. 全スイープの並行実行 (tmux)
+複数のアーキテクチャのスイープを `tmux` 上で同時に開始します。
 
 ```bash
+# V3 / V3.1 の並行実行
+./run_sweep_v3_v3_1_parallel.sh
+
+# V2.3 / V2.4 の並行実行
+./run_sweep_v2_3_v2_4_parallel.sh
+
+# 以前の統合ランチャー (Legacy)
 ./launch_sweeps_tmux.sh
 ```
-- `baseline_sweep` ウィンドウ: Baseline (f100-f600) のスイープ
-- `v2_6ops_sweep` ウィンドウ: V2 デザインのパイプライン段数スイープ
-- `monitor` ウィンドウ: ログファイルの進捗監視
 
-### 2. 全演算（Add/Mult）の並行実行 (tmux)
-Baseline の Add/Mult と、V2 の Add/Mult パイプラインスイープを 4 つの tmux ウィンドウで並行実行します。
+### 2. モニタリング
+ログファイルの進捗をリアルタイムで監視します。
 
 ```bash
-./launch_experiments_tmux.sh
-```
-- **Window 構成**:
-    - `baseline_add`: Baseline FPAdd (f100-f600)
-    - `baseline_mult`: Baseline FPMult (f100-f600)
-    - `v2_add`: V2 Add (Pipe 1-12)
-    - `v2_mult`: V2 Mult (Pipe 1-12)
-- 個別の演算を並列で実行するため、`run_experiments_full.sh` よりも大幅に短時間で完了します。
-
-### 3. モニタリング
-ログファイルの進捗を監視します。
-
-```bash
-watch -n 1 'ls -ltr *.log | tail -n 20'
-```
-
-```bash
-python3 run_sweep_f100_f600.py
-```
-- **対象バリエーション**:
-    - `4OPS`: FP32 (Add, Mul, Sqrt, Div)
-    - `5OPS`: Add Mixed (FP32 Add + BF16 Add x2)
-    - `6OPS`: All Operations
-    - `7OPS`: Mul Mixed (FP32 Mul + BF16 Mul x2)
-- **出力**: `sweep_summary_f100_f600.csv`
-
-### 3. V2 パイプラインスイープ (単体実行)
-リタイミング版 V2 デザイン (`src/rtl/v2_bf16_full`) を対象に、パイプライン段数 (1-12) を変化させてスイープします。
-
-```bash
-python3 run_sweep_v2_6ops.py
-```
-- **出力**: `sweep_summary_v2_6ops.csv`
-
-### 4. 全演算（Add/Mult）のシーケンシャル実行
-Baseline の Add/Mult と、V2 の Add/Mult パイプラインスイープを連続して実行します。
-
-```bash
-./run_experiments_full.sh
-```
-- **実行内容**:
-    - Baseline FPAdd (f100-f600)
-    - Baseline FPMult (f100-f600)
-    - V2 Retiming Add/Mult (Pipe 1-12)
-- パイプライン化された V2 の Add と Mult を順次実行するため、時間がかかりますが、放置して全ての結果を得るのに適しています。
-
-### 5. 個別モジュールのリタイミング合成
-特定のパイプライン段数を指定して合成・解析を行いたい場合に使用します。内部で `PIPE` 環境変数を参照します。
-
-```bash
-# BF16 Add のパイプライン 10段設定で実行
-setenv PIPE 10
-dc_shell-xg-t -f ret_v2_1_add.tcl
+# logs/ ディレクトリ内の最新ログを確認
+watch -n 1 'ls -ltr logs/*.log | tail -n 10'
 ```
 
 ---
 
-## 結果の集計
+## 補助ツール
 
-各スクリプトが生成する CSV 以外に、ディレクトリ内の `.log` ファイルから最新の結果を抽出してサマリを作成できます。
+### 1. 組み合わせ（0段）ベースライン計測
+パイプラインを入れない状態での純粋な論理遅延と面積を計測します。
+
+```bash
+dc_shell-xg-t -f measure_comb_dat.tcl
+# 出力: comb_baseline_dat_area.csv
+```
+
+### 2. 全結果サマリ作成
+ディレクトリ内のすべての `.csv` または `.log` から最終的な比較表を作成します。
 
 ```bash
 python3 summarize_results.py
+# 出力: final_summary.csv
 ```
-- **出力**: `final_summary.csv` (Entity名, 面積, 到着時間の一覧)
 
 ---
 
-## 主要なファイル構成
+## 主要なディレクトリ構成
 
-- `run_ppa.tcl`: 合成のコアロジック（Baseline用）
-- `run_sweep_*.py`: Pythonベースの自動スイーパ
-- `ret_v2_*.tcl`: V2デザイン専用のリタイミング合成スクリプト
-- `launch_sweeps_tmux.sh`: tmux を利用したバッチ実行スクリプト
+- `logs/`: すべてのスイープ実行ログ (.log)
+- `src/rtl/`: 対象となる各アーキテクチャのソースコード
+- `run-*/`: 各合成実行の詳細な中間データ (`area.rpt`, `timing.rpt` 等)
