@@ -65,7 +65,13 @@ run.log
 run/
 run_*/
 
-*.csv
+# Allow tracking of summary results, but ignore raw large CSVs if necessary
+!sweep_summary_*.csv
+!comb_baseline_dat_area.csv
+!final_summary.csv
+
+# Ignore generated intermediate sweep scripts
+synopsysDC/_sweep_*.tcl
 
 # cocotb
 **/__pycache__
