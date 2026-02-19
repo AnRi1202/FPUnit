@@ -12,9 +12,9 @@ This directory contains various RTL implementations and configurations for FloPo
 - `v0_area_opt/`: area-optimization VHDL implementations.
 - `v1_area_opt/`: area-optimized SystemVerilog implementations.
 - `v1_1_fp32_add/` & `v1_2_fp32_mult/`: FP32 specific operation modules. These are for synthesis, so logically same as v1.
-- `v2_bf16_full/`: 6 operators(v1 + BFADD, BFMULT) implementation.
-- `v2_1_bf16_add/` to `v2_4_divsqrt_only/`: FUSED specific operation modules (Add, Mult, AddMult, DivSqrt). These are for synthesis, so logically same as v2.
 - `v1_3_addmul_only/` & `v1_4_divsqrt_only/`:  FP32 specific operation modules. These are for synthesis, so logically same as v1.
+- `v2_bf16_full/`: 6 operators(v1 + BFADD, BFMULT) implementation.
+- `v2_1_bf16_add/` to `v2_4_divsqrt_only/`: BF16 specific operation modules (Add, Mult, AddMult, DivSqrt). These are for synthesis, so logically same as v2.
 
 ## Usage
 These files are used as source inputs for Synopsys Design Compiler synthesis sweeps.
