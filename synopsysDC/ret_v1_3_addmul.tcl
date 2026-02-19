@@ -1,5 +1,5 @@
 # ======================================================================
-# DC script (retiming for addmul_only_ret.sv - V3)
+# DC script (retiming for addmul_only_ret.sv - V1_3)
 # ======================================================================
 set_host_options -max_cores 8
 
@@ -10,7 +10,7 @@ set num_pipe [expr {[info exists env(PARAM_PIPE)] ? $env(PARAM_PIPE) : 1}]
 set main_clock_period 0.5
 
 set tag [clock format [clock seconds] -format "%m%d-%H%M"]
-set run_dir [file normalize "run-v3_addmul-P${num_pipe}-T${main_clock_period}-${tag}"]
+set run_dir [file normalize "run-v1_3_addmul-P${num_pipe}-T${main_clock_period}-${tag}"]
 set WORK_DIR [file normalize "${run_dir}/WORK"]
 
 file mkdir $run_dir
@@ -38,13 +38,13 @@ set target_library $link_library
 # Analyze & Elaborate
 # ----------------------------------------------------------------------
 set rtl_dir "../src/rtl"
-set v3_dir "$rtl_dir/v3_addmul_only"
+set v1_3_dir "$rtl_dir/v1_3_addmul_only"
 set v2_dir "$rtl_dir/v2_bf16_full"
 
 analyze -library WORK -format vhdl "$v2_dir/utils.vhdl"
-analyze -library WORK -format sverilog "$v3_dir/fpall_pkg.sv"
-analyze -library WORK -format sverilog "$v3_dir/addmul_only.sv"
-analyze -library WORK -format sverilog "$v3_dir/addmul_only_ret.sv"
+analyze -library WORK -format sverilog "$v1_3_dir/fpall_pkg.sv"
+analyze -library WORK -format sverilog "$v1_3_dir/addmul_only.sv"
+analyze -library WORK -format sverilog "$v1_3_dir/addmul_only_ret.sv"
 
 elaborate addmul_only_ret -parameters "PARAM_PIPE=${num_pipe}"
 current_design addmul_only_ret

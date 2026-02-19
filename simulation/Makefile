@@ -54,8 +54,8 @@ ifeq ($(TARGET),v2_2_bf16_mult)
   VALID_TARGET := 1
 endif
 
-ifeq ($(TARGET),v3_addmul_only)
-  DEFINES += +define+V3_ADDMUL_ONLY
+ifeq ($(TARGET),v1_3_addmul_only)
+  DEFINES += +define+V1_3_ADDMUL_ONLY
   VALID_TARGET := 1
 endif
 

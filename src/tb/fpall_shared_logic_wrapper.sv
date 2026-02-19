@@ -74,7 +74,7 @@ module fpall_shared_logic_wrapper(
         .R(R)
     );
 
-`elsif V3_ADDMUL_ONLY
+`elsif V1_3_ADDMUL_ONLY
     addmul_only u_dut (
         .clk(clk),
         .opcode(opcode_in),

@@ -9,10 +9,10 @@ pipeline_stages = list(range(1, 19)) # 1 to 18
 
 # Synthesis Script Template
 scripts = {
-    "divsqrt": {
-        "tcl": "ret_v3_1_divsqrt.tcl",
-        "label": "v3_1_divsqrt",
-        "csv": "sweep_summary_v3_1_divsqrt.csv"
+    "addmul": {
+        "tcl": "ret_v1_3_addmul.tcl",
+        "label": "v1_3_addmul",
+        "csv": "sweep_summary_v1_3_addmul.csv"
     }
 }
 

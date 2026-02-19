@@ -113,7 +113,7 @@ for freq in frequencies:
     # We want to sweep both standard (FP32) and BF16, and now FPALL (Combined)
     # Mapping: (Type, VariantLabel, num_ops)
     sweep_targets = [
-        ("fpall", "4OPS", 4), # vs v1 (area opt)/ v3(addmult) + v3_1 (divsqrt) 
+        ("fpall", "4OPS", 4), # vs v1 (area opt)/ v1_3(addmult) + v1_4 (divsqrt) 
         ("fpall", "5OPS", 5), # vs v2_1 (frac add)
         ("fpall", "6OPS", 6), # vs v2 (6ops) / vs v2_3(faddmult) + v2_4 (divsqrt)
         ("fpall", "7OPS", 7), # vs v2_2 (frac_addmult)

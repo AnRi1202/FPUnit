@@ -1,6 +1,6 @@
 # FPU Synthesis and PPA Evaluation Environment
 
-このディレクトリには、FloPoCoベースのBaselineデザインと、改良版（V1, V2, V3）デザインの PPA (Power, Performance, Area) を評価するためのスクリプト群が含まれています。
+このディレクトリには、FloPoCoベースのBaselineデザインと、改良版（V1, V2, V1_3）デザインの PPA (Power, Performance, Area) を評価するためのスクリプト群が含まれています。
 
 ## 統一合成制約 (Standardized Constraints)
 
@@ -25,9 +25,9 @@
 | :--- | :--- | :--- | :--- |
 | **FloPoCo Baseline** | `./launch_sweep_flopoco.sh` | `sweep_flopoco` | `sweep_summary_flopoco_all.csv` |
 | **V1 (Area Opt All)** | `./launch_sweep_v1.sh` | `sweep_v1` | `sweep_summary_v1_all.csv` |
+| **V1 Subunits** | `./launch_sweep_v1_subunits.sh` | `v1_subunits_sweep` | `sweep_summary_v1_*.csv` |
 | **V2 (BF16 Full All)** | `./launch_sweep_v2.sh` | `sweep_v2` | `sweep_summary_v2_all.csv` |
 | **V2 Subunits** | `./launch_sweep_v2_subunits.sh` | `v2_subunits_sweep` | `sweep_summary_v2_*.csv` |
-| **V3 Subunits** | `./launch_sweep_v3_subunits.sh` | `v3_subunits_sweep` | `sweep_summary_v3_*.csv` |
 | **純粋組み合わせ遅延** | `./launch_baseline_comb.sh` | `comb_baseline` | `comb_baseline_dat_area.csv` |
 
 - **監視方法**: `tmux attach -t [Session Name]` で各セッションに接続して進捗を確認できます。
