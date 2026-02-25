@@ -31,7 +31,7 @@ module fp32_add(
     logic [8:0] extendedExpInc;
     logic [8:0] updatedExp;
     logic stk, rnd, lsb;
-    logic [32:0] RoundedExpFrac;
+    logic [30:0] RoundedExpFrac;
     logic [22:0] fracR;
     logic [7:0] expR;
 
@@ -87,7 +87,7 @@ module fp32_add(
     assign extendedExpInc = {1'b0, add_expX} + 9'd1;
     assign updatedExp = {extendedExpInc} - {4'b0000, nZerosNew};
     
-    assign add_expFrac = {updatedExp, shiftedFrac[26:3]};
+    assign add_expFrac = {updatedExp, shiftedFrac[26:4]};
     assign stk = shiftedFrac[2] | shiftedFrac[1] | shiftedFrac[0];
     assign rnd = shiftedFrac[3];
     assign lsb = shiftedFrac[4];
@@ -95,9 +95,9 @@ module fp32_add(
     assign add_round = ((rnd == 1'b1) && (stk == 1'b1)) || ((rnd == 1'b1) && (stk == 1'b0) && (lsb == 1'b1)) ? 1'b1 : 1'b0;
     // Get result from Shared Rounding Adder
     assign RoundedExpFrac = add_expFrac + add_round;
-    assign fracR = RoundedExpFrac[23:1];
-    assign expR = RoundedExpFrac[31:24];
+    assign fracR = RoundedExpFrac[22:0];
+    assign expR = RoundedExpFrac[30:23];
     
-    assign R = {signX, expR, fracR};
+    assign R = {signX,RoundedExpFrac};
 
 endmodule

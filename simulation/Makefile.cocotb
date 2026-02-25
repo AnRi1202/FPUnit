@@ -11,14 +11,64 @@ endef
 SIM ?= xcelium
 TARGET ?= v2_bf16_full
 
+# --- DUT selection define (mirrors Makefile) ---
+DEFINES :=
+VALID_TARGET := 0
+
+ifeq ($(TARGET),v0_area_opt)
+  DEFINES += +define+V0_AREA_OPT
+  VALID_TARGET := 1
+endif
+
+ifeq ($(TARGET),v1_area_opt)
+  DEFINES += +define+V1_AREA_OPT
+  VALID_TARGET := 1
+endif
+
+ifeq ($(TARGET),v1_1_fp32_add)
+  DEFINES += +define+V1_1_FP32_ADD
+  VALID_TARGET := 1
+endif
+
+ifeq ($(TARGET),v1_2_fp32_mult)
+  DEFINES += +define+V1_2_FP32_MULT
+  VALID_TARGET := 1
+endif
+
+ifeq ($(TARGET),v2_bf16_full)
+  DEFINES += +define+V2_BF16_FULL
+  VALID_TARGET := 1
+endif
+
+ifeq ($(TARGET),v2_1_bf16_add)
+  DEFINES += +define+V2_1_BF16_ADD
+  VALID_TARGET := 1
+endif
+
+ifeq ($(TARGET),v2_2_bf16_mult)
+  DEFINES += +define+V2_2_BF16_MULT
+  VALID_TARGET := 1
+endif
+
+ifeq ($(TARGET),v1_3_addmul_only)
+  DEFINES += +define+V1_3_ADDMUL_ONLY
+  VALID_TARGET := 1
+endif
+
+ifeq ($(VALID_TARGET),0)
+  $(error Invalid TARGET: $(TARGET))
+endif
+
+
+# --- Source files ---
 VERILOG_SOURCES = $(call get_sources,$(SIM_DIR)/filelists/common_sv.f)
-VERILOG_SOURCES += $(call get_sources,$(SIM_DIR)/filelists/cocotb/v2_bf16_full_sv.f)
+VERILOG_SOURCES += $(call get_sources,$(SIM_DIR)/filelists/cocotb/$(TARGET)_sv.f)
 VHDL_SOURCES = $(call get_sources,$(SIM_DIR)/filelists/common_vhdl.f)
 
 
 TEST_UNIT ?= fp32_add
 
-# result folder 
+# result folder
 SIM_BUILD := $(SIM_DIR)/build/$(SIM)/$(TARGET)/$(TEST_UNIT)_cocotb
 COCOTB_RESULTS_FILE := $(SIM_BUILD)/results.xml
 export SIM_BUILD COCOTB_RESULTS_FILE
@@ -27,9 +77,8 @@ export SIM_BUILD COCOTB_RESULTS_FILE
 TOPLEVEL := $(TEST_UNIT)_wrapper
 MODULE := $(TEST_UNIT)_test
 
-# Fix typo in path (shared-combine -> shared_combine)
 export PYTHONPATH := $(ROOT)/src/tb/cocotb:$(PYTHONPATH)
 
-EXTRA_ARGS += -64bit -sv -v200x -access +rwc
+EXTRA_ARGS += -64bit -sv -v200x -access +rwc $(DEFINES)
 
 include $(shell cocotb-config --makefiles)/Makefile.sim
