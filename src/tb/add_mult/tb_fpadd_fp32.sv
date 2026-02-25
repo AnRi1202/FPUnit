@@ -139,7 +139,40 @@ module tb_fpadd_fp32;
     // -----------------------------
     $display("Running boundary test (X=1.0, Y=-(1.0+eps))...");
     run_one(32'h3F80_0000, 32'hBF80_0001, "boundary_fp32"); // for abs_comparator. cin_hi
+    // -----------------------------------------------------------------
+    // 丸めと指数部伝搬の特定ケース
+    // -----------------------------------------------------------------
 
+    // 1. Exponent Propagation (仮数部全1への繰り上がり)
+    // A = 1.111...11 * 2^0  (0x3F7F_FFFF)
+    // B = 微小値。加算により丸めが発生し、結果が 1.0 * 2^1 (0x4000_0000) になるケース
+    $display("Test: Exponent Propagation (1.11...1 + small_delta)...");
+    run_one(32'h3F7F_FFFF, 32'h3400_0000, "exp_prop"); 
+
+    // 2. GRS = 100 (Tie to Even) 
+    // IEEE 754 の Round to Nearest, Ties to Even を検証
+    // 内部的に LSB=0, G=1, R=0, S=0 となるパターン
+
+    // CASE A: LSB=0 且つ GRS=100 -> 「偶数」である0の方へ丸める（切り捨て）
+    // A = 1.0...00 * 2^0 (0x3F80_0000)
+    // B = (1.0...00 * 2^-24) -> GRS=100 を狙う
+    $display("Test: GRS=100, LSB=0 (Round Down to Even)...");
+    run_one(32'h3F80_0000, 32'h3380_0000, "grs_100_lsb0");
+
+    // CASE B: LSB=1 且つ GRS=100 -> 「偶数」である次の方へ丸める（切り上げ）
+    // A = 1.0...01 * 2^0 (0x3F80_0001)
+    $display("Test: GRS=100, LSB=1 (Round Up to Even)...");
+    run_one(32'h3F80_0001, 32'h3380_0000, "grs_100_lsb1");
+
+    // 3. GRS = 101 (Always Round Up)
+    // G=1 且つ (R|S)=1 のため、LSBに関わらず常に切り上げ
+    $display("Test: GRS=101 (Round Up)...");
+    run_one(32'h3F80_0000, 32'h33A0_0000, "grs_101");
+
+    // 4. Catastrophic Cancellation (近接値の減算)
+    // 指数部が大きく動き、Normalizer の挙動を検証
+    $display("Test: Catastrophic Cancellation...");
+    run_one(32'h3F80_0001, 32'hBF80_0000, "cancellation");
     run_random_normal_only(N_RANDOM);
 
     $display("PASS: fp32 ADD normal-only tests completed");
