@@ -47,7 +47,6 @@ module addmul_only(
     logic [30:0] add_RoundedExpFrac;
     logic [31:0] add_R_fp32;
     logic [31:0] add_R_fp16;
-    logic add_R; // Placeholder for logic or just use add_R signal below
 
     // FPMul signals
     logic sign_h;
@@ -68,11 +67,11 @@ module addmul_only(
     // Shared Output Signals
     logic [31:0] add_R_final, mul_R;
     logic add_round_h, add_round_l;
-    logic [33:0] ra_X, ra_Y, ra_R;
-    logic [33:0] mul_ra_X, mul_ra_Y;
+    logic [30:0] ra_X, ra_Y, ra_R;
+    logic [30:0] add_ra_X, add_ra_Y, mul_ra_X, mul_ra_Y;
     logic ra_Cin;
     
-    logic [26:0] add_fracAdder_X, add_fracAdder_Y;
+    logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_Y_eff;
     logic [26:0] cin_vec_add;
 
     // =================================================================================
@@ -158,7 +157,11 @@ module addmul_only(
     (fmt == FP16) ? ((27'(cInSigAdd_l)) | (27'(cInSigAdd_h) << 16))
                 :  (27'(cInSigAdd_l));
 
-    assign fracAddResult = fracXpad + fracYpadXorOp + cin_vec_add;
+    assign add_fracAdder_X = fracXpad;
+    assign add_fracAdder_Y = fracYpadXorOp;
+    assign add_fracAdder_Y_eff = (fmt == FP16) ? (add_fracAdder_Y + cin_vec_add) : add_fracAdder_Y;
+
+    assign fracAddResult = add_fracAdder_X + add_fracAdder_Y_eff + (fmt == FP32 ? 27'(cInSigAdd_l) : 27'd0);
  
     always_comb begin
         fracSticky = {fracAddResult, add_sticky_l};
@@ -207,7 +210,9 @@ module addmul_only(
     assign round_vec = 
         (fmt == FP16) ? ((31'(add_round_l)) | (31'(add_round_h) << 16))
                 :  (31'(add_round_l));
-    assign add_RoundedExpFrac = add_expFrac + round_vec;
+    assign add_ra_X = add_expFrac;
+    assign add_ra_Y = round_vec;
+    assign add_RoundedExpFrac = ra_R[30:0];  // from Shared RA when opcode==OP_ADD
     
     assign add_R_fp32 = {
         signX_h,
@@ -282,25 +287,20 @@ module addmul_only(
     assign mult_round_l  = sigProdExt[8]  & (sigProdExt[9]  | (|sigProdExt[7:0]));
     
     assign mult_round = (fmt == FP32) ? mult_round_32 : mult_round_l;
-    assign mul_ra_Y   = (fmt == FP16) ? (34'(mult_round_h) << 16) : 34'd0;
+    assign mul_ra_Y   = (fmt == FP16) ? (31'(mult_round_h) << 16) : 31'd0;
 
-    assign mul_ra_X = {1'b0, expSig}; 
+    assign mul_ra_X = expSig[30:0]; 
     
     // =================================================================================
     // Shared Resources & Output Mux
     // =================================================================================
 
-    assign ra_X = mul_ra_X;
-    assign ra_Y = mul_ra_Y;                                   
-    assign ra_Cin = mult_round;
+    assign ra_X = (opcode == OP_ADD) ? add_ra_X : mul_ra_X;
+    assign ra_Y = (opcode == OP_ADD) ? add_ra_Y : mul_ra_Y;                                   
+    assign ra_Cin = (opcode == OP_ADD) ? 1'b0 : mult_round;
 
-    IntAdder_34_Freq1_uid11 U_SHARED_RA (
-        .clk(clk),
-        .X(ra_X),
-        .Y(ra_Y),
-        .Cin(ra_Cin),
-        .R(ra_R)
-    );
+    // Shared 31-bit Rounding Adder
+    assign ra_R = ra_X + ra_Y + ra_Cin;
 
     assign expSigPostRound = ra_R[30:0];
     assign mul_R = {sign_h, expSigPostRound};

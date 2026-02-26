@@ -30,7 +30,8 @@ module addmul_only(
     logic eqdiffsign;
     logic stk, rnd, lsb;
     logic [30:0] RoundedExpFrac;
-
+    logic [22:0] fracR;
+    logic [7:0] expR;
     logic signR2;
 
     // FPMul signals
@@ -40,9 +41,9 @@ module addmul_only(
     logic [23:0] sigX, sigY;
     logic [47:0] sigProd;
     logic norm;
-    logic [9:0] expPostNorm;
+    logic [7:0] expPostNorm;
     logic [47:0] sigProdExt;
-    logic [32:0] expSig;
+    logic [30:0] expSig;
     logic mul_guard_bit, mul_sticky, mul_round, mul_lsb;
     logic [30:0] expSigPostRound;
 
@@ -50,9 +51,8 @@ module addmul_only(
     logic [31:0] add_R, mul_R;
     logic [30:0] add_expFrac;
     logic add_round;
-    logic [33:0] ra_X, ra_R;
-    logic [30:0] add_ra_X;
-    logic [33:0] mul_ra_X;
+    logic [30:0] ra_X, ra_R;
+    logic [30:0] add_ra_X, mul_ra_X;
     logic ra_Cin;
     
     logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
@@ -123,10 +123,10 @@ module addmul_only(
     assign add_round = ((rnd == 1'b1) && (stk == 1'b1)) || ((rnd == 1'b1) && (stk == 1'b0) && (lsb == 1'b1)) ? 1'b1 : 1'b0;
 
     assign RoundedExpFrac = ra_R;
-
-    
+    assign fracR = RoundedExpFrac[22:0];
+    assign expR = RoundedExpFrac[30:23];
     assign signR2 = (eqdiffsign && EffSub) ? 1'b0 : signX;
-    assign add_R = {signR2, RoundedExpFrac};
+    assign add_R = {signR2, expR, fracR};
 
     
     // =================================================================================
@@ -148,7 +148,7 @@ module addmul_only(
     assign sigY = {1'b1, Y[22:0]};
     assign sigProd = sigX * sigY;
     assign norm = sigProd[47];
-    assign expPostNorm = expSum + {9'd0, norm};
+    assign expPostNorm = expSum + {7'd0, norm};
     assign sigProdExt = (norm == 1'b1) ? {sigProd[46:0], 1'b0} : {sigProd[45:0], 2'b00};
     assign expSig = {expPostNorm, sigProdExt[47:25]};
     assign mul_guard_bit = sigProdExt[24];
@@ -156,8 +156,8 @@ module addmul_only(
     assign mul_lsb = sigProdExt[25];
     assign mul_round = mul_guard_bit & (mul_sticky | mul_lsb);
     
-    assign mul_ra_X = {1'b0, expSig}; 
-    assign expSigPostRound = ra_R[30:0];
+    assign mul_ra_X = expSig;
+    assign expSigPostRound = ra_R;
     assign mul_R = {sign, expSigPostRound};
 
 

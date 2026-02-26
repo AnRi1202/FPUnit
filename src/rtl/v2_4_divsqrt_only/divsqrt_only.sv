@@ -1,10 +1,9 @@
 `timescale 1ns/1ps
-    import fpall_pkg::*;
 
 module divsqrt_only(
     input logic clk,
-    input fp_op_e opcode, // 10: Sqrt, 11: Div
-    input fp_fmt_e fmt,
+    input logic [1:0] opcode, // 10: Sqrt, 11: Div
+    input logic fmt,
     input logic [31:0] X,
     input logic [31:0] Y,
     output logic [31:0] R
@@ -97,7 +96,6 @@ module divsqrt_only(
     logic [23:0] fRnorm;
     logic div_round;
     logic [9:0] expR1;
-    logic [32:0] div_expfrac, expfracR;
     logic [31:0] div_R;
 
     // FPSqrt signals
@@ -334,9 +332,9 @@ module divsqrt_only(
     logic shared_as_sub13;
     logic [26:0] shared_as_r13, sub_mask13, y_xor13, cin_vec13;
 
-    // Rounding Adder Signals
-    logic [33:0] ra_X, ra_Y, ra_R;
-    logic [33:0] div_ra_X, sqrt_ra_X;
+    // Rounding Adder Signals (area_opt同様: 31bit)
+    logic [30:0] ra_X, ra_R;
+    logic [30:0] div_ra_X, sqrt_ra_X;
     logic ra_Cin;
 
     // =================================================================================
@@ -644,8 +642,8 @@ module divsqrt_only(
     assign div_round = fRnorm[0];
     
     assign expR1 = expR0 + {3'b000, 6'b111111, div_mR[25]};
-    assign div_expfrac = {expR1, fRnorm[23:1]};
-    assign div_ra_X = {1'b0, div_expfrac}; 
+    // area_opt同様: 31bit RA (expR1[7:0] + fRnorm[23:1])
+    assign div_ra_X = {expR1[7:0], fRnorm[23:1]};
     assign div_R = {sR, ra_R[30:0]};
 
 
@@ -661,7 +659,7 @@ module divsqrt_only(
     assign fracXnorm = (X[23] == 1'b0) ? {1'b1, fracX, 3'b000} : {2'b01, fracX, 2'b00};
     
     assign S0 = 2'b01;
-    assign T1 = {4'b0111 + {1'b0, fracXnorm[26:23]}, fracXnorm[22:0]};
+    assign T1 = {4'b0111 + fracXnorm[26:23], fracXnorm[22:0]};  // area_optと同一
 
     assign d1 = ~T1[26];
     assign T1s = {T1, 1'b0};
@@ -897,7 +895,8 @@ module divsqrt_only(
     assign fR = sqrt_mR[23:1];
     assign sqrt_round = sqrt_mR[0];
     assign sqrt_expFrac = fR;
-    assign sqrt_ra_X = {11'd0, sqrt_expFrac}; 
+    // area_opt同様: 31bit RA (8'd0 + 23bit frac)
+    assign sqrt_ra_X = {8'd0, sqrt_expFrac};
     assign fRrnd = ra_R[22:0];
     assign Rn2 = {eRn1, fRrnd};
     assign sqrt_R = {X[31], Rn2};
@@ -906,86 +905,86 @@ module divsqrt_only(
     // Shared Add/Sub Logic (Steps 0 to 13)
     // =================================================================================
 
-    assign shared_as_x0 = (opcode == OP_DIV) ? {1'b0, betaw1} : T23s_h;
-    assign shared_as_y0 = (opcode == OP_DIV) ? {1'b0, absq1D} : U23;
-    assign shared_as_sub0 = (opcode == OP_DIV) ? ~q1[2] : d23;
+    assign shared_as_x0 = (opcode[0] == 1'b1) ? {1'b0, betaw1} : T23s_h;
+    assign shared_as_y0 = (opcode[0] == 1'b1) ? {1'b0, absq1D} : U23;
+    assign shared_as_sub0 = (opcode[0] == 1'b1) ? ~q1[2] : d23;
     assign sub_mask0 = {28{shared_as_sub0}};
     assign y_xor0 = shared_as_y0 ^ sub_mask0;
     assign cin_vec0 = {27'd0, shared_as_sub0};
     assign shared_as_r0 = shared_as_x0 + y_xor0 + cin_vec0;
 
-    assign shared_as_x1 = (opcode == OP_DIV) ? betaw2 : T22s_h;
-    assign shared_as_y1 = (opcode == OP_DIV) ? absq2D : U22;
-    assign shared_as_sub1 = (opcode == OP_DIV) ? ~q2[2] : d22;
+    assign shared_as_x1 = (opcode[0] == 1'b1) ? betaw2 : T22s_h;
+    assign shared_as_y1 = (opcode[0] == 1'b1) ? absq2D : U22;
+    assign shared_as_sub1 = (opcode[0] == 1'b1) ? ~q2[2] : d22;
     assign shared_as_r1 = (shared_as_sub1 == 1'b1) ? (shared_as_x1 - shared_as_y1) : (shared_as_x1 + shared_as_y1);
 
-    assign shared_as_x2 = (opcode == OP_DIV) ? betaw3 : {1'b0, T21s_h};
-    assign shared_as_y2 = (opcode == OP_DIV) ? absq3D : {1'b0, U21};
-    assign shared_as_sub2 = (opcode == OP_DIV) ? ~q3[2] : d21;
+    assign shared_as_x2 = (opcode[0] == 1'b1) ? betaw3 : {1'b0, T21s_h};
+    assign shared_as_y2 = (opcode[0] == 1'b1) ? absq3D : {1'b0, U21};
+    assign shared_as_sub2 = (opcode[0] == 1'b1) ? ~q3[2] : d21;
     assign sub_mask2 = {27{shared_as_sub2}};
     assign y_xor2 = shared_as_y2 ^ sub_mask2;
     assign cin_vec2 = {26'd0, shared_as_sub2};
     assign shared_as_r2 = shared_as_x2 + y_xor2 + cin_vec2;
 
-    assign shared_as_x3 = (opcode == OP_DIV) ? betaw4 : {2'b00, T20s_h};
-    assign shared_as_y3 = (opcode == OP_DIV) ? absq4D : {2'b00, U20};
-    assign shared_as_sub3 = (opcode == OP_DIV) ? ~q4[2] : d20;
+    assign shared_as_x3 = (opcode[0] == 1'b1) ? betaw4 : {2'b00, T20s_h};
+    assign shared_as_y3 = (opcode[0] == 1'b1) ? absq4D : {2'b00, U20};
+    assign shared_as_sub3 = (opcode[0] == 1'b1) ? ~q4[2] : d20;
     assign sub_mask3 = {27{shared_as_sub3}};
     assign y_xor3 = shared_as_y3 ^ sub_mask3;
     assign cin_vec3 = {26'd0, shared_as_sub3};
     assign shared_as_r3 = shared_as_x3 + y_xor3 + cin_vec3;
 
-    assign shared_as_x4 = (opcode == OP_DIV) ? betaw5 : {3'b000, T19s_h};
-    assign shared_as_y4 = (opcode == OP_DIV) ? absq5D : {3'b000, U19};
-    assign shared_as_sub4 = (opcode == OP_DIV) ? ~q5[2] : d19;
+    assign shared_as_x4 = (opcode[0] == 1'b1) ? betaw5 : {3'b000, T19s_h};
+    assign shared_as_y4 = (opcode[0] == 1'b1) ? absq5D : {3'b000, U19};
+    assign shared_as_sub4 = (opcode[0] == 1'b1) ? ~q5[2] : d19;
     assign sub_mask4 = {27{shared_as_sub4}};
     assign y_xor4 = shared_as_y4 ^ sub_mask4;
     assign cin_vec4 = {26'd0, shared_as_sub4};
     assign shared_as_r4 = shared_as_x4 + y_xor4 + cin_vec4;
 
-    assign shared_as_x5 = (opcode == OP_DIV) ? betaw6 : {4'd0, T18s_h};
-    assign shared_as_y5 = (opcode == OP_DIV) ? absq6D : {4'd0, U18};
-    assign shared_as_sub5 = (opcode == OP_DIV) ? ~q6[2] : d18;
+    assign shared_as_x5 = (opcode[0] == 1'b1) ? betaw6 : {4'd0, T18s_h};
+    assign shared_as_y5 = (opcode[0] == 1'b1) ? absq6D : {4'd0, U18};
+    assign shared_as_sub5 = (opcode[0] == 1'b1) ? ~q6[2] : d18;
     assign shared_as_r5 = (shared_as_sub5 == 1'b1) ? (shared_as_x5 - shared_as_y5) : (shared_as_x5 + shared_as_y5);
 
-    assign shared_as_x6 = (opcode == OP_DIV) ? betaw7 : {5'd0, T17s_h};
-    assign shared_as_y6 = (opcode == OP_DIV) ? absq7D : {5'd0, U17};
-    assign shared_as_sub6 = (opcode == OP_DIV) ? ~q7[2] : d17;
+    assign shared_as_x6 = (opcode[0] == 1'b1) ? betaw7 : {5'd0, T17s_h};
+    assign shared_as_y6 = (opcode[0] == 1'b1) ? absq7D : {5'd0, U17};
+    assign shared_as_sub6 = (opcode[0] == 1'b1) ? ~q7[2] : d17;
     assign shared_as_r6 = (shared_as_sub6 == 1'b1) ? (shared_as_x6 - shared_as_y6) : (shared_as_x6 + shared_as_y6);
 
-    assign shared_as_x7 = (opcode == OP_DIV) ? betaw8 : {6'd0, T16s_h};
-    assign shared_as_y7 = (opcode == OP_DIV) ? absq8D : {6'd0, U16};
-    assign shared_as_sub7 = (opcode == OP_DIV) ? ~q8[2] : d16;
+    assign shared_as_x7 = (opcode[0] == 1'b1) ? betaw8 : {6'd0, T16s_h};
+    assign shared_as_y7 = (opcode[0] == 1'b1) ? absq8D : {6'd0, U16};
+    assign shared_as_sub7 = (opcode[0] == 1'b1) ? ~q8[2] : d16;
     assign shared_as_r7 = (shared_as_sub7 == 1'b1) ? (shared_as_x7 - shared_as_y7) : (shared_as_x7 + shared_as_y7);
 
-    assign shared_as_x8 = (opcode == OP_DIV) ? betaw9 : {7'd0, T15s_h};
-    assign shared_as_y8 = (opcode == OP_DIV) ? absq9D : {7'd0, U15};
-    assign shared_as_sub8 = (opcode == OP_DIV) ? ~q9[2] : d15;
+    assign shared_as_x8 = (opcode[0] == 1'b1) ? betaw9 : {7'd0, T15s_h};
+    assign shared_as_y8 = (opcode[0] == 1'b1) ? absq9D : {7'd0, U15};
+    assign shared_as_sub8 = (opcode[0] == 1'b1) ? ~q9[2] : d15;
     assign shared_as_r8 = (shared_as_sub8 == 1'b1) ? (shared_as_x8 - shared_as_y8) : (shared_as_x8 + shared_as_y8);
 
-    assign shared_as_x9 = (opcode == OP_DIV) ? betaw10 : {8'd0, T14s_h};
-    assign shared_as_y9 = (opcode == OP_DIV) ? absq10D : {8'd0, U14};
-    assign shared_as_sub9 = (opcode == OP_DIV) ? ~q10[2] : d14;
+    assign shared_as_x9 = (opcode[0] == 1'b1) ? betaw10 : {8'd0, T14s_h};
+    assign shared_as_y9 = (opcode[0] == 1'b1) ? absq10D : {8'd0, U14};
+    assign shared_as_sub9 = (opcode[0] == 1'b1) ? ~q10[2] : d14;
     assign shared_as_r9 = (shared_as_sub9 == 1'b1) ? (shared_as_x9 - shared_as_y9) : (shared_as_x9 + shared_as_y9);
 
-    assign shared_as_x10 = (opcode == OP_DIV) ? betaw11 : {9'd0, T13s_h};
-    assign shared_as_y10 = (opcode == OP_DIV) ? absq11D : {9'd0, U13};
-    assign shared_as_sub10 = (opcode == OP_DIV) ? ~q11[2] : d13;
+    assign shared_as_x10 = (opcode[0] == 1'b1) ? betaw11 : {9'd0, T13s_h};
+    assign shared_as_y10 = (opcode[0] == 1'b1) ? absq11D : {9'd0, U13};
+    assign shared_as_sub10 = (opcode[0] == 1'b1) ? ~q11[2] : d13;
     assign shared_as_r10 = (shared_as_sub10 == 1'b1) ? (shared_as_x10 - shared_as_y10) : (shared_as_x10 + shared_as_y10);
 
-    assign shared_as_x11 = (opcode == OP_DIV) ? betaw12 : {10'd0, T12s_h};
-    assign shared_as_y11 = (opcode == OP_DIV) ? absq12D : {10'd0, U12};
-    assign shared_as_sub11 = (opcode == OP_DIV) ? ~q12[2] : d12;
+    assign shared_as_x11 = (opcode[0] == 1'b1) ? betaw12 : {10'd0, T12s_h};
+    assign shared_as_y11 = (opcode[0] == 1'b1) ? absq12D : {10'd0, U12};
+    assign shared_as_sub11 = (opcode[0] == 1'b1) ? ~q12[2] : d12;
     assign shared_as_r11 = (shared_as_sub11 == 1'b1) ? (shared_as_x11 - shared_as_y11) : (shared_as_x11 + shared_as_y11);
 
-    assign shared_as_x12 = (opcode == OP_DIV) ? betaw13 : {11'd0, T11s_h};
-    assign shared_as_y12 = (opcode == OP_DIV) ? absq13D : {11'd0, U11};
-    assign shared_as_sub12 = (opcode == OP_DIV) ? ~q13[2] : d11;
+    assign shared_as_x12 = (opcode[0] == 1'b1) ? betaw13 : {11'd0, T11s_h};
+    assign shared_as_y12 = (opcode[0] == 1'b1) ? absq13D : {11'd0, U11};
+    assign shared_as_sub12 = (opcode[0] == 1'b1) ? ~q13[2] : d11;
     assign shared_as_r12 = (shared_as_sub12 == 1'b1) ? (shared_as_x12 - shared_as_y12) : (shared_as_x12 + shared_as_y12);
 
-    assign shared_as_x13 = (opcode == OP_DIV) ? betaw14 : {12'd0, T10s_h};
-    assign shared_as_y13 = (opcode == OP_DIV) ? absq14D : {12'd0, U10};
-    assign shared_as_sub13 = (opcode == OP_DIV) ? ~q14[2] : d10;
+    assign shared_as_x13 = (opcode[0] == 1'b1) ? betaw14 : {12'd0, T10s_h};
+    assign shared_as_y13 = (opcode[0] == 1'b1) ? absq14D : {12'd0, U10};
+    assign shared_as_sub13 = (opcode[0] == 1'b1) ? ~q14[2] : d10;
     assign sub_mask13 = {27{shared_as_sub13}};
     assign y_xor13 = shared_as_y13 ^ sub_mask13;
     assign cin_vec13 = {26'd0, shared_as_sub13};
@@ -995,18 +994,11 @@ module divsqrt_only(
     // Shared Resources & Output Mux
     // =================================================================================
 
-    assign ra_X = (opcode == OP_DIV) ? div_ra_X : sqrt_ra_X;
-    assign ra_Y = 34'd0;
-    assign ra_Cin = (opcode == OP_DIV) ? div_round : sqrt_round;
+    assign ra_X = (opcode[0] == 1'b1) ? div_ra_X : sqrt_ra_X;
+    assign ra_Cin = (opcode[0] == 1'b1) ? div_round : sqrt_round;  // opcode[0]==1 => DIV
+    // area_opt同様: 31bit インライン加算
+    assign ra_R = ra_X + ra_Cin;
 
-    IntAdder_34_Freq1_uid11 U_SHARED_RA (
-        .clk(clk),
-        .X(ra_X),
-        .Y(ra_Y),
-        .Cin(ra_Cin),
-        .R(ra_R)
-    );
-
-    assign R = (opcode == OP_SQRT) ? sqrt_R : div_R;
+    assign R = (opcode == 2'b10) ? sqrt_R : div_R;
 
 endmodule

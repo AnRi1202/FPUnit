@@ -42,7 +42,6 @@ set v1_4_dir "$rtl_dir/v1_4_divsqrt_only"
 set v2_dir "$rtl_dir/v2_bf16_full"
 
 analyze -library WORK -format vhdl "$v2_dir/utils.vhdl"
-analyze -library WORK -format sverilog "$v1_4_dir/fpall_pkg.sv"
 analyze -library WORK -format sverilog "$v1_4_dir/divsqrt_only.sv"
 analyze -library WORK -format sverilog "$v1_4_dir/divsqrt_only_ret.sv"
 

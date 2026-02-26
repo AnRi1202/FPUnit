@@ -46,7 +46,8 @@ set v2_dir "$rtl_dir/v2_bf16_full"
 # Analyze supporting VHDL components (FloPoCo-generated primitives)
 analyze -library WORK -format vhdl "$v2_dir/utils.vhdl"
 
-# Analyze the main SystemVerilog file
+# Analyze the main SystemVerilog files (area_opt first, then area_opt_ret which instantiates it)
+analyze -library WORK -format sverilog "$v1_dir/area_opt.sv"
 analyze -library WORK -format sverilog "$v1_dir/area_opt_ret.sv"
 
 # Elaborate top-level with parameters

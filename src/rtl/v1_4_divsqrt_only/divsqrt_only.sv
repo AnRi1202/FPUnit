@@ -95,7 +95,6 @@ module divsqrt_only(
     logic [23:0] fRnorm;
     logic div_round;
     logic [9:0] expR1;
-    logic [32:0] expfracR;
     logic [31:0] div_R;
 
     // FPSqrt signals
@@ -332,8 +331,9 @@ module divsqrt_only(
     logic shared_as_sub13;
     logic [26:0] shared_as_r13, sub_mask13, y_xor13, cin_vec13;
 
-    logic [32:0] ra_X, ra_R;
-    logic [32:0] div_ra_X, sqrt_ra_X;
+    // area_opt同様: 31bit RA
+    logic [30:0] ra_X, ra_R;
+    logic [30:0] div_ra_X, sqrt_ra_X;
     logic ra_Cin;
 
     // =================================================================================
@@ -557,7 +557,8 @@ module divsqrt_only(
     assign fRnorm = (div_mR[25] == 1'b1) ? div_mR[24:1] : div_mR[23:0];
     assign div_round = fRnorm[0];
     assign expR1 = expR0 + {3'b000, 6'b111111, div_mR[25]};
-    assign div_ra_X = {expR1, fRnorm[23:1]};
+    // area_opt同様: 31bit (expR1[7:0] + fRnorm[23:1])
+    assign div_ra_X = {expR1[7:0], fRnorm[23:1]};
     
     assign div_R = {sR, ra_R[30:0]};
 
@@ -761,7 +762,8 @@ module divsqrt_only(
     assign fR = sqrt_mR[23:1];
     assign sqrt_round = sqrt_mR[0];
     assign sqrt_expFrac = fR;
-    assign sqrt_ra_X = {10'd0, sqrt_expFrac};
+    // area_opt同様: 31bit (8'd0 + 23bit frac)
+    assign sqrt_ra_X = {8'd0, sqrt_expFrac};
     assign fRrnd = ra_R[22:0];
     assign Rn2 = {eRn1, fRrnd};
 

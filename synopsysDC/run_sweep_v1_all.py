@@ -46,8 +46,9 @@ set target_library $link_library
 set v1_dir "{v1_dir}"
 set v2_dir "{v2_dir}"
 
-# Analyze supporting files
+# Analyze supporting files (area_opt first, then area_opt_ret which instantiates it)
 analyze -library WORK -format vhdl     "$v2_dir/utils.vhdl"
+analyze -library WORK -format sverilog "$v1_dir/area_opt.sv"
 analyze -library WORK -format sverilog "$v1_dir/area_opt_ret.sv"
 
 # Elaborate top-level with parameters (both AM and DS set to num_pipe)

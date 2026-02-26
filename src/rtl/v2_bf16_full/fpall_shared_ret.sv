@@ -48,11 +48,11 @@ module fpall_shared_ret #(
     logic [13:0] shiftedFrac_h, shiftedFrac_l;
     logic [8:0] extendedExpInc_h, extendedExpInc_l;
     logic [8:0] normShift_h, normShift_l;   
-    logic [9:0] updatedExp_h, updatedExp_l;
+    logic [7:0] updatedExp_h, updatedExp_l;
     logic stk_h, rnd_h, lsb_h;
     logic stk_l, rnd_l, lsb_l;
-    logic [35 :0] round_vec;
-    logic [35:0] add_RoundedExpFrac;
+    logic [30:0] round_vec;
+    logic [30:0] add_RoundedExpFrac;
     logic [31:0] add_R_fp32;
     logic [31:0] add_R_fp16;
 
@@ -162,7 +162,7 @@ module fpall_shared_ret #(
     logic [23:0] fRnorm;
     logic div_round;
     logic [9:0] expR1;
-    logic [32:0] div_expfrac, expfracR;
+    logic [30:0] expfracR;
     logic [1:0] exnR, exnRfinal;
     logic [31:0] div_R;
 
@@ -417,14 +417,14 @@ module fpall_shared_ret #(
 
     // Shared Output Signals
     logic [31:0] add_R, mul_R;
-    logic [35:0] add_expFrac;
+    logic [30:0] add_expFrac;
     logic add_round_h, add_round_l, add_round;
     // logic mult_round; // already defined
-    logic [33:0] ra_X, ra_Y, ra_R;
-    logic [33:0] add_ra_X, mul_ra_X, mul_ra_Y, div_ra_X, sqrt_ra_X;
+    logic [30:0] ra_X, ra_Y, ra_R;
+    logic [30:0] add_ra_X, add_ra_Y, mul_ra_X, mul_ra_Y, div_ra_X, sqrt_ra_X;
     logic ra_Cin;
     
-    logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
+    logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_Y_eff, add_fracAdder_R;
     
     logic [7:0] mul_expAdder_X, mul_expAdder_Y;
     logic mul_expAdder_Cin;
@@ -534,17 +534,18 @@ module fpall_shared_ret #(
     assign cInSigAdd_l = (fmt ==FP32) ? EffSub_h & (~add_sticky_l):  EffSub_l & (~add_sticky_l); 
 
 
-    // Connect to Shared IntAdder_27 (TODO: not conneced now. separated from other op)
+    // Connect to Shared IntAdder_27 (area_opt同様: Add frac + Mul exp を共有)
     assign add_fracAdder_X = fracXpad;       // Connect padded X fraction
     assign add_fracAdder_Y = fracYpadXorOp;  // Connect prepared Y fraction
 
-    // Vectorize Carry-in for Shared Adder 
+    // Vectorize Carry-in: FP32は1bitでCinに吸収、FP16は2箇所なのでY_effに事前加算
     assign cin_vec =
     (fmt == FP16) ? ((27'(cInSigAdd_l)) | (27'(cInSigAdd_h) << 16))
                 :  (27'(cInSigAdd_l));
+    assign add_fracAdder_Y_eff = (fmt == FP16) ? (add_fracAdder_Y + cin_vec) : add_fracAdder_Y;
 
-    /* Execute Significand Addition/Subtraction */
-    assign fracAddResult = add_fracAdder_X + add_fracAdder_Y + cin_vec;
+    /* Execute Significand Addition - from Shared IntAdder_27 when Add */
+    assign fracAddResult = add_fracAdder_R;
  
     // Prepare Normalizer Input (Significand + Sticky)
     always_comb begin
@@ -569,7 +570,7 @@ module fpall_shared_ret #(
     assign normShift_h = {4'b0, nZerosNew_h};   
     assign normShift_l = {4'b0, nZerosNew_l};  
     assign updatedExp_h = extendedExpInc_h - normShift_h;
-    assign updatedExp_l = (fmt == FP32) ? 9'd0 : (extendedExpInc_l - normShift_l);
+    assign updatedExp_l = (fmt == FP32) ? 8'd0 : (extendedExpInc_l - normShift_l);
     
 
      
@@ -581,9 +582,9 @@ module fpall_shared_ret #(
     always_comb begin
         add_expFrac = '0;
         if (fmt ==FP32) begin
-            add_expFrac = {2'b0, updatedExp_h, shiftedFrac_h[12:0], shiftedFrac_l[13:3]}; //[26:3] 暗黙は消えてる
+            add_expFrac = {updatedExp_h, shiftedFrac_h[12:0], shiftedFrac_l[13:4]}; //[26:3] 暗黙は消えてる
         end else begin
-            add_expFrac = {updatedExp_h, shiftedFrac_h[12:5], updatedExp_l, shiftedFrac_l[10:3]}; //36bit
+            add_expFrac = {updatedExp_h, shiftedFrac_h[12:6],1'b0, updatedExp_l, shiftedFrac_l[10:4]}; //31bit
         end
     end
     assign stk_h = |shiftedFrac_h[4:2];
@@ -597,23 +598,25 @@ module fpall_shared_ret #(
     assign add_round_h = rnd_h & (stk_h | lsb_h);
     assign add_round_l = rnd_l & (stk_l | lsb_l);
 
-    // Shared rounding adder (36bit)
+    // Add: connect to Shared Rounding Adder
     assign round_vec = 
-        (fmt == FP16) ? ((36'(add_round_l)) | (36'(add_round_h) << 18))
-                :  (36'(add_round_l));
-    assign add_RoundedExpFrac = add_expFrac + round_vec;
+        (fmt == FP16) ? ((31'(add_round_l)) | (31'(add_round_h) << 16))
+                :  (31'(add_round_l));
+    assign add_ra_X = add_expFrac;
+    assign add_ra_Y = round_vec;
+    assign add_RoundedExpFrac = ra_R[30:0];  // from Shared RA when opcode==OP_ADD
     
     // Pack Result (Sign, Exponent, Mantissa)
     assign add_R_fp32 = {
         signX_h,
-        add_RoundedExpFrac[31:1]   // exp + frac (FP32)
+        add_RoundedExpFrac   // exp + frac (FP32)
     };
 
     assign add_R_fp16 = {
         signX_h,
-        add_RoundedExpFrac[33:19], // exp+frac high lane
+        add_RoundedExpFrac[30:16], // exp+frac high lane
         signX_l,
-        add_RoundedExpFrac[15:1]   // exp+frac low lane
+        add_RoundedExpFrac[14:0]   // exp+frac low lane
     };
 
     assign add_R = (fmt == FP32) ? add_R_fp32 : add_R_fp16;
@@ -629,17 +632,12 @@ module fpall_shared_ret #(
     assign sign_h = X[31] ^ Y[31];
     assign sign_l = X[15] ^ Y[15];
 
-    // assign mult_expX = X[30:23];
-    // assign mult_expY = Y[30:23];
-    
-    // // Connect to Shared IntAdder_27
-    // assign mul_expAdder_X = mult_expX;        // Connect exponent X
-    // assign mul_expAdder_Y = mult_expY;            // Connect exponent Y
-    // assign mul_expAdder_Cin = 1'b0;          // No carry-in needed for simple addition
-    // assign expSumPreSub = {1'b0, mul_expAdder_R[8:0]}; // Get addition result
-    
-    assign expSumPreSub_h = mult_x.fp32.exp + mult_y.fp32.exp;
-    assign expSumPreSub_l = mult_x.lanes.lo[14:7] + mult_y.lanes.lo[14:7];
+    assign mul_expAdder_X = mult_x.fp32.exp;
+    assign mul_expAdder_Y = mult_y.fp32.exp;
+    assign mul_expAdder_Cin = 1'b0;
+    // expSumPreSub from Shared IntAdder_27 when Mul
+    assign expSumPreSub_h = (fmt == FP32) ? mul_expAdder_R : ia27_R[26:18];
+    assign expSumPreSub_l = (fmt == FP16) ? ia27_R[8:0] : 9'd0;
     assign bias = 9'd127;
     assign expSum_h = expSumPreSub_h - bias;
     assign expSum_l = expSumPreSub_l - bias;
@@ -693,10 +691,10 @@ module fpall_shared_ret #(
     
     // Select rounding carries for shared adder (ra_Cin for Low/FP32, mul_ra_Y for High)
     assign mult_round = (fmt == FP32) ? mult_round_32 : mult_round_l;
-    assign mul_ra_Y   = (fmt == FP16) ? (34'(mult_round_h) << 16) : 34'd0;
+    assign mul_ra_Y   = (fmt == FP16) ? (31'(mult_round_h) << 16) : 31'd0;
 
-    // Connect to Shared Rounding Adder
-    assign mul_ra_X = {1'b0, expSig}; 
+    // Connect to Shared Rounding Adder (31bit, area_opt同様)
+    assign mul_ra_X = expSig[30:0]; 
     
     // Get result from Shared Rounding Adder
     assign expSigPostRound = ra_R[30:0];
@@ -1030,13 +1028,11 @@ module fpall_shared_ret #(
     assign div_round = fRnorm[0];
     
     assign expR1 = expR0 + {3'b000, 6'b111111, div_mR[25]}; // add back bias
-    // final rounding
-    assign div_expfrac = {expR1, fRnorm[23:1]};
-    // Connect to Shared Rounding Adder
-    assign div_ra_X = {1'b0, div_expfrac}; 
+    // final rounding - Connect to Shared Rounding Adder (31bit, area_opt同様)
+    assign div_ra_X = {expR1[7:0], fRnorm[23:1]}; 
     // Get result from Shared Rounding Adder
-    assign expfracR = ra_R[32:0];
-    assign div_R = {sR, expfracR[30:0]};
+    assign expfracR = ra_R[30:0];
+    assign div_R = {sR, expfracR};
 
 
     // =================================================================================
@@ -1328,8 +1324,8 @@ module fpall_shared_ret #(
     assign fR = sqrt_mR[23:1]; // removing leading 1
     assign sqrt_round = sqrt_mR[0]; // round bit
     assign sqrt_expFrac = fR;
-    // Connect to Shared Rounding Adder
-    assign sqrt_ra_X = {11'd0, sqrt_expFrac}; 
+    // Connect to Shared Rounding Adder (31bit, area_opt同様)
+    assign sqrt_ra_X = {8'd0, sqrt_expFrac}; 
     // Get result from Shared Rounding Adder
     assign fRrnd = ra_R[22:0]; // rounding sqrt never changes exponents (handled in shared adder) 
     assign Rn2 = {eRn1, fRrnd};
@@ -1465,50 +1461,39 @@ module fpall_shared_ret #(
     // Shared Resources & Output Mux
     // =================================================================================
 
-    // Multiplex inputs to Shared Rounding Adder (Add uses its own adder)
-    // opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
     // Multiplex inputs to Shared Rounding Adder
     // opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
-    assign ra_X = 
+    assign ra_X = (opcode == OP_ADD) ? add_ra_X :
                   (opcode == OP_MUL) ? mul_ra_X :
                   (opcode == OP_DIV) ? div_ra_X :
                                       sqrt_ra_X;
-    assign ra_Y = 
+    assign ra_Y = (opcode == OP_ADD) ? add_ra_Y :
                   (opcode == OP_MUL) ? mul_ra_Y :
-                                      34'd0;                                   
-    assign ra_Cin = 
+                                      31'd0;                                   
+    assign ra_Cin = (opcode == OP_ADD) ? 1'b0 :
                     (opcode == OP_MUL) ? mult_round :
                     (opcode == OP_DIV) ? div_round :
                                         sqrt_round;
 
-    // // Multiplex inputs to Shared IntAdder_27
-    // // opcode: 00=Add (fracAdder), 01=Mul (expAdder), others unused
-    // assign ia27_X[26:9] = add_fracAdder_X[26:9];
-    // assign ia27_X[8:0] = (opcode == OP_ADD) ? add_fracAdder_X[8:0] : {1'b0, mul_expAdder_X}; // Lower bits shared: Add(8:0) vs Mul(Exp)
-    
-    // assign ia27_Y[26:9] = add_fracAdder_Y[26:9];
-    // assign ia27_Y[8:0] = (opcode == OP_ADD) ? add_fracAdder_Y[8:0] : {1'b0, mul_expAdder_Y}; // Lower bits shared
-    
-    // assign ia27_Cin = (opcode == OP_ADD) ? add_fracAdder_Cin : mul_expAdder_Cin;
-    
-    // assign add_fracAdder_R = ia27_R;
-    // assign mul_expAdder_R = ia27_R[8:0];
+    // Multiplex inputs to Shared IntAdder_27 (area_opt同様: 必要なbitだけMUX)
+    assign ia27_X[26:9] = (opcode == OP_ADD) ? add_fracAdder_X[26:9] :
+                          (opcode == OP_MUL && fmt == FP16) ? {1'b0, mult_x.fp32.exp, 9'b0} : 18'b0;
+    assign ia27_X[8:0]  = (opcode == OP_ADD) ? add_fracAdder_X[8:0] :
+                          (opcode == OP_MUL) ? {1'b0, (fmt == FP32) ? mul_expAdder_X : mult_x.lanes.lo[14:7]} : 9'b0;
 
-    // IntAdder_27_Freq1_uid6 U_SHARED_IA27 (
-    //     .clk(clk),
-    //     .X(ia27_X),
-    //     .Y(ia27_Y),
-    //     .Cin(ia27_Cin),
-    //     .R(ia27_R)
-    // );
+    assign ia27_Y[26:9] = (opcode == OP_ADD) ? add_fracAdder_Y_eff[26:9] :
+                          (opcode == OP_MUL && fmt == FP16) ? {1'b0, mult_y.fp32.exp, 9'b0} : 18'b0;
+    assign ia27_Y[8:0]  = (opcode == OP_ADD) ? add_fracAdder_Y_eff[8:0] :
+                          (opcode == OP_MUL) ? {1'b0, (fmt == FP32) ? mul_expAdder_Y : mult_y.lanes.lo[14:7]} : 9'b0;
 
-    IntAdder_34_Freq1_uid11 U_SHARED_RA (
-        .clk(clk),
-        .X(ra_X),
-        .Y(ra_Y),
-        .Cin(ra_Cin),
-        .R(ra_R)
-    );
+    assign ia27_Cin = (opcode == OP_ADD) ? ((fmt == FP32) ? cInSigAdd_l : 1'b0) : 1'b0;
+
+    assign ia27_R = ia27_X + ia27_Y + ia27_Cin;
+    assign add_fracAdder_R = ia27_R;
+    assign mul_expAdder_R = ia27_R[8:0];
+
+    // Shared 31-bit Rounding Adder (area_opt同様: ra_R = ra_X + ra_Y + ra_Cin)
+    assign ra_R = ra_X + ra_Y + ra_Cin;
     // Operation-Specific Pipelines for Retiming
     // -------------------------------------------------------------------------
     logic [31:0] R_am_final, R_ds_final;

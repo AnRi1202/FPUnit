@@ -56,7 +56,7 @@ for key, cfg in scripts.items():
             lines = f.readlines()[1:] # skip header
             for line in lines:
                 parts = line.strip().split(',')
-                if len(parts) >= 1:
+                if len(parts) >= 1 and parts[0].isdigit():
                     done_stages.add(int(parts[0]))
 
     for pipe in pipeline_stages:

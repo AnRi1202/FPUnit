@@ -74,7 +74,7 @@ proc run_synth_common {entity_name label} {
 
     # set_max_delay 1000 -from [all_inputs] -to [all_outputs]
     # Compile
-    compile_ultra -no_autoungroup -no_boundary_optimization
+    compile_ultra 
     
 
 
