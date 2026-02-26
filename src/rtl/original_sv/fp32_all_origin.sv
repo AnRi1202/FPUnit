@@ -2,7 +2,7 @@
 // =============================================================================
 // fp32_all_origin.sv
 // Direct SV translation of FloPoCo FP32 baseline (FPAdd + FPMult + FPSqrt + FPDiv)
-// FloPoCo 34-bit format: [33:32]=exc, [31]=sign, [30:23]=exp, [22:0]=frac
+// Step1: exc removed - 32-bit IEEE format [31]=sign, [30:23]=exp, [22:0]=frac
 // =============================================================================
 
 // ---------------------------------------------------------------------------
@@ -53,53 +53,37 @@ module Normalizer_Z_28_28_28_Freq1_uid8 (
 endmodule
 
 // ---------------------------------------------------------------------------
-// FPAdd_8_23_Freq1_uid2  (FP32 Adder, FloPoCo 34-bit I/O)
+// FPAdd_8_23_Freq1_uid2  (FP32 Adder, 32-bit I/O, exc removed)
 // ---------------------------------------------------------------------------
 module FPAdd_8_23_Freq1_uid2 (
     input  logic        clk,
-    input  logic [33:0] X, Y,
-    output logic [33:0] R
+    input  logic [31:0] X, Y,
+    output logic [31:0] R
 );
-    logic [32:0] efX,efY; logic swap;
-    logic [7:0]  eXmeY,eYmeX,expDiff; logic [33:0] newX,newY;
-    logic [7:0]  expX; logic [1:0] excX,excY; logic signX,signY,EffSub;
-    logic [5:0]  sXsYExnXY; logic [23:0] fracY;
-    logic [1:0]  excRt; logic signR;
+    logic [30:0] efX,efY; logic swap;
+    logic [7:0]  eXmeY,eYmeX,expDiff; logic [31:0] newX,newY;
+    logic [7:0]  expX; logic signX,signY,EffSub;
+    logic [23:0] fracY;
+    logic signR;
     logic shiftedOut; logic [4:0] shiftVal;
     logic [25:0] shiftedFracY; logic sticky;
     logic [26:0] fracYpad,ESV,fracYpadXor,fracXpad; logic cIn;
     logic [26:0] fracAddResult; logic [27:0] fracSticky;
     logic [4:0]  nZerosNew; logic [27:0] shiftedFrac;
     logic [8:0]  extExpInc; logic [9:0] updatedExp; logic eqdiffsign;
-    logic [33:0] expFrac; logic stk,rnd,lsb,needRound;
-    logic [33:0] RoundedEF; logic [1:0] upExc; logic [22:0] fracR;
-    logic [7:0]  expR; logic [3:0] exExpExc; logic [1:0] excRt2,excR;
-    logic signR2;
+    logic [31:0] expFrac; logic stk,rnd,lsb,needRound;
+    logic [31:0] RoundedEF; logic [22:0] fracR;
+    logic [7:0]  expR; logic signR2;
 
-    assign efX={X[33:32],X[30:0]}; assign efY={Y[33:32],Y[30:0]};
+    assign efX=X[30:0]; assign efY=Y[30:0];
     assign swap=(efX<efY);
     assign eXmeY=X[30:23]-Y[30:23]; assign eYmeX=Y[30:23]-X[30:23];
     assign expDiff=swap?eYmeX:eXmeY;
     assign newX=swap?Y:X; assign newY=swap?X:Y;
-    assign expX=newX[30:23]; assign excX=newX[33:32]; assign excY=newY[33:32];
-    assign signX=newX[31]; assign signY=newY[31]; assign EffSub=signX^signY;
-    assign sXsYExnXY={signX,signY,excX,excY};
-    assign fracY=(excY==2'b00)?24'h0:{1'b1,newY[22:0]};
+    assign expX=newX[30:23]; assign signX=newX[31]; assign signY=newY[31]; assign EffSub=signX^signY;
+    assign fracY={1'b1,newY[22:0]};  // exc removed: always normal
 
-    always_comb case(sXsYExnXY)
-        6'b000000,6'b010000,6'b100000,6'b110000: excRt=2'b00;
-        6'b000101,6'b010101,6'b100101,6'b110101,
-        6'b000100,6'b010100,6'b100100,6'b110100,
-        6'b000001,6'b010001,6'b100001,6'b110001: excRt=2'b01;
-        6'b111010,6'b001010,6'b001000,6'b011000,
-        6'b101000,6'b111000,6'b000010,6'b010010,
-        6'b100010,6'b110010,6'b001001,6'b011001,
-        6'b101001,6'b111001,6'b000110,6'b010110,
-        6'b100110,6'b110110:                     excRt=2'b10;
-        default:                                 excRt=2'b11;
-    endcase
-
-    assign signR=((sXsYExnXY==6'b100000)||(sXsYExnXY==6'b010000))?1'b0:signX;
+    assign signR=signX;
     assign shiftedOut=(expDiff>8'd25); assign shiftVal=shiftedOut?5'd26:expDiff[4:0];
 
     RightShifterSticky24_by_max_26_Freq1_uid4 u_rs(.clk,.X(fracY),.S(shiftVal),.R(shiftedFracY),.Sticky(sticky));
@@ -113,48 +97,34 @@ module FPAdd_8_23_Freq1_uid2 (
 
     assign extExpInc={1'b0,expX}+9'd1; assign updatedExp={1'b0,extExpInc}-{5'b0,nZerosNew};
     assign eqdiffsign=(nZerosNew==5'b11111);
-    assign expFrac={updatedExp,shiftedFrac[26:3]};
+    assign expFrac={updatedExp[7:0],shiftedFrac[26:4]};  // 8bit + 23bit (area_opt同様)
     assign stk=shiftedFrac[2]|shiftedFrac[1]|shiftedFrac[0];
     assign rnd=shiftedFrac[3]; assign lsb=shiftedFrac[4];
     assign needRound=(rnd&stk)|(rnd&~stk&lsb);
-    assign RoundedEF=expFrac+{{33{1'b0}},needRound};
-    assign upExc=RoundedEF[33:32]; assign fracR=RoundedEF[23:1]; assign expR=RoundedEF[31:24];
-    assign exExpExc={upExc,excRt};
-
-    always_comb case(exExpExc)
-        4'b0000,4'b0100,4'b1000,4'b1100,4'b1001,4'b1101: excRt2=2'b00;
-        4'b0001: excRt2=2'b01;
-        4'b0010,4'b0110,4'b1010,4'b1110,4'b0101:          excRt2=2'b10;
-        default:                                            excRt2=2'b11;
-    endcase
-
-    assign excR=(eqdiffsign&&EffSub&&(excRt!=2'b11))?2'b00:excRt2;
+    assign RoundedEF=expFrac+{{30{1'b0}},needRound};
+    assign fracR=RoundedEF[22:0]; assign expR=RoundedEF[30:23];
     assign signR2=(eqdiffsign&&EffSub)?1'b0:signR;
-    assign R={excR,signR2,expR,fracR};
+    assign R={signR2,expR,fracR};
 endmodule
 
 
 // ---------------------------------------------------------------------------
-// FPMult_8_23_uid2_Freq1_uid3  (FP32 Multiplier)
-// Note: Original VHDL uses a 290KB Booth multiplier table (IntMultiplier_24x24).
-// Replaced with SV '*' operator – functionally identical, synthesis-equivalent.
+// FPMult_8_23_uid2_Freq1_uid3  (FP32 Multiplier, 32-bit I/O, exc removed)
 // ---------------------------------------------------------------------------
 module FPMult_8_23_uid2_Freq1_uid3 (
     input  logic        clk,
-    input  logic [33:0] X, Y,
-    output logic [33:0] R
+    input  logic [31:0] X, Y,
+    output logic [31:0] R
 );
     logic        sign;
     logic [7:0]  expX,expY;
     logic [9:0]  expSumPreSub,bias,expSum;
     logic [23:0] sigX,sigY;
     logic [47:0] sigProd,sigProdExt;
-    logic [1:0]  excSel,exc;
     logic        norm;
     logic [9:0]  expPostNorm;
-    logic [32:0] expSig,expSigPostRound;
+    logic [31:0] expSig,expSigPostRound;
     logic        sticky,guard,round;
-    logic [1:0]  excPostNorm,finalExc;
 
     assign sign=X[31]^Y[31];
     assign expX=X[30:23]; assign expY=Y[30:23];
@@ -162,45 +132,28 @@ module FPMult_8_23_uid2_Freq1_uid3 (
     assign bias=10'd127; assign expSum=expSumPreSub-bias;
     assign sigX={1'b1,X[22:0]}; assign sigY={1'b1,Y[22:0]};
     assign sigProd=sigX*sigY;
-    assign excSel=X[33:32]^Y[33:32]; // simplified – see below
-
-    always_comb case({X[33:32],Y[33:32]})
-        4'b0000,4'b0001,4'b0100: exc=2'b00;
-        4'b0101:                  exc=2'b01;
-        4'b0110,4'b1001,4'b1010: exc=2'b10;
-        default:                  exc=2'b11;
-    endcase
 
     assign norm=sigProd[47];
     assign expPostNorm=expSum+{9'd0,norm};
     assign sigProdExt=norm?{sigProd[46:0],1'b0}:{sigProd[45:0],2'b00};
-    assign expSig={expPostNorm,sigProdExt[47:25]};
+    assign expSig={expPostNorm[7:0],sigProdExt[47:25]};  // 8bit + 23bit (area_opt同様)
     assign sticky=sigProdExt[24];
     assign guard=(sigProdExt[23:0]!=24'h0);
     assign round=sticky&((guard&~sigProdExt[25])|sigProdExt[25]);
-    assign expSigPostRound=expSig+{{32{1'b0}},round};
-
-    always_comb case(expSigPostRound[32:31])
-        2'b00: excPostNorm=2'b01;
-        2'b01: excPostNorm=2'b10;
-        default: excPostNorm=2'b00;
-    endcase
-
-    assign finalExc=(exc==2'b11||exc==2'b10||exc==2'b00)?exc:excPostNorm;
-    assign R={finalExc,sign,expSigPostRound[30:0]};
+    assign expSigPostRound=expSig+{{30{1'b0}},round};
+    assign R={sign,expSigPostRound[30:0]};
 endmodule
 
 
 // ---------------------------------------------------------------------------
-// FPSqrt_8_23  (FP32 Square Root – non-restoring binary algorithm)
+// FPSqrt_8_23  (FP32 Square Root, 32-bit I/O, exc removed)
 // ---------------------------------------------------------------------------
 module FPSqrt_8_23 (
     input  logic        clk,
-    input  logic [33:0] X,
-    output logic [33:0] R
+    input  logic [31:0] X,
+    output logic [31:0] R
 );
     logic [22:0] fracX; logic [7:0] eRn0,eRn1;
-    logic [2:0]  xsX,xsR;
     logic [26:0] fracXnorm;
     // Recurrence state: S (accumulated root) and T (remainder)
     logic [1:0]  S0;
@@ -240,7 +193,6 @@ module FPSqrt_8_23 (
     logic [30:0] Rn2;
 
     assign fracX=X[22:0]; assign eRn0={1'b0,X[30:24]};
-    assign xsX=X[33:31];
     assign eRn1=eRn0+8'h3f+{7'd0,X[23]};
     assign fracXnorm=X[23]?{2'b01,fracX,2'b0}:{1'b1,fracX,3'b0};
     assign S0=2'b01;
@@ -343,15 +295,7 @@ module FPSqrt_8_23 (
     assign fR=mR[23:1]; assign round=mR[0];
     assign fRrnd=fR+{22'b0,round};
     assign Rn2={eRn1,fRrnd};
-
-    always_comb case(xsX)
-        3'b010: xsR=3'b010;
-        3'b100: xsR=3'b100;
-        3'b000: xsR=3'b000;
-        3'b001: xsR=3'b001;
-        default: xsR=3'b110;
-    endcase
-    assign R={xsR,Rn2};
+    assign R={X[31],Rn2};  // exc removed: pass through sign
 endmodule
 
 
@@ -382,18 +326,16 @@ endmodule
 
 
 // ---------------------------------------------------------------------------
-// FPDiv_8_23_Freq1_uid2  (FP32 Divider – Radix-2 SRT, 14 iterations)
+// FPDiv_8_23_Freq1_uid2  (FP32 Divider, 32-bit I/O, exc removed)
 // ---------------------------------------------------------------------------
 module FPDiv_8_23_Freq1_uid2 (
     input  logic        clk,
-    input  logic [33:0] X, Y,
-    output logic [33:0] R
+    input  logic [31:0] X, Y,
+    output logic [31:0] R
 );
     logic [23:0] fX,fY,D;
     logic [9:0]  expR0;
     logic        sR;
-    logic [3:0]  exnXY;
-    logic [1:0]  exnR0;
     logic [24:0] psX;
     // Remainder chain: betaw = 4*w
     logic [26:0] bw14,bw13,bw12,bw11,bw10,bw9,bw8,bw7,bw6,bw5,bw4,bw3,bw2,bw1;
@@ -407,19 +349,11 @@ module FPDiv_8_23_Freq1_uid2 (
     logic [24:0] wfinal; logic qM0;
     logic [25:0] mR; logic [23:0] fRnorm; logic round;
     logic [9:0]  expR1;
-    logic [32:0] expfrac,expfracR;
-    logic [1:0]  exnR,exnRfinal;
+    logic [31:0] expfrac,expfracR;
 
     assign fX={1'b1,X[22:0]}; assign fY={1'b1,Y[22:0]};
     assign expR0={2'b0,X[30:23]}-{2'b0,Y[30:23]};
     assign sR=X[31]^Y[31];
-    assign exnXY={X[33:32],Y[33:32]};
-    always_comb case(exnXY)
-        4'b0101: exnR0=2'b01;
-        4'b0001,4'b0010,4'b0110: exnR0=2'b00;
-        4'b0100,4'b1000,4'b1001: exnR0=2'b10;
-        default: exnR0=2'b11;
-    endcase
 
     assign D=fY; assign psX={1'b0,fX};
 
@@ -529,47 +463,41 @@ module FPDiv_8_23_Freq1_uid2 (
     assign fRnorm=mR[25]?mR[24:1]:mR[23:0];
     assign round=fRnorm[0];
     assign expR1=expR0+{3'b0,6'b111111,mR[25]};
-    assign expfrac={expR1,fRnorm[23:1]};
-    assign expfracR=expfrac+{32'b0,round};
-    always_comb begin
-        if      (expfracR[32])           exnR = 2'b00;
-        else if (expfracR[32:31]==2'b01) exnR = 2'b10;
-        else                             exnR = 2'b01;
-    end
-    assign exnRfinal=(exnR0==2'b01)?exnR:exnR0;
-    assign R={exnRfinal,sR,expfracR[30:0]};
+    assign expfrac={expR1[7:0],fRnorm[23:1]};  // 8bit + 23bit (area_opt同様)
+    assign expfracR=expfrac+{{30{1'b0}},round};
+    assign R={sR,expfracR[30:0]};
 endmodule
 
 
 // ---------------------------------------------------------------------------
-// FPALL_origin  (top-level wrapper, NUM_OPS=4: Add+Mul+Sqrt+Div FP32 only)
+// FPALL_origin  (top-level wrapper, 32-bit I/O, NUM_OPS=4: Add+Mul+Sqrt+Div)
 // ---------------------------------------------------------------------------
 module FPALL_origin #(
     parameter int NUM_OPS = 4
 )(
     input  logic        clk,
     input  logic [2:0]  opcode,
-    input  logic [33:0] X, Y,
-    output logic [33:0] R
+    input  logic [31:0] X, Y,
+    output logic [31:0] R
 );
-    logic [33:0] add_R, mul_R, sqrt_R, div_R;
+    logic [31:0] add_R, mul_R, sqrt_R, div_R;
 
     generate
         if (NUM_OPS != 3) begin : G_ADD
             FPAdd_8_23_Freq1_uid2  u_add  (.clk,.X,.Y,.R(add_R));
         end else begin : G_NOADD
-            assign add_R=34'h0;
+            assign add_R=32'h0;
         end
         if (NUM_OPS != 1) begin : G_MUL
             FPMult_8_23_uid2_Freq1_uid3 u_mul (.clk,.X,.Y,.R(mul_R));
         end else begin : G_NOMUL
-            assign mul_R=34'h0;
+            assign mul_R=32'h0;
         end
         if (NUM_OPS == 4) begin : G_SQRTDIV
-            FPSqrt_8_23           u_sqrt (.clk,.X,.R(sqrt_R));
-            FPDiv_8_23_Freq1_uid2 u_div  (.clk,.X,.Y,.R(div_R));
+            FPSqrt_8_23           u_sqrt (.clk,.X(X),.R(sqrt_R));
+            FPDiv_8_23_Freq1_uid2 u_div  (.clk,.X(X),.Y(Y),.R(div_R));
         end else begin : G_NOSQRTDIV
-            assign sqrt_R=34'h0; assign div_R=34'h0;
+            assign sqrt_R=32'h0; assign div_R=32'h0;
         end
     endgenerate
 
@@ -581,7 +509,7 @@ module FPALL_origin #(
             3'b001: R=mul_R;
             3'b010: R=sqrt_R;
             3'b011: R=div_R;
-            default:R=34'h0;
+            default:R=32'h0;
         endcase
     end
 endmodule

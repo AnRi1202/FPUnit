@@ -84,19 +84,14 @@ module fpall_shared_logic_wrapper(
         .R(R)
     );
 `elsif ORIGINAL_SV
-    // FloPoCo 34-bit format: [33:32]=exc(01=normal), [31]=sign, [30:23]=exp, [22:0]=frac
-    // IEEE 32-bit:           [31]=sign, [30:23]=exp, [22:0]=frac
-    logic [33:0] fpc_X, fpc_Y, fpc_R;
-    assign fpc_X = {2'b01, X};   // assume normal (exc=01)
-    assign fpc_Y = {2'b01, Y};
+    // exc removed: 32-bit IEEE format throughout
     FPALL_origin u_dut (
         .clk   (clk),
         .opcode({1'b0, opcode_in}),  // 2-bit opcode_in → 3-bit: 00=Add,01=Mul,10=Sqrt,11=Div
-        .X     (fpc_X),
-        .Y     (fpc_Y),
-        .R     (fpc_R)
+        .X     (X),
+        .Y     (Y),
+        .R     (R)
     );
-    assign R = fpc_R[31:0];  // drop exc bits, return IEEE portion
 
 `else
     // Trigger compilation error if no version is defined
