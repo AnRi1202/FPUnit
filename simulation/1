@@ -1,0 +1,26 @@
+mkdir -p /autofs/fs1.ece/fs1.eecg.janders/iderikut/dev/research/flopoco_synth/simulation/build/xrun/original_sv
+ln -sf /autofs/fs1.ece/fs1.eecg.janders/iderikut/dev/research/flopoco_synth/simulation/inputs/*.input /autofs/fs1.ece/fs1.eecg.janders/iderikut/dev/research/flopoco_synth/simulation/build/xrun/original_sv/
+make tool_sim
+make[1]: Entering directory '/autofs/fs1.ece/fs1.eecg.janders/iderikut/dev/research/flopoco_synth/simulation'
+cd /autofs/fs1.ece/fs1.eecg.janders/iderikut/dev/research/flopoco_synth/simulation/build/xrun/original_sv && \
+xrun -v200x -64bit -sv -access +rwc -input "@run 150112ns; exit" +define+ORIGINAL_SV \
+-top tb_fpadd_fp32 \
+-f /autofs/fs1.ece/fs1.eecg.janders/iderikut/dev/research/flopoco_synth/simulation/filelists/common_sv.f -f /autofs/fs1.ece/fs1.eecg.janders/iderikut/dev/research/flopoco_synth/simulation/filelists/original_sv_sv.f \
+-f /autofs/fs1.ece/fs1.eecg.janders/iderikut/dev/research/flopoco_synth/simulation/filelists/common_vhdl.f
+TOOL:	xrun(64)	23.09-s006: Started on Feb 25, 2026 at 23:04:03 EST
+xrun(64): 23.09-s006: (c) Copyright 1995-2024 Cadence Design Systems, Inc.
+Loading snapshot worklib.tb_fpadd_fp32:sv .................... Done
+SVSEED default: 1
+xcelium> source /CMC/tools/cadence/XCELIUMMAIN23.09.006_lnx86/tools/xcelium/files/xmsimrc
+xcelium> run 150112ns; exit
+Running boundary test (X=1.0, Y=-(1.0+eps))...
+Test: Exponent Propagation (1.11...1 + small_delta)...
+Test: GRS=100, LSB=0 (Round Down to Even)...
+Test: GRS=100, LSB=1 (Round Up to Even)...
+Test: GRS=101 (Round Up)...
+Test: Catastrophic Cancellation...
+PASS: fp32 ADD normal-only tests completed
+SUMMARY: pass=4006 mismatch=0
+TOOL:	xrun(64)	23.09-s006: Exiting on Feb 25, 2026 at 23:04:04 EST  (total: 00:00:01)
+make[1]: Leaving directory '/autofs/fs1.ece/fs1.eecg.janders/iderikut/dev/research/flopoco_synth/simulation'
+make: *** No rule to make target '2'.  Stop.
