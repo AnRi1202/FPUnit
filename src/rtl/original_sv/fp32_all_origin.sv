@@ -582,7 +582,7 @@ module FPALL_origin #(
     logic [30:0] add_ra_X, mul_ra_X, div_ra_X, sqrt_ra_X;
     logic        add_round, mul_round, div_round, sqrt_round;
     logic [9:0]  add_sub_A, add_sub_B, sub_A, sub_B, sub_R;
-    logic [9:0]  mul_expSum;  // dedicated: (expX+expY)-127 for Mul
+    logic [9:0]  mul_expSum;  // Mul専用: expSumPreSub - bias (area_opt同様)
 
     generate
         if (NUM_OPS != 3) begin : G_ADD
@@ -641,15 +641,15 @@ module FPALL_origin #(
     end
     assign ra_R = ra_X + ra_Cin;
 
-    // Shared 10-bit Sub: Add only (expX - expY). Mul uses dedicated mul_expSum.
+    // Add: exp diff (expX-expY) - area_opt同様に専用
     assign sub_A = add_sub_A;
     assign sub_B = add_sub_B;
     assign sub_R = sub_A - sub_B;
 
-    // Mul: dedicated expSum = (expX+expY) - 127
+    // Mul: expSum = expSumPreSub - bias (area_opt同様、ia27_R[8:0]を利用)
     assign mul_expSum = {1'b0, ia27_R[8:0]} - 10'd127;
 
-    // Shared IntAdder_27 (area_opt同様: upper bits always from add)
+    // Shared IntAdder_27 (area_opt同様) (area_opt同様: upper bits always from add)
     assign ia27_X[26:9] = add_fracAdder_X[26:9];
     assign ia27_X[8:0]  = (opcode[1:0]==2'b00) ? add_fracAdder_X[8:0] : {1'b0,mul_expAdder_X};
     assign ia27_Y[26:9] = add_fracAdder_Y[26:9];
