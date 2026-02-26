@@ -607,6 +607,26 @@ if {$TASK == "all" || $TASK == "9"} {
 }
 
 
+# #########################     Original SV     #############################################
+set origin_sv_dir "$ROOT/src/rtl/original_sv"
+
+
+
+# Task 14: FPALL_origin SV (Add+Mul+Div+Sqrt, NUM_OPS=4)
+if {$TASK == "10" || $TASK == "FPALL_SV"} {
+    puts "--- Task 14: FPALL_origin (SV, NUM_OPS=4) ---"
+    remove_design -all
+    analyze -library WORK -format sverilog "$origin_sv_dir/fp32_all_origin.sv"
+    run_synth_common_param "FPALL_origin" "FPALL_origin_SV" "NUM_OPS=4"
+}
+
+# Task 15: FPAdd+FPMult only SV (NUM_OPS=2)
+if {$TASK == "11" || $TASK == "FPAddMul_SV"} {
+    puts "--- Task 15: FPAdd+FPMult (SV, NUM_OPS=2) ---"
+    remove_design -all
+    analyze -library WORK -format sverilog "$origin_sv_dir/fp32_all_origin.sv"
+    run_synth_common_param "FPALL_origin" "fpaddmul_only_origin_SV" "NUM_OPS=2"
+}
 
 ########################  v_  ####################################
 

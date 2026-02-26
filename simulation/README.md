@@ -79,3 +79,6 @@ make -f Makefile.cocotb TEST_UNIT=bf16_add
 2. `src/tb/cocotb_wrapper.sv` に `<test_unit>_wrapper` moduleを追加
 3. `make -f Makefile.cocotb TEST_UNIT=<test_unit>` で実行
 
+
+
+make TARGET=original_sv TOP=tb_fpadd_fp32

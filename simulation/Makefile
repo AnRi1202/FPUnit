@@ -59,6 +59,11 @@ ifeq ($(TARGET),v1_3_addmul_only)
   VALID_TARGET := 1
 endif
 
+ifeq ($(TARGET),original_sv)
+  DEFINES += +define+ORIGINAL_SV
+  VALID_TARGET := 1
+endif
+
 ifeq ($(VALID_TARGET),0)
   $(error Invalid TARGET: $(TARGET))
 endif
