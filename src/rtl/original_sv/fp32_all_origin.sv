@@ -77,6 +77,8 @@ module FPAdd_8_23_Freq1_uid2 (
     output logic        fracAdder_Cin,
     output logic [30:0] ra_X,           // to shared Rounding Adder
     output logic        ra_Cin,
+    output logic [9:0]  sub_A, sub_B,   // to shared Sub (exp diff: 9b expX - expY)
+    input  logic [9:0]  sub_R,          // from shared Sub: eXmeY[7:0] when Add
     output logic [31:0] R
 );
     logic [30:0] efX,efY; logic swap;
@@ -96,7 +98,8 @@ module FPAdd_8_23_Freq1_uid2 (
 
     assign efX=X[30:0]; assign efY=Y[30:0];
     assign swap=(efX<efY);
-    assign eXmeY=X[30:23]-Y[30:23]; assign eYmeX=Y[30:23]-X[30:23];
+    assign sub_A={2'b0,X[30:23]}; assign sub_B={2'b0,Y[30:23]};  // 10b for mux
+    assign eXmeY=sub_R[7:0]; assign eYmeX=~eXmeY+8'd1;  // negate
     assign expDiff=swap?eYmeX:eXmeY;
     assign newX=swap?Y:X; assign newY=swap?X:Y;
     assign expX=newX[30:23]; assign signX=newX[31]; assign signY=newY[31]; assign EffSub=signX^signY;
@@ -136,6 +139,7 @@ module FPMult_8_23_uid2_Freq1_uid3 (
     input  logic        clk,
     input  logic [31:0] X, Y,
     input  logic [8:0]  expAdder_R,   // from shared IntAdder [8:0]
+    input  logic [9:0]  sub_R,        // from shared Sub: expSum (bias -) when Mul
     input  logic [30:0] ra_R,         // from shared Rounding Adder
     output logic [7:0]  expAdder_X, expAdder_Y,
     output logic        expAdder_Cin,
@@ -145,7 +149,7 @@ module FPMult_8_23_uid2_Freq1_uid3 (
 );
     logic        sign;
     logic [7:0]  expX,expY;
-    logic [9:0]  expSumPreSub,bias,expSum;
+    logic [9:0]  expSumPreSub,expSum;
     logic [23:0] sigX,sigY;
     logic [47:0] sigProd,sigProdExt;
     logic        norm;
@@ -157,7 +161,7 @@ module FPMult_8_23_uid2_Freq1_uid3 (
     assign expX=X[30:23]; assign expY=Y[30:23];
     assign expAdder_X=expX; assign expAdder_Y=expY; assign expAdder_Cin=1'b0;
     assign expSumPreSub={1'b0,expAdder_R};
-    assign bias=10'd127; assign expSum=expSumPreSub-bias;
+    assign expSum=sub_R;  // from shared Sub (10b)
     assign sigX={1'b1,X[22:0]}; assign sigY={1'b1,Y[22:0]};
     assign sigProd=sigX*sigY;
 
@@ -577,6 +581,8 @@ module FPALL_origin #(
     logic        ra_Cin;
     logic [30:0] add_ra_X, mul_ra_X, div_ra_X, sqrt_ra_X;
     logic        add_round, mul_round, div_round, sqrt_round;
+    logic [9:0]  add_sub_A, add_sub_B, sub_A, sub_B, sub_R;
+    logic [9:0]  mul_expSum;  // dedicated: (expX+expY)-127 for Mul
 
     generate
         if (NUM_OPS != 3) begin : G_ADD
@@ -585,17 +591,19 @@ module FPALL_origin #(
                 .fracAdder_R(ia27_R), .ra_R(ra_R),
                 .fracAdder_X(add_fracAdder_X), .fracAdder_Y(add_fracAdder_Y), .fracAdder_Cin(add_fracAdder_Cin),
                 .ra_X(add_ra_X), .ra_Cin(add_round),
+                .sub_A(add_sub_A), .sub_B(add_sub_B), .sub_R(sub_R),
                 .R(add_R)
             );
         end else begin : G_NOADD
             assign add_R=32'h0;
             assign add_fracAdder_X=27'h0; assign add_fracAdder_Y=27'h0; assign add_fracAdder_Cin=1'b0;
             assign add_ra_X=31'h0; assign add_round=1'b0;
+            assign add_sub_A=10'h0; assign add_sub_B=10'h0;
         end
         if (NUM_OPS != 1) begin : G_MUL
             FPMult_8_23_uid2_Freq1_uid3 u_mul (
                 .clk(clk), .X(X), .Y(Y),
-                .expAdder_R(ia27_R[8:0]), .ra_R(ra_R),
+                .expAdder_R(ia27_R[8:0]), .sub_R(mul_expSum), .ra_R(ra_R),
                 .expAdder_X(mul_expAdder_X), .expAdder_Y(mul_expAdder_Y), .expAdder_Cin(mul_expAdder_Cin),
                 .ra_X(mul_ra_X), .ra_Cin(mul_round),
                 .R(mul_R)
@@ -632,6 +640,14 @@ module FPALL_origin #(
         endcase
     end
     assign ra_R = ra_X + ra_Cin;
+
+    // Shared 10-bit Sub: Add only (expX - expY). Mul uses dedicated mul_expSum.
+    assign sub_A = add_sub_A;
+    assign sub_B = add_sub_B;
+    assign sub_R = sub_A - sub_B;
+
+    // Mul: dedicated expSum = (expX+expY) - 127
+    assign mul_expSum = {1'b0, ia27_R[8:0]} - 10'd127;
 
     // Shared IntAdder_27 (area_opt同様: upper bits always from add)
     assign ia27_X[26:9] = add_fracAdder_X[26:9];
