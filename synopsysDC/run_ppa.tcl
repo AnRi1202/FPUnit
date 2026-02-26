@@ -74,7 +74,7 @@ proc run_synth_common {entity_name label} {
 
     # set_max_delay 1000 -from [all_inputs] -to [all_outputs]
     # Compile
-    compile_ultra 
+    compile_ultra -no_autoungroup -no_boundary_optimization
     
 
 
@@ -183,17 +183,17 @@ proc run_synth_common_param {entity_name label params} {
     
     link
     set_max_area 0
-    set main_clock_period 0.5 
-    create_clock -name clk -period $main_clock_period [get_ports clk]
+    # set main_clock_period 0.5 
+    # create_clock -name clk -period $main_clock_period [get_ports clk]
     
-    set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
-    set_input_delay 0.1 -clock clk $input_ports
+    # set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
+    # set_input_delay 0.1 -clock clk $input_ports
     
-    set output_ports [all_outputs]
-    set_output_delay 0.1 -clock clk $output_ports
+    # set output_ports [all_outputs]
+    # set_output_delay 0.1 -clock clk $output_ports
     
-    set_input_transition 0.05 [remove_from_collection [all_inputs] [get_ports clk]]
-    set_load 0.1 [all_outputs]
+    # set_input_transition 0.05 [remove_from_collection [all_inputs] [get_ports clk]]
+    # set_load 0.1 [all_outputs]
     
     compile_ultra -no_autoungroup -no_boundary_optimization
     

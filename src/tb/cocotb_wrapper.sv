@@ -192,7 +192,7 @@ module bf16_add_wrapper (
   logic [31:0] tmp_R;
 
 `ifdef V2_1_BF16_ADD
-  add_fp32_bf16 u_dut (
+  bf16_add u_dut (
     .clk    (i_clk),
     .fmt    (FP16),
     .X      ({16'b0, i_operand_a}),

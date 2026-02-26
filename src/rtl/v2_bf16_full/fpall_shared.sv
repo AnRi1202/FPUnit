@@ -45,11 +45,11 @@ module fpall_shared(
     logic [13:0] shiftedFrac_h, shiftedFrac_l;
     logic [8:0] extendedExpInc_h, extendedExpInc_l;
     logic [8:0] normShift_h, normShift_l;   
-    logic [9:0] updatedExp_h, updatedExp_l;
+    logic [7:0] updatedExp_h, updatedExp_l;
     logic stk_h, rnd_h, lsb_h;
     logic stk_l, rnd_l, lsb_l;
-    logic [35 :0] round_vec;
-    logic [35:0] add_RoundedExpFrac;
+    logic [30 :0] round_vec;
+    logic [30:0] add_RoundedExpFrac;
     logic [31:0] add_R_fp32;
     logic [31:0] add_R_fp16;
 
@@ -414,7 +414,7 @@ module fpall_shared(
 
     // Shared Output Signals
     logic [31:0] add_R, mul_R;
-    logic [35:0] add_expFrac;
+    logic [30:0] add_expFrac;
     logic add_round_h, add_round_l, add_round;
     // logic mult_round; // already defined
     logic [33:0] ra_X, ra_Y, ra_R;
@@ -563,7 +563,7 @@ module fpall_shared(
     assign normShift_h = {4'b0, nZerosNew_h};   
     assign normShift_l = {4'b0, nZerosNew_l};  
     assign updatedExp_h = extendedExpInc_h - normShift_h;
-    assign updatedExp_l = (fmt == FP32) ? 9'd0 : (extendedExpInc_l - normShift_l);
+    assign updatedExp_l = (fmt == FP32) ? 8'd0 : (extendedExpInc_l - normShift_l);
     
 
      
@@ -575,9 +575,9 @@ module fpall_shared(
     always_comb begin
         add_expFrac = '0;
         if (fmt ==FP32) begin
-            add_expFrac = {2'b0, updatedExp_h, shiftedFrac_h[12:0], shiftedFrac_l[13:3]}; //[26:3] 暗黙は消えてる
+            add_expFrac = {updatedExp_h, shiftedFrac_h[12:0], shiftedFrac_l[13:4]}; //[26:3] 暗黙は消えてる
         end else begin
-            add_expFrac = {updatedExp_h, shiftedFrac_h[12:5], updatedExp_l, shiftedFrac_l[10:3]}; //36bit
+            add_expFrac = {updatedExp_h, shiftedFrac_h[12:6],1'b0, updatedExp_l, shiftedFrac_l[10:4]}; //31bit
         end
     end
     assign stk_h = |shiftedFrac_h[4:2];
@@ -593,21 +593,21 @@ module fpall_shared(
 
     // Shared rounding adder (36bit)
     assign round_vec = 
-        (fmt == FP16) ? ((36'(add_round_l)) | (36'(add_round_h) << 18))
-                :  (36'(add_round_l));
+        (fmt == FP16) ? ((31'(add_round_l)) | (31'(add_round_h) << 16))
+                :  (31'(add_round_l));
     assign add_RoundedExpFrac = add_expFrac + round_vec;
     
     // Pack Result (Sign, Exponent, Mantissa)
     assign add_R_fp32 = {
         signX_h,
-        add_RoundedExpFrac[31:1]   // exp + frac (FP32)
+        add_RoundedExpFrac   // exp + frac (FP32)
     };
 
     assign add_R_fp16 = {
         signX_h,
-        add_RoundedExpFrac[33:19], // exp+frac high lane
+        add_RoundedExpFrac[30:16], // exp+frac high lane
         signX_l,
-        add_RoundedExpFrac[15:1]   // exp+frac low lane
+        add_RoundedExpFrac[14:0]   // exp+frac low lane
     };
 
     assign add_R = (fmt == FP32) ? add_R_fp32 : add_R_fp16;

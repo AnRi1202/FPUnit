@@ -57,7 +57,7 @@ module fpall_shared_logic_wrapper(
         .R(R)
     );
 `elsif V2_1_BF16_ADD
-    add_fp32_bf16 u_dut (
+    bf16_add u_dut (
         .clk(clk),
         .fmt(fp_fmt_e'(fmt_in)),
         .X(X),
