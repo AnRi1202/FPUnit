@@ -53,11 +53,30 @@ module Normalizer_Z_28_28_28_Freq1_uid8 (
 endmodule
 
 // ---------------------------------------------------------------------------
+// IntAdder_27_Freq1_uid6  (27-bit adder with carry-in, shared Add frac + Mul exp)
+// ---------------------------------------------------------------------------
+module IntAdder_27_Freq1_uid6 (
+    input  logic        clk,
+    input  logic [26:0] X, Y,
+    input  logic        Cin,
+    output logic [26:0] R
+);
+    assign R = X + Y + 27'(Cin);
+endmodule
+
+// ---------------------------------------------------------------------------
 // FPAdd_8_23_Freq1_uid2  (FP32 Adder, 32-bit I/O, exc removed)
+// Shared: IntAdder (fracAdder), Rounding Adder (ra)
 // ---------------------------------------------------------------------------
 module FPAdd_8_23_Freq1_uid2 (
     input  logic        clk,
     input  logic [31:0] X, Y,
+    input  logic [26:0] fracAdder_R,   // from shared IntAdder
+    input  logic [30:0] ra_R,           // from shared Rounding Adder
+    output logic [26:0] fracAdder_X, fracAdder_Y,
+    output logic        fracAdder_Cin,
+    output logic [30:0] ra_X,           // to shared Rounding Adder
+    output logic        ra_Cin,
     output logic [31:0] R
 );
     logic [30:0] efX,efY; logic swap;
@@ -90,7 +109,8 @@ module FPAdd_8_23_Freq1_uid2 (
 
     assign fracYpad={1'b0,shiftedFracY}; assign ESV={27{EffSub}}; assign fracYpadXor=fracYpad^ESV;
     assign fracXpad={2'b01,newX[22:0],2'b00}; assign cIn=EffSub&(~sticky);
-    assign fracAddResult=fracXpad+fracYpadXor+{{26{1'b0}},cIn};
+    assign fracAdder_X=fracXpad; assign fracAdder_Y=fracYpadXor; assign fracAdder_Cin=cIn;
+    assign fracAddResult=fracAdder_R;
     assign fracSticky={fracAddResult,sticky};
 
     Normalizer_Z_28_28_28_Freq1_uid8 u_norm(.clk,.X(fracSticky),.Count(nZerosNew),.R(shiftedFrac));
@@ -101,8 +121,8 @@ module FPAdd_8_23_Freq1_uid2 (
     assign stk=shiftedFrac[2]|shiftedFrac[1]|shiftedFrac[0];
     assign rnd=shiftedFrac[3]; assign lsb=shiftedFrac[4];
     assign needRound=(rnd&stk)|(rnd&~stk&lsb);
-    assign RoundedEF=expFrac+{{30{1'b0}},needRound};
-    assign fracR=RoundedEF[22:0]; assign expR=RoundedEF[30:23];
+    assign ra_X=expFrac; assign ra_Cin=needRound;
+    assign fracR=ra_R[22:0]; assign expR=ra_R[30:23];
     assign signR2=(eqdiffsign&&EffSub)?1'b0:signR;
     assign R={signR2,expR,fracR};
 endmodule
@@ -110,10 +130,17 @@ endmodule
 
 // ---------------------------------------------------------------------------
 // FPMult_8_23_uid2_Freq1_uid3  (FP32 Multiplier, 32-bit I/O, exc removed)
+// Shared: IntAdder (expAdder), Rounding Adder (ra)
 // ---------------------------------------------------------------------------
 module FPMult_8_23_uid2_Freq1_uid3 (
     input  logic        clk,
     input  logic [31:0] X, Y,
+    input  logic [8:0]  expAdder_R,   // from shared IntAdder [8:0]
+    input  logic [30:0] ra_R,         // from shared Rounding Adder
+    output logic [7:0]  expAdder_X, expAdder_Y,
+    output logic        expAdder_Cin,
+    output logic [30:0] ra_X,         // to shared Rounding Adder
+    output logic        ra_Cin,
     output logic [31:0] R
 );
     logic        sign;
@@ -128,7 +155,8 @@ module FPMult_8_23_uid2_Freq1_uid3 (
 
     assign sign=X[31]^Y[31];
     assign expX=X[30:23]; assign expY=Y[30:23];
-    assign expSumPreSub={2'b0,expX}+{2'b0,expY};
+    assign expAdder_X=expX; assign expAdder_Y=expY; assign expAdder_Cin=1'b0;
+    assign expSumPreSub={1'b0,expAdder_R};
     assign bias=10'd127; assign expSum=expSumPreSub-bias;
     assign sigX={1'b1,X[22:0]}; assign sigY={1'b1,Y[22:0]};
     assign sigProd=sigX*sigY;
@@ -140,8 +168,8 @@ module FPMult_8_23_uid2_Freq1_uid3 (
     assign sticky=sigProdExt[24];
     assign guard=(sigProdExt[23:0]!=24'h0);
     assign round=sticky&((guard&~sigProdExt[25])|sigProdExt[25]);
-    assign expSigPostRound=expSig+{{30{1'b0}},round};
-    assign R={sign,expSigPostRound[30:0]};
+    assign ra_X=expSig; assign ra_Cin=round;
+    assign R={sign,ra_R[30:0]};
 endmodule
 
 
@@ -154,6 +182,9 @@ module FPDivSqrt_8_23_shared (
     input  logic        clk,
     input  logic        is_div,  // 1=Div, 0=Sqrt
     input  logic [31:0] X, Y,
+    input  logic [30:0] ra_R,    // from shared Rounding Adder
+    output logic [30:0] div_ra_X, sqrt_ra_X,
+    output logic        div_round, sqrt_round,
     output logic [31:0] R
 );
     // FPDiv signals
@@ -172,8 +203,8 @@ module FPDivSqrt_8_23_shared (
     logic [1:0]  qP14,qM14,qP13,qM13,qP12,qM12,qP11,qM11,qP10,qM10;
     logic [1:0]  qP9,qM9,qP8,qM8,qP7,qM7,qP6,qM6,qP5,qM5,qP4,qM4,qP3,qM3,qP2,qM2,qP1,qM1;
     logic [27:0] qP, qM, quotient;
-    logic [25:0] div_mR; logic [23:0] fRnorm; logic div_round;
-    logic [9:0]  expR1; logic [31:0] div_expfrac, div_expfracR;
+    logic [25:0] div_mR; logic [23:0] fRnorm;
+    logic [9:0]  expR1; logic [31:0] div_expfrac;
     logic [31:0] div_R;
 
     // FPSqrt signals
@@ -207,7 +238,7 @@ module FPDivSqrt_8_23_shared (
     logic [13:0] S13; logic [14:0] S14; logic [15:0] S15; logic [16:0] S16;
     logic [17:0] S17; logic [18:0] S18; logic [19:0] S19; logic [20:0] S20;
     logic [21:0] S21; logic [22:0] S22; logic [23:0] S23;
-    logic [25:0] sqrt_mR; logic [22:0] fR, fRrnd; logic sqrt_round;
+    logic [25:0] sqrt_mR; logic [22:0] fR, fRrnd;
     logic [30:0] Rn2;
     logic [31:0] sqrt_R;
 
@@ -304,8 +335,8 @@ module FPDivSqrt_8_23_shared (
     assign fRnorm=div_mR[25]?div_mR[24:1]:div_mR[23:0]; assign div_round=fRnorm[0];
     assign expR1=expR0+{3'b000,6'b111111,div_mR[25]};
     assign div_expfrac={expR1[7:0],fRnorm[23:1]};
-    assign div_expfracR=div_expfrac+{{31{1'b0}},div_round};
-    assign div_R={sR,div_expfracR[30:0]};
+    assign div_ra_X=div_expfrac;
+    assign div_R={sR,ra_R[30:0]};
 
     // ========== FPSqrt Logic (matches area_opt.sv) ==========
     assign fracX=X[22:0]; assign eRn0={1'b0,X[30:24]};
@@ -407,7 +438,8 @@ module FPDivSqrt_8_23_shared (
     assign T25_h=shared_as_r0; assign T24=T25_h[26:0]; assign S23={S22,d23};
     assign d25=~T24[26]; assign sqrt_mR={S23,d25};
     assign fR=sqrt_mR[23:1]; assign sqrt_round=sqrt_mR[0];
-    assign fRrnd=fR+{22'b0,sqrt_round};
+    assign sqrt_ra_X={8'd0,fR};
+    assign fRrnd=ra_R[22:0];
     assign Rn2={eRn1,fRrnd};
     assign sqrt_R={X[31],Rn2};
 
@@ -524,6 +556,7 @@ endmodule
 
 // ---------------------------------------------------------------------------
 // FPALL_origin  (top-level wrapper, 32-bit I/O, NUM_OPS=4: Add+Mul+Sqrt+Div)
+// Step3: Shared IntAdder_27 + Shared Rounding Adder (area_opt準拠)
 // ---------------------------------------------------------------------------
 module FPALL_origin #(
     parameter int NUM_OPS = 4
@@ -534,25 +567,82 @@ module FPALL_origin #(
     output logic [31:0] R
 );
     logic [31:0] add_R, mul_R, sqrt_R, div_R, divsqrt_R;
+    logic [26:0] add_fracAdder_X, add_fracAdder_Y;
+    logic        add_fracAdder_Cin;
+    logic [7:0]  mul_expAdder_X, mul_expAdder_Y;
+    logic        mul_expAdder_Cin;
+    logic [26:0] ia27_X, ia27_Y, ia27_R;
+    logic        ia27_Cin;
+    logic [30:0] ra_X, ra_R;
+    logic        ra_Cin;
+    logic [30:0] add_ra_X, mul_ra_X, div_ra_X, sqrt_ra_X;
+    logic        add_round, mul_round, div_round, sqrt_round;
 
     generate
         if (NUM_OPS != 3) begin : G_ADD
-            FPAdd_8_23_Freq1_uid2  u_add  (.clk,.X,.Y,.R(add_R));
+            FPAdd_8_23_Freq1_uid2 u_add (
+                .clk(clk), .X(X), .Y(Y),
+                .fracAdder_R(ia27_R), .ra_R(ra_R),
+                .fracAdder_X(add_fracAdder_X), .fracAdder_Y(add_fracAdder_Y), .fracAdder_Cin(add_fracAdder_Cin),
+                .ra_X(add_ra_X), .ra_Cin(add_round),
+                .R(add_R)
+            );
         end else begin : G_NOADD
             assign add_R=32'h0;
+            assign add_fracAdder_X=27'h0; assign add_fracAdder_Y=27'h0; assign add_fracAdder_Cin=1'b0;
+            assign add_ra_X=31'h0; assign add_round=1'b0;
         end
         if (NUM_OPS != 1) begin : G_MUL
-            FPMult_8_23_uid2_Freq1_uid3 u_mul (.clk,.X,.Y,.R(mul_R));
+            FPMult_8_23_uid2_Freq1_uid3 u_mul (
+                .clk(clk), .X(X), .Y(Y),
+                .expAdder_R(ia27_R[8:0]), .ra_R(ra_R),
+                .expAdder_X(mul_expAdder_X), .expAdder_Y(mul_expAdder_Y), .expAdder_Cin(mul_expAdder_Cin),
+                .ra_X(mul_ra_X), .ra_Cin(mul_round),
+                .R(mul_R)
+            );
         end else begin : G_NOMUL
             assign mul_R=32'h0;
+            assign mul_expAdder_X=8'h0; assign mul_expAdder_Y=8'h0; assign mul_expAdder_Cin=1'b0;
+            assign mul_ra_X=31'h0; assign mul_round=1'b0;
         end
         if (NUM_OPS == 4) begin : G_SQRTDIV
-            FPDivSqrt_8_23_shared u_divsqrt (.clk,.is_div(opcode[0]),.X(X),.Y(Y),.R(divsqrt_R));
+            FPDivSqrt_8_23_shared u_divsqrt (
+                .clk(clk), .is_div(opcode[0]), .X(X), .Y(Y),
+                .ra_R(ra_R),
+                .div_ra_X(div_ra_X), .div_round(div_round),
+                .sqrt_ra_X(sqrt_ra_X), .sqrt_round(sqrt_round),
+                .R(divsqrt_R)
+            );
             assign sqrt_R=divsqrt_R; assign div_R=divsqrt_R;
         end else begin : G_NOSQRTDIV
             assign sqrt_R=32'h0; assign div_R=32'h0;
+            assign div_ra_X=31'h0; assign div_round=1'b0;
+            assign sqrt_ra_X=31'h0; assign sqrt_round=1'b0;
         end
     endgenerate
+
+    // Shared Rounding Adder (area_opt同様)
+    always_comb begin
+        unique case (opcode[1:0])
+            2'b00: begin ra_X=add_ra_X; ra_Cin=add_round; end
+            2'b01: begin ra_X=mul_ra_X; ra_Cin=mul_round; end
+            2'b11: begin ra_X=div_ra_X; ra_Cin=div_round; end
+            2'b10: begin ra_X=sqrt_ra_X; ra_Cin=sqrt_round; end
+            default: begin ra_X='x; ra_Cin='x; end
+        endcase
+    end
+    assign ra_R = ra_X + ra_Cin;
+
+    // Shared IntAdder_27 (area_opt同様: upper bits always from add)
+    assign ia27_X[26:9] = add_fracAdder_X[26:9];
+    assign ia27_X[8:0]  = (opcode[1:0]==2'b00) ? add_fracAdder_X[8:0] : {1'b0,mul_expAdder_X};
+    assign ia27_Y[26:9] = add_fracAdder_Y[26:9];
+    assign ia27_Y[8:0]  = (opcode[1:0]==2'b00) ? add_fracAdder_Y[8:0] : {1'b0,mul_expAdder_Y};
+    assign ia27_Cin     = (opcode[1:0]==2'b00) ? add_fracAdder_Cin : mul_expAdder_Cin;
+
+    IntAdder_27_Freq1_uid6 u_ia27 (
+        .clk(clk), .X(ia27_X), .Y(ia27_Y), .Cin(ia27_Cin), .R(ia27_R)
+    );
 
     always_comb begin
         if (NUM_OPS==1)      R=add_R;
