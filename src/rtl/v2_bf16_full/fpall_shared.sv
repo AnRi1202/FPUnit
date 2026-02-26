@@ -159,7 +159,7 @@ module fpall_shared(
     logic [23:0] fRnorm;
     logic div_round;
     logic [9:0] expR1;
-    logic [32:0] div_expfrac, expfracR;
+    logic [30:0] expfracR;
     logic [1:0] exnR, exnRfinal;
     logic [31:0] div_R;
 
@@ -417,8 +417,8 @@ module fpall_shared(
     logic [30:0] add_expFrac;
     logic add_round_h, add_round_l, add_round;
     // logic mult_round; // already defined
-    logic [33:0] ra_X, ra_Y, ra_R;
-    logic [33:0] add_ra_X, mul_ra_X, mul_ra_Y, div_ra_X, sqrt_ra_X;
+    logic [30:0] ra_X, ra_Y, ra_R;
+    logic [30:0] add_ra_X, add_ra_Y, mul_ra_X, mul_ra_Y, div_ra_X, sqrt_ra_X;
     logic ra_Cin;
     
     logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
@@ -591,11 +591,13 @@ module fpall_shared(
     assign add_round_h = rnd_h & (stk_h | lsb_h);
     assign add_round_l = rnd_l & (stk_l | lsb_l);
 
-    // Shared rounding adder (36bit)
+    // Add: connect to Shared Rounding Adder
     assign round_vec = 
         (fmt == FP16) ? ((31'(add_round_l)) | (31'(add_round_h) << 16))
                 :  (31'(add_round_l));
-    assign add_RoundedExpFrac = add_expFrac + round_vec;
+    assign add_ra_X = add_expFrac;
+    assign add_ra_Y = round_vec;
+    assign add_RoundedExpFrac = ra_R[30:0];  // from Shared RA when opcode==OP_ADD
     
     // Pack Result (Sign, Exponent, Mantissa)
     assign add_R_fp32 = {
@@ -687,10 +689,10 @@ module fpall_shared(
     
     // Select rounding carries for shared adder (ra_Cin for Low/FP32, mul_ra_Y for High)
     assign mult_round = (fmt == FP32) ? mult_round_32 : mult_round_l;
-    assign mul_ra_Y   = (fmt == FP16) ? (34'(mult_round_h) << 16) : 34'd0;
+    assign mul_ra_Y   = (fmt == FP16) ? (31'(mult_round_h) << 16) : 31'd0;
 
-    // Connect to Shared Rounding Adder
-    assign mul_ra_X = {1'b0, expSig}; 
+    // Connect to Shared Rounding Adder (31bit, area_opt同様)
+    assign mul_ra_X = expSig[30:0]; 
     
     // Get result from Shared Rounding Adder
     assign expSigPostRound = ra_R[30:0];
@@ -1025,12 +1027,11 @@ module fpall_shared(
     
     assign expR1 = expR0 + {3'b000, 6'b111111, div_mR[25]}; // add back bias
     // final rounding
-    assign div_expfrac = {expR1, fRnorm[23:1]};
-    // Connect to Shared Rounding Adder
-    assign div_ra_X = {1'b0, div_expfrac}; 
+    // Connect to Shared Rounding Adder (31bit, area_opt同様: expR1[7:0]で8bit)
+    assign div_ra_X = {expR1[7:0], fRnorm[23:1]}; 
     // Get result from Shared Rounding Adder
-    assign expfracR = ra_R[32:0];
-    assign div_R = {sR, expfracR[30:0]};
+    assign expfracR = ra_R[30:0];
+    assign div_R = {sR, expfracR};
 
 
     // =================================================================================
@@ -1322,8 +1323,8 @@ module fpall_shared(
     assign fR = sqrt_mR[23:1]; // removing leading 1
     assign sqrt_round = sqrt_mR[0]; // round bit
     assign sqrt_expFrac = fR;
-    // Connect to Shared Rounding Adder
-    assign sqrt_ra_X = {11'd0, sqrt_expFrac}; 
+    // Connect to Shared Rounding Adder (31bit, area_opt同様: 8'd0 + 23bit frac)
+    assign sqrt_ra_X = {8'd0, sqrt_expFrac}; 
     // Get result from Shared Rounding Adder
     assign fRrnd = ra_R[22:0]; // rounding sqrt never changes exponents (handled in shared adder) 
     assign Rn2 = {eRn1, fRrnd};
@@ -1459,18 +1460,16 @@ module fpall_shared(
     // Shared Resources & Output Mux
     // =================================================================================
 
-    // Multiplex inputs to Shared Rounding Adder (Add uses its own adder)
-    // opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
     // Multiplex inputs to Shared Rounding Adder
     // opcode: 00=Add, 01=Mul, 10=Sqrt, 11=Div
-    assign ra_X = 
+    assign ra_X = (opcode == OP_ADD) ? add_ra_X :
                   (opcode == OP_MUL) ? mul_ra_X :
                   (opcode == OP_DIV) ? div_ra_X :
                                       sqrt_ra_X;
-    assign ra_Y = 
+    assign ra_Y = (opcode == OP_ADD) ? add_ra_Y :
                   (opcode == OP_MUL) ? mul_ra_Y :
-                                      34'd0;                                   
-    assign ra_Cin = 
+                                      31'd0;                                   
+    assign ra_Cin = (opcode == OP_ADD) ? 1'b0 :
                     (opcode == OP_MUL) ? mult_round :
                     (opcode == OP_DIV) ? div_round :
                                         sqrt_round;
@@ -1496,13 +1495,8 @@ module fpall_shared(
     //     .R(ia27_R)
     // );
 
-    IntAdder_34_Freq1_uid11 U_SHARED_RA (
-        .clk(clk),
-        .X(ra_X),
-        .Y(ra_Y),
-        .Cin(ra_Cin),
-        .R(ra_R)
-    );
+    // Shared 31-bit Rounding Adder (area_opt同様: ra_R = ra_X + ra_Y + ra_Cin)
+    assign ra_R = ra_X + ra_Y + ra_Cin;
 
     assign R = (opcode == OP_ADD) ? add_R :  // Add Result
                (opcode == OP_MUL) ? mul_R :  // Mul Result
