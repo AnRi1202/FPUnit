@@ -29,9 +29,8 @@ module addmul_only(
     logic [9:0] updatedExp;
     logic eqdiffsign;
     logic stk, rnd, lsb;
-    logic [33:0] RoundedExpFrac;
-    logic [22:0] fracR;
-    logic [7:0] expR;
+    logic [30:0] RoundedExpFrac;
+
     logic signR2;
 
     // FPMul signals
@@ -49,10 +48,11 @@ module addmul_only(
 
     // Shared Output Signals
     logic [31:0] add_R, mul_R;
-    logic [33:0] add_expFrac;
+    logic [30:0] add_expFrac;
     logic add_round;
     logic [33:0] ra_X, ra_R;
-    logic [33:0] add_ra_X, mul_ra_X;
+    logic [30:0] add_ra_X;
+    logic [33:0] mul_ra_X;
     logic ra_Cin;
     
     logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
@@ -115,7 +115,7 @@ module addmul_only(
     assign updatedExp = {1'b0, extendedExpInc} - {5'b00000, nZerosNew};
     assign eqdiffsign = (nZerosNew == 5'b11111);
     
-    assign add_expFrac = {updatedExp, shiftedFrac[26:3]};
+    assign add_expFrac = {updatedExp[7:0], shiftedFrac[26:4]};
     assign stk = shiftedFrac[2] | shiftedFrac[1] | shiftedFrac[0];
     assign rnd = shiftedFrac[3];
     assign lsb = shiftedFrac[4];
@@ -123,11 +123,10 @@ module addmul_only(
     assign add_round = ((rnd == 1'b1) && (stk == 1'b1)) || ((rnd == 1'b1) && (stk == 1'b0) && (lsb == 1'b1)) ? 1'b1 : 1'b0;
 
     assign RoundedExpFrac = ra_R;
-    assign fracR = RoundedExpFrac[23:1];
-    assign expR = RoundedExpFrac[31:24];
+
     
     assign signR2 = (eqdiffsign && EffSub) ? 1'b0 : signX;
-    assign add_R = {signR2, expR, fracR};
+    assign add_R = {signR2, RoundedExpFrac};
 
     
     // =================================================================================

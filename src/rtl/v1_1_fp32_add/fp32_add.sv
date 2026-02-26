@@ -35,7 +35,7 @@ module fp32_add(
     logic [22:0] fracR;
     logic [7:0] expR;
 
-    logic [32:0] add_expFrac;
+    logic [30:0] add_expFrac;
     logic add_round;
     // =================================================================================
     // FPAdd Logic
@@ -69,6 +69,10 @@ module fp32_add(
     assign fracYpad = {1'b0, shiftedFracY};
     assign EffSubVector = {27{EffSub}};
     assign fracYpadXorOp = fracYpad ^ EffSubVector;
+    // fracXpad = { 0,        1,          frac[22:0], 00      }
+    //              ^overflow  ^hidden bit             ^G/R bits
+    // The leading '0' guard bit handles the case where fracX + fracY >= 2.0 (i.e., 11.xxx...),
+    // which is reinterpreted as 1.1xxx... with the exponent bumped +1 (see extendedExpInc).
     assign fracXpad = {2'b01, newX[22:0], 2'b00};
     assign cInSigAdd = EffSub & (~add_sticky); // if we subtract and the sticky was one, some of the negated sticky bits would have absorbed this carry 
 
@@ -83,11 +87,14 @@ module fp32_add(
         .Count(nZerosNew),
         .R(shiftedFrac)
     );
-    
+     
+    // Pre-increment exp by 1 to match the '0' overflow guard bit prepended in fracXpad.
+    // This makes extendedExpInc 9 bits wide: the normal 8-bit exponent can reach 0xFF (255),
+    // and adding 1 may carry into a 9th bit, which the normalizer resolves.
     assign extendedExpInc = {1'b0, add_expX} + 9'd1;
-    assign updatedExp = {extendedExpInc} - {4'b0000, nZerosNew};
+    assign updatedExp = {extendedExpInc} - {4'b0000, nZerosNew}; // subtract leading zeros found by normalizer
     
-    assign add_expFrac = {updatedExp, shiftedFrac[26:4]};
+    assign add_expFrac = {updatedExp[7:0], shiftedFrac[26:4]}; // 8bit + 23bit
     assign stk = shiftedFrac[2] | shiftedFrac[1] | shiftedFrac[0];
     assign rnd = shiftedFrac[3];
     assign lsb = shiftedFrac[4];

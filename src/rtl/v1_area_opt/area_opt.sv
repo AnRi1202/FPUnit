@@ -38,13 +38,14 @@ module area_opt(
     // FPMul signals
     logic sign;
     logic [7:0] mul_expX, expY;
-    logic [9:0] expSumPreSub, bias, expSum;
+    logic [9:0] expSumPreSub, bias; 
+    logic [7:0] expSum;
     logic [23:0] sigX, sigY;
     logic [47:0] sigProd;
     logic norm;
-    logic [9:0] expPostNorm;
+    logic [7:0] expPostNorm;
     logic [47:0] sigProdExt;
-    logic [32:0] expSig;
+    logic [30:0] expSig;
     logic mul_guard_bit, mul_sticky, mul_round, mul_lsb;
     logic [30:0] expSigPostRound;
 
@@ -140,7 +141,7 @@ module area_opt(
     logic [23:0] fRnorm;
     logic div_round;
     logic [9:0] expR1;
-    logic [32:0] expfracR;
+    logic [30:0] expfracR;
     logic [31:0] div_R;
 
     // FPSqrt signals
@@ -393,11 +394,11 @@ module area_opt(
 
     // Shared Output Signals
     logic [31:0] add_R, mul_R;
-    logic [32:0] add_expFrac;
+    logic [30:0] add_expFrac;
     logic add_round;
     // logic mul_round; // already defined
-    logic [32:0] ra_X, ra_R;
-    logic [32:0] add_ra_X, mul_ra_X, div_ra_X, sqrt_ra_X;
+    logic [30:0] ra_X, ra_R;
+    logic [30:0] add_ra_X, mul_ra_X, div_ra_X, sqrt_ra_X;
     logic ra_Cin;
     
     logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
@@ -464,7 +465,7 @@ module area_opt(
     assign extendedExpInc = {1'b0, add_expX} + 9'd1;
     assign updatedExp = {extendedExpInc} - {4'b0000, nZerosNew};
     
-    assign add_expFrac = {updatedExp, shiftedFrac[26:3]};
+    assign add_expFrac = {updatedExp[7:0], shiftedFrac[26:4]}; //8bit + 23bit
     assign stk = shiftedFrac[2] | shiftedFrac[1] | shiftedFrac[0];
     assign rnd = shiftedFrac[3];
     assign lsb = shiftedFrac[4];
@@ -473,8 +474,8 @@ module area_opt(
     assign add_round = ((rnd == 1'b1) && (stk == 1'b1)) || ((rnd == 1'b1) && (stk == 1'b0) && (lsb == 1'b1)) ? 1'b1 : 1'b0;
     // Get result from Shared Rounding Adder
     assign RoundedExpFrac = ra_R;
-    assign fracR = RoundedExpFrac[23:1];
-    assign expR = RoundedExpFrac[31:24];
+    assign fracR = RoundedExpFrac[22:0];
+    assign expR = RoundedExpFrac[30:23];
     
     assign add_R = {signX, expR, fracR};
 
@@ -502,10 +503,10 @@ module area_opt(
     assign sigProd = sigX * sigY;
     // exponent update 
     assign norm = sigProd[47];
-    assign expPostNorm = expSum + {9'd0, norm};
+    assign expPostNorm = expSum + {7'd0, norm};
     // significand normalization shift 
     assign sigProdExt = (norm == 1'b1) ? {sigProd[46:0], 1'b0} : {sigProd[45:0], 2'b00};
-    assign expSig = {expPostNorm, sigProdExt[47:25]};
+    assign expSig = {expPostNorm, sigProdExt[47:25]}; 
     assign mul_guard_bit = sigProdExt[24];
     assign mul_sticky = |sigProdExt[23:0];
     assign mul_lsb = sigProdExt[25];
@@ -515,7 +516,7 @@ module area_opt(
     assign mul_ra_X =  expSig; 
     
     // Get result from Shared Rounding Adder
-    assign expSigPostRound = ra_R[30:0];
+    assign expSigPostRound = ra_R;
     assign mul_R = {sign, expSigPostRound};
 
 
@@ -847,11 +848,11 @@ module area_opt(
     
     assign expR1 = expR0 + {3'b000, 6'b111111, div_mR[25]}; // add back bias
     // final rounding
-    assign div_ra_X = {expR1, fRnorm[23:1]};
+    assign div_ra_X = {expR1[7:0], fRnorm[23:1]};
     // Connect to Shared Rounding Adder
     // Get result from Shared Rounding Adder
-    assign expfracR = ra_R[32:0];
-    assign div_R = {sR, expfracR[30:0]};
+    assign expfracR = ra_R;
+    assign div_R = {sR, expfracR};
 
 
     // =================================================================================
@@ -1144,7 +1145,7 @@ module area_opt(
     assign sqrt_round = sqrt_mR[0]; // round bit
     assign sqrt_expFrac = fR;
     // Connect to Shared Rounding Adder
-    assign sqrt_ra_X = {10'd0, sqrt_expFrac}; 
+    assign sqrt_ra_X = {8'd0, sqrt_expFrac}; 
     // Get result from Shared Rounding Adder
     assign fRrnd = ra_R[22:0]; // rounding sqrt never changes exponents (handled in shared adder) 
     assign Rn2 = {eRn1, fRrnd};
