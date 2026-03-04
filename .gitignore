@@ -73,3 +73,5 @@ synopsysDC/_sweep_*.tcl
 
 # Archives
 synopsysDC/csv_archive/
+
+WORK*/

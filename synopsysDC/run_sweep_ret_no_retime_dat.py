@@ -265,6 +265,134 @@ set_clock_uncertainty 0.0 clk
 {common_no_retime_compile()}
 """
 
+def make_tcl_flopoco_origin_fpadd():
+    return f"""
+{common_header()}
+set run_dir [file normalize "run-flopoco_origin_fpadd_ret-P1-noRetime-$tag"]
+set WORK_DIR [file normalize "${{run_dir}}/WORK"]
+file mkdir $run_dir
+file mkdir $WORK_DIR
+define_design_lib WORK -path $WORK_DIR
+set_app_var alib_library_analysis_path $WORK_DIR
+
+{common_libs()}
+
+set origin_dir "{rtl_dir}/original"
+
+analyze -library WORK -format vhdl "$origin_dir/FPAdd_Kin_f1_origin.vhdl"
+analyze -library WORK -format vhdl "$origin_dir/fpadd_bf16_f1.vhdl"
+analyze -library WORK -format vhdl "$origin_dir/FPAdd_origin_ret.vhdl"
+elaborate FPAdd_origin_ret -library WORK -parameters "NUM_PIPE=1"
+
+link
+check_design
+set_max_area 0
+{common_constraints()}
+{common_no_retime_compile()}
+"""
+
+def make_tcl_flopoco_origin_fpmult():
+    return f"""
+{common_header()}
+set run_dir [file normalize "run-flopoco_origin_fpmult_ret-P1-noRetime-$tag"]
+set WORK_DIR [file normalize "${{run_dir}}/WORK"]
+file mkdir $run_dir
+file mkdir $WORK_DIR
+define_design_lib WORK -path $WORK_DIR
+set_app_var alib_library_analysis_path $WORK_DIR
+
+{common_libs()}
+
+set origin_dir "{rtl_dir}/original"
+
+analyze -library WORK -format vhdl "$origin_dir/FPMult_Kin_f1_origin.vhdl"
+analyze -library WORK -format vhdl "$origin_dir/fpmult_bf16_f1.vhdl"
+analyze -library WORK -format vhdl "$origin_dir/FPMult_origin_ret.vhdl"
+elaborate FPMult_origin_ret -library WORK -parameters "NUM_PIPE=1"
+
+link
+check_design
+set_max_area 0
+{common_constraints()}
+{common_no_retime_compile()}
+"""
+
+def make_tcl_flopoco_origin_addmul():
+    return f"""
+{common_header()}
+set run_dir [file normalize "run-flopoco_origin_addmul_ret-P1-noRetime-$tag"]
+set WORK_DIR [file normalize "${{run_dir}}/WORK"]
+file mkdir $run_dir
+file mkdir $WORK_DIR
+define_design_lib WORK -path $WORK_DIR
+set_app_var alib_library_analysis_path $WORK_DIR
+
+{common_libs()}
+
+set origin_dir "{rtl_dir}/original"
+
+# Analyze ALL VHDL files (FPAdd, FPMult + FPAddMul_origin_ret)
+analyze -library WORK -format vhdl [glob "$origin_dir/*.vhdl"]
+
+elaborate FPAddMul_origin_ret -library WORK -parameters "NUM_PIPE=1"
+
+link
+check_design
+set_max_area 0
+{common_constraints()}
+{common_no_retime_compile()}
+"""
+
+def make_tcl_flopoco_origin_addmul_bf16():
+    return f"""
+{common_header()}
+set run_dir [file normalize "run-flopoco_origin_addmul_bf16_ret-P1-noRetime-$tag"]
+set WORK_DIR [file normalize "${{run_dir}}/WORK"]
+file mkdir $run_dir
+file mkdir $WORK_DIR
+define_design_lib WORK -path $WORK_DIR
+set_app_var alib_library_analysis_path $WORK_DIR
+
+{common_libs()}
+
+set origin_dir "{rtl_dir}/original"
+
+analyze -library WORK -format vhdl [glob "$origin_dir/*.vhdl"]
+elaborate FPAddMulBF16_origin_ret -library WORK -parameters "NUM_PIPE=1"
+
+link
+check_design
+set_max_area 0
+{common_constraints()}
+{common_no_retime_compile()}
+"""
+
+def make_tcl_flopoco_origin_divsqrt():
+    return f"""
+{common_header()}
+set run_dir [file normalize "run-flopoco_origin_divsqrt_ret-P1-noRetime-$tag"]
+set WORK_DIR [file normalize "${{run_dir}}/WORK"]
+file mkdir $run_dir
+file mkdir $WORK_DIR
+define_design_lib WORK -path $WORK_DIR
+set_app_var alib_library_analysis_path $WORK_DIR
+
+{common_libs()}
+
+set origin_dir "{rtl_dir}/original"
+
+# Analyze ALL VHDL files (FPSqrt, FPDiv+selFunction + FPDivSqrt_origin_ret)
+analyze -library WORK -format vhdl [glob "$origin_dir/*.vhdl"]
+
+elaborate FPDivSqrt_origin_ret -library WORK -parameters "NUM_PIPE=1"
+
+link
+check_design
+set_max_area 0
+{common_constraints()}
+{common_no_retime_compile()}
+"""
+
 def make_tcl_v2_4_divsqrt():
     return f"""
 {common_header()}
@@ -319,23 +447,71 @@ def parse_results(run_dir):
                     break
     return area, dat
 
-# Order: smaller designs first (bf16_add ~5min, divsqrt ~10min, addmul ~15min, area_opt/fpall ~30-60min)
+# Order: FloPoCo first, then v2/v1 (smaller first), area_opt/fpall last (~30-60min each)
 DESIGNS = [
+    # FloPoCo origin (first)
+    ("flopoco_origin_fpadd_ret", make_tcl_flopoco_origin_fpadd, "run-flopoco_origin_fpadd_ret-P1-noRetime-"),
+    ("flopoco_origin_fpmult_ret", make_tcl_flopoco_origin_fpmult, "run-flopoco_origin_fpmult_ret-P1-noRetime-"),
+    ("flopoco_origin_divsqrt_ret", make_tcl_flopoco_origin_divsqrt, "run-flopoco_origin_divsqrt_ret-P1-noRetime-"),
+    ("flopoco_origin_addmul_ret", make_tcl_flopoco_origin_addmul, "run-flopoco_origin_addmul_ret-P1-noRetime-"),
+    ("flopoco_origin_addmul_bf16_ret", make_tcl_flopoco_origin_addmul_bf16, "run-flopoco_origin_addmul_bf16_ret-P1-noRetime-"),
+    # v2/v1 subunits
     ("v2_1_bf16_add_ret", make_tcl_v2_1_add, "run-bf16_add_ret-P1-noRetime-"),
     ("v2_2_bf16_mult_ret", make_tcl_v2_2_mult, "run-bf16_mult_ret-P1-noRetime-"),
     ("v1_4_divsqrt_ret", make_tcl_v1_4_divsqrt, "run-v1_4_divsqrt_ret-P1-noRetime-"),
     ("v2_4_divsqrt_ret", make_tcl_v2_4_divsqrt, "run-v2_4_divsqrt_ret-P1-noRetime-"),
     ("v1_3_addmul_ret", make_tcl_v1_3_addmul, "run-v1_3_addmul_ret-P1-noRetime-"),
     ("v2_3_addmul_ret", make_tcl_v2_3_addmul, "run-v2_3_addmul_ret-P1-noRetime-"),
+    # Full designs (slowest)
     ("v1_area_opt_ret", make_tcl_v1_area_opt, "run-v1_area_opt_ret-P1-noRetime-"),
     ("v2_fpall_ret", make_tcl_v2_fpall, "run-v2_fpall_ret-P1-noRetime-"),
 ]
 
 def main():
+    # Filter: python run_sweep_ret_no_retime_dat.py addmul divsqrt
+    #    or:  python run_sweep_ret_no_retime_dat.py --designs addmul divsqrt
+    #  -> only designs whose label contains "addmul" or "divsqrt"
+    filter_keywords = []
+    if "--designs" in sys.argv:
+        idx = sys.argv.index("--designs") + 1
+        while idx < len(sys.argv) and not sys.argv[idx].startswith("-"):
+            filter_keywords.append(sys.argv[idx])
+            idx += 1
+    else:
+        filter_keywords = [a for a in sys.argv[1:] if not a.startswith("-")]
+
+    designs_to_run = DESIGNS
+    if filter_keywords:
+        designs_to_run = [(l, fn, pat) for l, fn, pat in DESIGNS
+                          if any(kw in l for kw in filter_keywords)]
+        if not designs_to_run:
+            print(f"No designs match: {filter_keywords}")
+            sys.exit(1)
+        print(f"Filter: running only {[d[0] for d in designs_to_run]}")
+
     os.makedirs("logs", exist_ok=True)
-    results = []
-    print("Note: v1_area_opt_ret and v2_fpall_ret may take 30-60min each. Check logs/sweep_*_P1_noRetime.log for progress.")
-    for label, make_tcl_fn, run_pattern in DESIGNS:
+    csv_path = os.path.join(syn_dir, "ret_no_retime_dat_summary.csv")
+
+    # Load existing CSV: skip designs already in it
+    merged = {}  # label -> (area, dat), preserves all designs across runs
+    if os.path.exists(csv_path):
+        with open(csv_path, "r") as f:
+            lines = f.readlines()
+        if len(lines) >= 2:
+            for line in lines[1:]:
+                parts = line.strip().split(",")
+                if len(parts) >= 3:
+                    merged[parts[0]] = (parts[1], parts[2])
+        skip_list = [l for l in designs_to_run if l[0] in merged]
+        if skip_list:
+            print(f"Skipping {len(skip_list)} designs (already in CSV): {[d[0] for d in skip_list]}")
+
+    for label, make_tcl_fn, run_pattern in designs_to_run:
+        if label in merged:
+            area, dat = merged[label]
+            print(f"  {label}: Area={area}, DAT={dat} (from CSV)")
+            continue
+
         print(f"Running {label} (P1, no retime)...")
         sys.stdout.flush()
         tcl_content = make_tcl_fn()
@@ -349,20 +525,23 @@ def main():
             if run_dirs:
                 latest = os.path.join(syn_dir, run_dirs[-1])
                 area, dat = parse_results(latest)
-                results.append((label, area, dat))
+                merged[label] = (area, dat)
                 print(f"  Area={area}, DAT={dat}")
             else:
-                results.append((label, "Error", "No run dir"))
+                merged[label] = ("Error", "No run dir")
                 print(f"  Error: no run dir found")
         except subprocess.CalledProcessError as e:
-            results.append((label, "Error", str(e)))
+            merged[label] = ("Error", str(e))
             print(f"  Error: {e}")
-    csv_path = os.path.join(syn_dir, "ret_no_retime_dat_summary.csv")
-    with open(csv_path, "w") as f:
-        f.write("Design,Area,DataArrivalTime\n")
-        for label, area, dat in results:
-            f.write(f"{label},{area},{dat}\n")
-    print(f"\nWrote {csv_path}")
+        # Incremental CSV write (after each new design)
+        with open(csv_path, "w") as f:
+            f.write("Design,Area,DataArrivalTime\n")
+            for lbl, _, _ in DESIGNS:
+                if lbl in merged:
+                    a, d = merged[lbl]
+                    f.write(f"{lbl},{a},{d}\n")
+        print(f"  -> {csv_path} updated")
+    print(f"\nDone. Wrote {csv_path}")
 
 if __name__ == "__main__":
     main()

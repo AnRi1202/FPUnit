@@ -1,21 +1,17 @@
 # ======================================================================
-# DC script (retiming for bf16_add_ret.sv)
-# This script supports variable pipeline stages for BF16 Add.
+# DC script (retiming for FPAddMulBF16_origin_ret.vhdl - Add+Mul+BF16 Add+BF16 Mult)
+# 6ops addmul cluster: FP32 Add, FP32 Mul, BF16 Add x2, BF16 Mult x2
 # ======================================================================
 set_host_options -max_cores 8
 
 remove_design -all
 
-# --- Pipeline Stage Selection ---
-if {[info exists env(PIPE)]} {
-    set num_pipe $env(PIPE)
-} else {
-    set num_pipe 11
-}
+# --- Config (Env vars or defaults) ---
+set num_pipe [expr {[info exists env(NUM_PIPE)] ? $env(NUM_PIPE) : 1}]
 set main_clock_period 0.5
 
 set tag [clock format [clock seconds] -format "%m%d-%H%M"]
-set run_dir [file normalize "run-bf16_add_ret-P${num_pipe}-T${main_clock_period}-${tag}"]
+set run_dir [file normalize "run-flopoco_origin_addmul_bf16_ret-P${num_pipe}-T${main_clock_period}-${tag}"]
 set WORK_DIR [file normalize "${run_dir}/WORK"]
 
 file mkdir $run_dir
@@ -42,23 +38,12 @@ set target_library $link_library
 # ----------------------------------------------------------------------
 # Analyze & Elaborate
 # ----------------------------------------------------------------------
-set rtl_dir "../src/rtl"
-set v2_dir "$rtl_dir/v2_bf16_full"
-set v2_1_dir "$rtl_dir/v2_1_bf16_add"
+set rtl_dir [file normalize "../src/rtl/original"]
 
-# Analyze supporting files (from v2_bf16_full as they are shared/imported)
-analyze -library WORK -format sverilog "$v2_dir/fpall_pkg.sv"
-analyze -library WORK -format vhdl     "$v2_dir/utils.vhdl"
-analyze -library WORK -format sverilog "$v2_dir/utils/abs_comparator.sv"
-analyze -library WORK -format sverilog "$v2_dir/utils/barrel_shifter.sv"
-analyze -library WORK -format sverilog "$v2_dir/utils/normalizer.sv"
+# FPAddMulBF16 needs: FPAdd, FPMult (FP32), FPAdd_8_7, FPMult_8_7 (BF16)
+analyze -library WORK -format vhdl [glob "$rtl_dir/*.vhdl"]
 
-# Analyze the main SystemVerilog files
-analyze -library WORK -format sverilog "$v2_1_dir/bf16_add.sv"
-analyze -library WORK -format sverilog "$v2_1_dir/bf16_add_ret.sv"
-
-# Elaborate top-level with parameters
-elaborate bf16_add_ret -library WORK -parameters "PARAM_PIPE=${num_pipe}"
+elaborate FPAddMulBF16_origin_ret -library WORK -parameters "NUM_PIPE=${num_pipe}"
 
 link
 check_design
@@ -68,14 +53,11 @@ set_max_area 0
 # Clocks & Constraints
 # ----------------------------------------------------------------------
 create_clock -name clk -period $main_clock_period [get_ports clk]
-# set input/output delay
-set input_ports [remove_from_collection [all_inputs] [get_ports clk]]
-set_input_delay 0.1 -clock clk $input_ports
 
-set output_ports [all_outputs]
-set_output_delay 0.1 -clock clk $output_ports
-
-set_input_transition 0.05 [remove_from_collection [all_inputs] [get_ports clk]]
+set inputs_no_clk [remove_from_collection [all_inputs] [get_ports clk]]
+set_input_delay      -clock clk 0.1 $inputs_no_clk
+set_output_delay     -clock clk 0.1 [all_outputs]
+set_input_transition 0.05 $inputs_no_clk
 set_load 0.1 [all_outputs]
 
 # Enable retiming infrastructure
@@ -86,7 +68,7 @@ set_app_var compile_sequential_area_recovery true
 # ----------------------------------------------------------------------
 # RETIMING Synthesis
 # ----------------------------------------------------------------------
-compile_ultra  -no_autoungroup -no_boundary_optimization -retime 
+compile_ultra -retime
 
 # Export reports
 write_file -format verilog -hierarchy -output "$run_dir/out_afterRetime.v"
@@ -94,31 +76,5 @@ report_area  -hierarchy > $run_dir/area.rpt
 report_power            > $run_dir/power.rpt
 report_timing -delay_type max -max_paths 1 > $run_dir/timing_setup.rpt
 report_register         > $run_dir/registers.rpt
-
-# Parsing results for summary
-set area 0.0
-set dat "N/A"
-
-if {[file exists "$run_dir/area.rpt"]} {
-    set fp [open "$run_dir/area.rpt" r]
-    while {[gets $fp line] >= 0} {
-        if {[regexp {Total cell area:\s+([0-9\.]+)} $line match val]} {
-            set area $val
-        }
-    }
-    close $fp
-}
-
-if {[file exists "$run_dir/timing_setup.rpt"]} {
-    set fp [open "$run_dir/timing_setup.rpt" r]
-    while {[gets $fp line] >= 0} {
-        if {[regexp {data arrival time\s+([0-9\.\-]+)} $line match val]} {
-            set dat $val
-        }
-    }
-    close $fp
-}
-
-puts "Done bf16_add_ret_pipe${num_pipe}: Area=$area, DAT=$dat"
 
 exit

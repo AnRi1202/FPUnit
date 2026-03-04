@@ -242,7 +242,7 @@ library std;
 use std.textio.all;
 library work;
 
-entity _8_7_FreqFPAdd1_uid2 is
+entity FPAdd_8_7_Freq1_uid2 is
     port (clk : in std_logic;
           X : in  std_logic_vector(8+7+2 downto 0);
           Y : in  std_logic_vector(8+7+2 downto 0);

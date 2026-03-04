@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+"""
+Pipeline sweep for FPAddMulBF16_origin_ret (6ops addmul: FP32 Add/Mul + BF16 Add/Mul x2).
+Sweeps NUM_PIPE from 1 to 18 with retiming.
+"""
 import os
 import subprocess
 import re
@@ -5,24 +10,18 @@ import sys
 
 # Configuration
 clock_period = 0.5
-pipeline_stages = list(range(1, 19))  # 1 to 18
+pipeline_stages = [int(a) for a in sys.argv[1:]] if len(sys.argv) > 1 else list(range(1, 19))
 
-# Synthesis Script
-scripts = {
-    "divsqrt": {
-        "tcl": "ret_flopoco_origin_divsqrt.tcl",
-        "label": "flopoco_origin_divsqrt_ret",
-        "csv": "sweep_summary_flopoco_origin_divsqrt.csv"
-    }
-}
+label = "flopoco_origin_addmul_bf16_ret"
+tcl_file = "ret_flopoco_origin_addmul_bf16.tcl"
+csv_file = "sweep_summary_flopoco_origin_addmul_bf16.csv"
+
 
 def parse_results(run_dir):
     area_rpt = os.path.join(run_dir, "area.rpt")
     timing_rpt = os.path.join(run_dir, "timing_setup.rpt")
-
     area = "N/A"
     data_arrival = "N/A"
-
     if os.path.exists(area_rpt):
         with open(area_rpt, 'r') as f:
             for line in f:
@@ -30,8 +29,7 @@ def parse_results(run_dir):
                     match = re.search(r"Total cell area:\s+([\d\.]+)", line)
                     if match:
                         area = match.group(1)
-                        break
-
+                    break
     if os.path.exists(timing_rpt):
         with open(timing_rpt, 'r') as f:
             for line in f:
@@ -39,54 +37,55 @@ def parse_results(run_dir):
                     match = re.search(r"data arrival time\s+([\d\.]+)", line)
                     if match:
                         data_arrival = match.group(1)
-                        break
+                    break
     return area, data_arrival
 
-for key, cfg in scripts.items():
-    print(f"Starting {cfg['label']} Pipeline Sweep...")
 
-    # Initialize CSV if it doesn't exist
+def main():
+    syn_dir = os.path.abspath(os.path.dirname(__file__))
+    os.chdir(syn_dir)
+    os.makedirs("logs", exist_ok=True)
+
+    print(f"Starting {label} Pipeline Sweep (6ops addmul)...")
+
     done_stages = set()
-    if not os.path.exists(cfg['csv']):
-        with open(cfg['csv'], "w") as f:
+    if not os.path.exists(csv_file):
+        with open(csv_file, "w") as f:
             f.write("PipelineStages,Area,MaxDataArrival\n")
     else:
-        # Read existing results to skip
-        with open(cfg['csv'], "r") as f:
-            lines = f.readlines()[1:]  # skip header
-            for line in lines:
+        with open(csv_file, "r") as f:
+            for line in f.readlines()[1:]:
                 parts = line.strip().split(',')
                 if len(parts) >= 1 and parts[0].isdigit():
                     done_stages.add(int(parts[0]))
 
     for pipe in pipeline_stages:
         if pipe in done_stages:
-            print(f"  Skipping P{pipe} (already in {cfg['csv']})")
+            print(f"  Skipping P{pipe} (already in {csv_file})")
             continue
 
         print(f"  Running P{pipe}...")
         sys.stdout.flush()
 
-        log_file = f"logs/sweep_{cfg['label']}_P{pipe}.log"
-        full_cmd = f"source ~/.cshrc; setenv NUM_PIPE {pipe}; dc_shell-xg-t -f {cfg['tcl']} >& {log_file}"
+        log_file = f"logs/sweep_{label}_P{pipe}.log"
+        full_cmd = f"source ~/.cshrc; setenv NUM_PIPE {pipe}; dc_shell-xg-t -f {tcl_file} >& {log_file}"
 
         try:
-            subprocess.run(["tcsh", "-c", full_cmd], check=True)
-
-            # Find the run directory (it has a timestamp tag)
-            run_dirs = sorted([d for d in os.listdir('.') if d.startswith(f"run-{cfg['label']}-P{pipe}-T{clock_period}-")])
+            subprocess.run(["tcsh", "-c", full_cmd], check=True, cwd=syn_dir)
+            run_dirs = sorted([d for d in os.listdir(syn_dir) if d.startswith(f"run-{label}-P{pipe}-T{clock_period}-")])
             if run_dirs:
-                latest_run = run_dirs[-1]
+                latest_run = os.path.join(syn_dir, run_dirs[-1])
                 area, arrival = parse_results(latest_run)
                 print(f"    Result: Area={area}, Arrival={arrival}")
-
-                # Append to CSV immediately
-                with open(cfg['csv'], "a") as f:
+                with open(csv_file, "a") as f:
                     f.write(f"{pipe},{area},{arrival}\n")
             else:
                 print(f"    Error: Could not find run directory for P{pipe}")
-
         except subprocess.CalledProcessError as e:
             print(f"    Error: {e}")
 
-print("Sweep Completed.")
+    print("Sweep Completed.")
+
+
+if __name__ == "__main__":
+    main()
