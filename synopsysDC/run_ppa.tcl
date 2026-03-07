@@ -628,6 +628,17 @@ if {$TASK == "11" || $TASK == "FPAddMul_SV"} {
     run_synth_common_param "FPALL_origin" "fpaddmul_only_origin_SV" "NUM_OPS=2"
 }
 
+<<<<<<< Updated upstream
+=======
+# Task 12: FPALL_baseline SV (*使用、exc削除)
+if {$TASK == "12" || $TASK == "FPALL_BASELINE_SV"} {
+    puts "--- Task 12: FPALL_baseline (SV, FPMult=*, exc削除, NUM_OPS=4) ---"
+    remove_design -all
+    analyze -library WORK -format sverilog "$origin_sv_dir/fp32_all_baseline.sv"
+    run_synth_common_param "FPALL_origin" "FPALL_baseline_SV" "NUM_OPS=4"
+}
+
+>>>>>>> Stashed changes
 ########################  v_  ####################################
 
 set rtl_pkg    "$ROOT/src/rtl/v2_bf16_full/fpall_pkg.sv"

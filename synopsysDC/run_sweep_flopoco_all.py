@@ -3,9 +3,11 @@ import subprocess
 import re
 import sys
 import glob
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # Configuration
 frequencies = [100, 200, 300, 400, 500, 600]
+MAX_PARALLEL = int(os.environ.get("SWEEP_PARALLEL", "6"))  # 並列数 (環境変数で上書き可)
 types = ["add", "mult"]
 clock_period = 0.5
 
@@ -13,7 +15,7 @@ clock_period = 0.5
 base_rtl_dir = "../src/rtl"
 syn_dir = os.getcwd()
 
-# TCL Template
+# TCL Template (run_dir は各ジョブの作業ディレクトリ内の reports/)
 tcl_template = """
 set_host_options -max_cores 8
 file mkdir WORK
@@ -48,7 +50,7 @@ set_load 0.1 [all_outputs]
 # Compile
 compile_ultra
 
-# Output
+# Output (run_dir はジョブ専用ディレクトリ内)
 set run_dir "{run_dir}"
 file mkdir $run_dir
 report_area -hierarchy > $run_dir/area.rpt
@@ -91,6 +93,41 @@ def parse_results(run_dir):
                         break
     return area, data_arrival
 
+
+def run_one_synth(args):
+    """1ジョブ実行。専用サブディレクトリで dc_shell を動かす。"""
+    freq, t, variant_label, num_ops, entity_name, params, abs_base_dir, abs_file_path, tcl_template, clock_period, syn_dir = args
+    job_name = f"f{freq}_{t}_{variant_label}"
+    job_dir = os.path.join(syn_dir, "sweep_run", job_name)
+    os.makedirs(job_dir, exist_ok=True)
+    run_dir = os.path.join(job_dir, "reports")
+    os.makedirs(run_dir, exist_ok=True)
+
+    tcl_content = tcl_template.format(
+        rtl_path=abs_base_dir,
+        file_path=abs_file_path,
+        entity_name=entity_name,
+        clock_period=clock_period,
+        run_dir=run_dir,
+        params=params
+    )
+    tcl_file = os.path.join(job_dir, "run.tcl")
+    with open(tcl_file, "w") as f:
+        f.write(tcl_content)
+
+    log_file = os.path.join(syn_dir, "logs", f"sweep_{job_name}.log")
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    full_cmd = f"source ~/.cshrc; cd {job_dir} && dc_shell-xg-t -f run.tcl >& {log_file}"
+
+    try:
+        subprocess.run(["tcsh", "-c", full_cmd], check=True, timeout=3600)
+        area, arrival = parse_results(run_dir)
+        return (freq, t, variant_label, area, arrival, None)
+    except subprocess.CalledProcessError as e:
+        return (freq, t, variant_label, "Error", "Error", str(e))
+    except subprocess.TimeoutExpired:
+        return (freq, t, variant_label, "Timeout", "Timeout", "timeout")
+
 # Load existing results for skipping
 results = []
 done_keys = set()
@@ -105,26 +142,20 @@ if os.path.exists(csv_file):
                 results.append((parts[0], parts[1], parts[2], parts[3], parts[4]))
                 done_keys.add((str(parts[0]), str(parts[1]), str(parts[2])))
 
-print("Starting F100-F600 Sweep...")
+print("Starting F100-F600 Sweep (parallel)...")
 
+# Build task list
+tasks = []
 for freq in frequencies:
-    base_dir = f"{base_rtl_dir}/base_f{freq}"
-    
-    # We want to sweep both standard (FP32) and BF16, and now FPALL (Combined)
-    # Mapping: (Type, VariantLabel, num_ops)
+    base_dir = os.path.abspath(os.path.join(syn_dir, base_rtl_dir, f"base_f{freq}"))
     sweep_targets = [
-        ("fpall", "4OPS", 4), # vs v1 (area opt)/ v1_3(addmult) + v1_4 (divsqrt) 
-        ("fpall", "5OPS", 5), # vs v2_1 (frac add)
-        ("fpall", "6OPS", 6), # vs v2 (6ops) / vs v2_3(faddmult) + v2_4 (divsqrt)
-        ("fpall", "7OPS", 7), # vs v2_2 (frac_addmult)
-        ("add", "FP32", None),
-        ("add", "BF16", None),
-        ("mult", "FP32", None),
-        ("mult", "BF16", None)
+        ("fpall", "4OPS", 4), ("fpall", "5OPS", 5), ("fpall", "6OPS", 6), ("fpall", "7OPS", 7),
+        ("add", "FP32", None), ("add", "BF16", None),
+        ("mult", "FP32", None), ("mult", "BF16", None)
     ]
-    
     for t, variant_label, num_ops in sweep_targets:
-        # Determine filename and entity
+        if (str(freq), str(t), str(variant_label)) in done_keys:
+            continue
         if t == "fpall":
             filename = f"f{freq}_fpall_origin.vhdl"
             entity_prefix = f"f{freq}_fpall_origin"
@@ -134,76 +165,52 @@ for freq in frequencies:
             filename = f"fp{t}{suffix}_f{freq}.vhdl"
             entity_prefix = "FPAdd" if t == "add" else "FPMult"
             params = ""
-        
         file_path = os.path.join(base_dir, filename)
         abs_file_path = os.path.abspath(file_path)
-        abs_base_dir = os.path.abspath(base_dir)
-        
         if not os.path.exists(abs_file_path):
-            print(f"Warning: File {abs_file_path} does not exist. Skipping.")
             continue
-            
         entities = get_entities(abs_file_path)
         if not entities:
-            print(f"Warning: Could not find any entities in {abs_file_path}. Skipping.")
             continue
-        
-        entity_name = None
-        if t == "fpall":
-            entity_name = f"{entity_prefix}_NUM_OPS{num_ops}"
-        else:
-            # Match FPAdd_8_23_Freq1_uid2
+        entity_name = entity_prefix if t == "fpall" else None
+        if not entity_name:
             pattern = rf"{entity_prefix}_8_23_Freq\d+_uid\d+"
             for ent in entities:
                 if re.match(pattern, ent):
                     entity_name = ent
                     break
-                 
         if not entity_name:
-             print(f"Warning: No matching entity found in {abs_file_path}. Found: {entities}. Skipping.")
-             continue
-             
-        run_name = f"run-f{freq}-{t}-{variant_label}"
-        run_dir = os.path.abspath(run_name)
-        
-        # Skip if already in CSV
-        if (str(freq), str(t), str(variant_label)) in done_keys:
-             print(f"Skipping f{freq} {t} {variant_label} (already in {csv_file})")
-             continue
+            continue
+        tasks.append((freq, t, variant_label, num_ops, entity_name, params, base_dir, abs_file_path))
 
-        print(f"Running f{freq} {t} {variant_label} (Entity: {entity_name}, params: {params})")
-        sys.stdout.flush()
-        
-        # Create TCL
-        tcl_content = tcl_template.format(
-            rtl_path=abs_base_dir,
-            file_path=abs_file_path,
-            entity_name=entity_name,
-            clock_period=clock_period,
-            run_dir=run_dir,
-            params=params
-        )
-        
-        tcl_file = f"_sweep_f{freq}_{t}_{variant_label}.tcl"
-        with open(tcl_file, "w") as f:
-            f.write(tcl_content)
-            
-        log_file = f"logs/sweep_f{freq}_{t}_{variant_label}.log"
-        full_cmd = f"source ~/.cshrc; dc_shell-xg-t -f {tcl_file} >& {log_file}"
-        
-        try:
-            subprocess.run(["tcsh", "-c", full_cmd], check=True)
-            area, arrival = parse_results(run_dir)
-            results.append((freq, t, variant_label, area, arrival))
-            print(f"  Result: Area={area}, Arrival={arrival}")
-        except subprocess.CalledProcessError as e:
-            print(f"  Error: {e}")
-            results.append((freq, t, variant_label, "Error", "Error"))
-        
-        # Incremental save CSV so user can see progress
-        with open("sweep_summary_flopoco_all.csv", "w") as f:
-            f.write("Freq,Type,Variant,Area,MaxDataArrival\n")
-            for r in results:
-                f.write(f"{r[0]},{r[1]},{r[2]},{r[3]},{r[4]}\n")
+if not tasks:
+    print("All tasks already in CSV or skipped. Done.")
+else:
+    print(f"Running {len(tasks)} tasks with max {MAX_PARALLEL} parallel workers...")
+
+    def run_task(t):
+        return run_one_synth(t + (tcl_template, clock_period, syn_dir))
+
+    with ProcessPoolExecutor(max_workers=MAX_PARALLEL) as ex:
+        futures = {ex.submit(run_task, task): task for task in tasks}
+        for fut in as_completed(futures):
+            task = futures[fut]
+            try:
+                r = fut.result()
+                freq, t, variant_label, area, arrival, err = r
+                results.append((freq, t, variant_label, area, arrival))
+                msg = f"  f{freq} {t} {variant_label}: Area={area}, Arrival={arrival}"
+                if err:
+                    msg += f" ({err})"
+                print(msg)
+            except Exception as e:
+                freq, t, variant_label = task[0], task[1], task[2]
+                results.append((freq, t, variant_label, "Error", "Error"))
+                print(f"  f{freq} {t} {variant_label}: Exception {e}")
+            sys.stdout.flush()
+            with open(csv_file, "w") as f:
+                f.write("Freq,Type,Variant,Area,MaxDataArrival\n")
+                for r in sorted(results, key=lambda x: (x[0], x[1], x[2])):
+                    f.write(f"{r[0]},{r[1]},{r[2]},{r[3]},{r[4]}\n")
 
 print("F100-F600 Sweep Completed.")

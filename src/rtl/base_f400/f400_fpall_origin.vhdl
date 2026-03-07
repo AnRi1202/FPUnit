@@ -21,9 +21,9 @@ entity f400_fpall_origin is
     port (
         clk    : in  std_logic;
         opcode : in  std_logic_vector(2 downto 0); 
-        X      : in  std_logic_vector(33 downto 0); -- FloPoCo 34-bit format
-        Y      : in  std_logic_vector(33 downto 0);
-        R      : out std_logic_vector(33 downto 0)
+        X      : in  std_logic_vector(31 downto 0); -- 32-bit IEEE (exc removed)
+        Y      : in  std_logic_vector(31 downto 0);
+        R      : out std_logic_vector(31 downto 0)
     );
 end entity;
 
@@ -55,10 +55,15 @@ architecture arch of f400_fpall_origin is
     signal bfadd_h, bfadd_l, bfmul_h, bfmul_l : std_logic_vector(17 downto 0) := (others => '0');
     signal X_bf_l, Y_bf_l : std_logic_vector(17 downto 0);
     
+    signal fpc_X, fpc_Y : std_logic_vector(33 downto 0);
+    signal fpc_X_upper, fpc_Y_upper : std_logic_vector(17 downto 0);
+    
 begin
+    fpc_X <= "01" & X;  fpc_Y <= "01" & Y;
+    fpc_X_upper <= "01" & X(31 downto 16);  fpc_Y_upper <= "01" & Y(31 downto 16);
     -- FP32 Add (Present unless Mul Only modes: 3 or 7)
     GEN_ADD: if NUM_OPS /= 3 and NUM_OPS /= 7 generate
-        U_ADD: FPAdd_8_23_Freq400_uid2 port map(clk=>clk, X=>X, Y=>Y, R=>add_R);
+        U_ADD: FPAdd_8_23_Freq400_uid2 port map(clk=>clk, X=>fpc_X, Y=>fpc_Y, R=>add_R);
     end generate;
     GEN_NO_ADD: if NUM_OPS = 3 or NUM_OPS = 7 generate
         add_R <= (others => '0');
@@ -66,7 +71,7 @@ begin
 
     -- FP32 Mul (Present unless Add Only modes: 1 or 5)
     GEN_MUL: if NUM_OPS /= 1 and NUM_OPS /= 5 generate
-        U_MUL: FPMult_8_23_uid2_Freq400_uid3 port map(clk=>clk, X=>X, Y=>Y, R=>mul_R);
+        U_MUL: FPMult_8_23_uid2_Freq400_uid3 port map(clk=>clk, X=>fpc_X, Y=>fpc_Y, R=>mul_R);
     end generate;
     GEN_NO_MUL: if NUM_OPS = 1 or NUM_OPS = 5 generate
         mul_R <= (others => '0');
@@ -74,8 +79,8 @@ begin
 
     -- Sqrt/Div (Present for NUM_OPS 4 (mixed) or 6 (all))
     GEN_SQRT_DIV: if NUM_OPS = 4 or NUM_OPS = 6 generate
-        U_SQRT: FPSqrt_8_23 port map(clk=>clk, X=>X, R=>sqrt_R);
-        U_DIV:  FPDiv_8_23_Freq400_uid2 port map(clk=>clk, X=>X, Y=>Y, R=>div_R);
+        U_SQRT: FPSqrt_8_23 port map(clk=>clk, X=>fpc_X, R=>sqrt_R);
+        U_DIV:  FPDiv_8_23_Freq400_uid2 port map(clk=>clk, X=>fpc_X, Y=>fpc_Y, R=>div_R);
     end generate;
     GEN_NO_SQRT_DIV: if NUM_OPS /= 4 and NUM_OPS /= 6 generate
         sqrt_R <= (others => '0');
@@ -90,7 +95,7 @@ begin
         -- BF16 ADD (Modes 5 and 6)
         GEN_BF_ADD: if NUM_OPS = 5 or NUM_OPS = 6 generate
             -- Upper lane [33:16]
-            U_BFADD_H: FPAdd_8_7_Freq400_uid2 port map(clk=>clk, X=>X(33 downto 16), Y=>Y(33 downto 16), R=>bfadd_h);
+            U_BFADD_H: FPAdd_8_7_Freq400_uid2 port map(clk=>clk, X=>fpc_X_upper, Y=>fpc_Y_upper, R=>bfadd_h);
             -- Lower lane [15:0]
             U_BFADD_L: FPAdd_8_7_Freq400_uid2 port map(clk=>clk, X=>X_bf_l, Y=>Y_bf_l, R=>bfadd_l);
             bfadd_R  <= bfadd_h  & bfadd_l(15 downto 0);
@@ -105,7 +110,7 @@ begin
         -- BF16 MUL (Modes 6 and 7)
         GEN_BF_MUL: if NUM_OPS = 6 or NUM_OPS = 7 generate
             -- Upper lane [33:16]
-            U_BFMUL_H: FPMult_8_7_uid2_Freq400_uid3 port map(clk=>clk, X=>X(33 downto 16), Y=>Y(33 downto 16), R=>bfmul_h);
+            U_BFMUL_H: FPMult_8_7_uid2_Freq400_uid3 port map(clk=>clk, X=>fpc_X_upper, Y=>fpc_Y_upper, R=>bfmul_h);
             -- Lower lane [15:0]
             U_BFMUL_L: FPMult_8_7_uid2_Freq400_uid3 port map(clk=>clk, X=>X_bf_l, Y=>Y_bf_l, R=>bfmul_l);
             bfmult_R <= bfmul_h & bfmul_l(15 downto 0);
@@ -126,38 +131,38 @@ begin
     -- Output Logic based on NUM_OPS
     -- If only one operation is active, bypass the mux.
     GEN_OUT_1: if NUM_OPS = 1 generate
-        R <= add_R;
+        R <= add_R(31 downto 0);
     end generate;
 
     GEN_OUT_3: if NUM_OPS = 3 generate
-        R <= mul_R;
+        R <= mul_R(31 downto 0);
     end generate;
 
     GEN_OUT_5: if NUM_OPS = 5 generate
         -- Add & BFAdd
         with opcode select
-            R <= add_R    when "000",
-                 bfadd_R  when "100",
+            R <= add_R(31 downto 0)    when "000",
+                 bfadd_R(31 downto 0)  when "100",
                  (others => '0') when others;
     end generate;
 
     GEN_OUT_7: if NUM_OPS = 7 generate
         -- Mul & BFMul
         with opcode select
-            R <= mul_R    when "001",
-                 bfmult_R when "101",
+            R <= mul_R(31 downto 0)    when "001",
+                 bfmult_R(31 downto 0) when "101",
                  (others => '0') when others;
     end generate;
     
     -- For mixed operations (2, 4, 6), use the Full Mux
     GEN_OUT_MUX: if NUM_OPS = 2 or NUM_OPS = 4 or NUM_OPS = 6 generate
         with opcode select
-            R <= add_R    when "000",
-                 mul_R    when "001",
-                 sqrt_R   when "010",
-                 div_R    when "011",
-                 bfadd_R  when "100",
-                 bfmult_R when "101",
+            R <= add_R(31 downto 0)    when "000",
+                 mul_R(31 downto 0)    when "001",
+                 sqrt_R(31 downto 0)   when "010",
+                 div_R(31 downto 0)    when "011",
+                 bfadd_R(31 downto 0)  when "100",
+                 bfmult_R(31 downto 0) when "101",
                  (others => '0') when others;
     end generate;
 end architecture;
