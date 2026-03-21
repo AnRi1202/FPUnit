@@ -1419,9 +1419,18 @@ entity IntMultiplier_8x8_16_Freq300_uid5 is
 end entity;
 
 architecture arch of IntMultiplier_8x8_16_Freq300_uid5 is
+   signal Mfull : std_logic_vector(15 downto 0);
+   signal Mfull_d1 : std_logic_vector(15 downto 0);
 begin
-   -- Use * operator instead of LUT tiles (simple mult)
-   R <= std_logic_vector(unsigned(X) * unsigned(Y));
+   -- Use * operator, Pipeline depth 1: reg at end
+   Mfull <= std_logic_vector(unsigned(X) * unsigned(Y));
+   process(clk)
+   begin
+      if clk'event and clk = '1' then
+         Mfull_d1 <= Mfull;
+      end if;
+   end process;
+   R <= Mfull_d1;
 end architecture;
 
 

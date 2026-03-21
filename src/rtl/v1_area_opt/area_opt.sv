@@ -402,15 +402,14 @@ module area_opt(
     logic ra_Cin;
     
     logic [26:0] add_fracAdder_X, add_fracAdder_Y, add_fracAdder_R;
+    logic [26:0] ia27_X, ia27_Y, ia27_R;
+    logic ia27_Cin;
     logic add_fracAdder_Cin;
     
     logic [7:0] mul_expAdder_X, mul_expAdder_Y;
     logic mul_expAdder_Cin;
     logic [8:0] mul_expAdder_R; 
     
-    logic [26:0] ia27_X, ia27_Y, ia27_R;
-    logic ia27_Cin;
-
 
     // =================================================================================
     // FPAdd Logic
@@ -1310,25 +1309,14 @@ module area_opt(
     end
     assign ra_R = ra_X + ra_Cin;
     // Multiplex inputs to Shared IntAdder_27
-    // opcode: 00=Add (fracAdder), 01=Mul (expAdder), others unused
     assign ia27_X[26:9] = add_fracAdder_X[26:9];
-    assign ia27_X[8:0] = (opcode == 2'b00) ? add_fracAdder_X[8:0] : {1'b0, mul_expAdder_X}; // Lower bits shared: Add(8:0) vs Mul(Exp)
-    
+    assign ia27_X[8:0] = (opcode == 2'b00) ? add_fracAdder_X[8:0] : {1'b0, mul_expAdder_X};
     assign ia27_Y[26:9] = add_fracAdder_Y[26:9];
-    assign ia27_Y[8:0] = (opcode == 2'b00) ? add_fracAdder_Y[8:0] : {1'b0, mul_expAdder_Y}; // Lower bits shared
-    
+    assign ia27_Y[8:0] = (opcode == 2'b00) ? add_fracAdder_Y[8:0] : {1'b0, mul_expAdder_Y};
     assign ia27_Cin = (opcode == 2'b00) ? add_fracAdder_Cin : mul_expAdder_Cin;
-    
     assign add_fracAdder_R = ia27_R;
     assign mul_expAdder_R = ia27_R[8:0];
-
-    IntAdder_27_Freq1_uid6 U_SHARED_IA27 (
-        .clk(clk),
-        .X(ia27_X),
-        .Y(ia27_Y),
-        .Cin(ia27_Cin),
-        .R(ia27_R)
-    );
+    assign ia27_R = ia27_X + ia27_Y + {{26{1'b0}}, ia27_Cin};
 
     always_comb begin
         unique case (opcode)

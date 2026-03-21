@@ -210,7 +210,7 @@ else:
             sys.stdout.flush()
             with open(csv_file, "w") as f:
                 f.write("Freq,Type,Variant,Area,MaxDataArrival\n")
-                for r in sorted(results, key=lambda x: (x[0], x[1], x[2])):
+                for r in sorted(results, key=lambda x: (int(x[0]), x[1], x[2])):
                     f.write(f"{r[0]},{r[1]},{r[2]},{r[3]},{r[4]}\n")
 
 print("F100-F600 Sweep Completed.")

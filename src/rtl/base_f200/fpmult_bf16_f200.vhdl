@@ -1406,7 +1406,7 @@ end entity;
 
 architecture arch of IntMultiplier_8x8_16_Freq200_uid5 is
 begin
-   -- Use * operator instead of LUT tiles (simple mult)
+   -- Use * operator, Pipeline depth 0
    R <= std_logic_vector(unsigned(X) * unsigned(Y));
 end architecture;
 

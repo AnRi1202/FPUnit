@@ -74,7 +74,7 @@ proc run_synth_common {entity_name label} {
 
     # set_max_delay 1000 -from [all_inputs] -to [all_outputs]
     # Compile
-    compile_ultra 
+    compile_ultra -no_autoungroup -no_boundary_optimization
     
 
 
@@ -612,7 +612,7 @@ set origin_sv_dir "$ROOT/src/rtl/original_sv"
 
 
 
-# Task 14: FPALL_origin SV (Add+Mul+Div+Sqrt, NUM_OPS=4)
+# Task 10: FPALL_origin SV (Add+Mul+Div+Sqrt, NUM_OPS=4)
 if {$TASK == "10" || $TASK == "FPALL_SV"} {
     puts "--- Task 14: FPALL_origin (SV, NUM_OPS=4) ---"
     remove_design -all
@@ -620,7 +620,7 @@ if {$TASK == "10" || $TASK == "FPALL_SV"} {
     run_synth_common_param "FPALL_origin" "FPALL_origin_SV" "NUM_OPS=4"
 }
 
-# Task 15: FPAdd+FPMult only SV (NUM_OPS=2)
+# Task 11: FPAdd+FPMult only SV (NUM_OPS=2)
 if {$TASK == "11" || $TASK == "FPAddMul_SV"} {
     puts "--- Task 15: FPAdd+FPMult (SV, NUM_OPS=2) ---"
     remove_design -all
@@ -628,9 +628,7 @@ if {$TASK == "11" || $TASK == "FPAddMul_SV"} {
     run_synth_common_param "FPALL_origin" "fpaddmul_only_origin_SV" "NUM_OPS=2"
 }
 
-<<<<<<< Updated upstream
-=======
-# Task 12: FPALL_baseline SV (*使用、exc削除)
+# Task 12: FPALL_baseline SV (*使用、exc削除) 4ops
 if {$TASK == "12" || $TASK == "FPALL_BASELINE_SV"} {
     puts "--- Task 12: FPALL_baseline (SV, FPMult=*, exc削除, NUM_OPS=4) ---"
     remove_design -all
@@ -638,7 +636,76 @@ if {$TASK == "12" || $TASK == "FPALL_BASELINE_SV"} {
     run_synth_common_param "FPALL_origin" "FPALL_baseline_SV" "NUM_OPS=4"
 }
 
->>>>>>> Stashed changes
+# Task 13: FPALL_baseline_6ops SV (*使用、exc削除) 6ops
+if {$TASK == "13" || $TASK == "FPALL_BASELINE_6OPS_SV"} {
+    puts "--- Task 13: FPALL_baseline_6ops (SV, FPMult=*, exc削除, NUM_OPS=6) ---"
+    remove_design -all
+    analyze -library WORK -format sverilog "$origin_sv_dir/fp32_all_baseline_6ops.sv"
+    run_synth_common_param "FPALL_origin" "FPALL_baseline_6ops_SV" "NUM_OPS=6"
+}
+
+# Task 17: FPALL_baseline_6ops_dsp SV (BF16 Mult = FloPoCo VHDL IntMultiplier)
+if {$TASK == "17" || $TASK == "FPALL_BASELINE_6OPS_DSP_SV"} {
+    puts "--- Task 17: FPALL_baseline_6ops_dsp (SV, BF16 Mult=FloPoCo VHDL IntMult, NUM_OPS=6) ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$origin_dir/fpmult_bf16_f1.vhdl"
+    analyze -library WORK -format sverilog "$origin_sv_dir/fp32_all_baseline_6ops_dsp.sv"
+    run_synth_common_param "FPALL_origin" "FPALL_baseline_6ops_DSP_SV" "NUM_OPS=6"
+}
+
+# Task 15: BF16 Add only (FloPoCo, 18-bit I/O)
+if {$TASK == "15" || $TASK == "BF16_Add"} {
+    puts "--- Task 15: BF16 Add (FloPoCo) ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$origin_dir/fpadd_bf16_f1.vhdl"
+    run_synth_common "FPAdd_8_7_Freq1_uid2" "BF16_Add"
+}
+# Task 16: BF16 Mult only (FloPoCo, 18-bit I/O)
+if {$TASK == "16" || $TASK == "BF16_Mult"} {
+    puts "--- Task 16: BF16 Mult (FloPoCo) ---"
+    remove_design -all
+    analyze -library WORK -format vhdl "$origin_dir/fpmult_bf16_f1.vhdl"
+    run_synth_common "FPMult_8_7_uid2_Freq1_uid3" "BF16_Mult"
+}
+
+# Task 19: Dual-precision FP Mult (bf16_mult, FP32+BF16 shared, comb)
+if {$TASK == "19" || $TASK == "DUAL_PREC_MULT"} {
+    puts "--- Task 19: Dual-precision FP Mult (bf16_mult, v2_2, comb) ---"
+    remove_design -all
+    set v2_dir "$rtl_dir/v2_bf16_full"
+    set v2_2_dir "$rtl_dir/v2_2_bf16_mult"
+    analyze -library WORK -format sverilog "$v2_dir/fpall_pkg.sv"
+    analyze -library WORK -format sverilog "$v2_2_dir/bf16_mult.sv"
+    run_synth_common "bf16_mult" "dual_prec_mult"
+}
+
+# Task 18: Dual-precision FP Add (bf16_add, FP32+BF16 shared, comb)
+if {$TASK == "18" || $TASK == "DUAL_PREC_ADD"} {
+    puts "--- Task 18: Dual-precision FP Add (bf16_add, comb) ---"
+    remove_design -all
+    set v2_dir "$rtl_dir/v2_bf16_full"
+    set v2_1_dir "$rtl_dir/v2_1_bf16_add"
+    analyze -library WORK -format sverilog "$v2_dir/fpall_pkg.sv"
+    analyze -library WORK -format sverilog "$v2_dir/utils/abs_comparator.sv"
+    analyze -library WORK -format sverilog "$v2_dir/utils/barrel_shifter.sv"
+    analyze -library WORK -format sverilog "$v2_dir/utils/normalizer.sv"
+    analyze -library WORK -format sverilog "$v2_1_dir/bf16_add.sv"
+    run_synth_common "bf16_add" "dual_prec_add"
+}
+
+# Task 14: fpall_shared (v2_bf16_full, HW shared, comb)
+if {$TASK == "14" || $TASK == "FPALL_SHARED"} {
+    puts "--- Task 14: fpall_shared (v2_bf16_full, comb) ---"
+    remove_design -all
+    set v2_dir "$rtl_dir/v2_bf16_full"
+    analyze -library WORK -format sverilog "$v2_dir/fpall_pkg.sv"
+    analyze -library WORK -format sverilog "$v2_dir/utils/abs_comparator.sv"
+    analyze -library WORK -format sverilog "$v2_dir/utils/barrel_shifter.sv"
+    analyze -library WORK -format sverilog "$v2_dir/utils/normalizer.sv"
+    analyze -library WORK -format sverilog "$v2_dir/utils/selFunction_Freq1_uid4.sv"
+    analyze -library WORK -format sverilog "$v2_dir/fpall_shared.sv"
+    run_synth_common "fpall_shared" "fpall_shared"
+}
 ########################  v_  ####################################
 
 set rtl_pkg    "$ROOT/src/rtl/v2_bf16_full/fpall_pkg.sv"

@@ -2,12 +2,15 @@ import os
 import subprocess
 import re
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Configuration
 clock_period = 0.5
-pipeline_stages = list(range(1, 13))  # 1 to 12
+pipeline_stages = list(range(1, 19))  # 1 to 18
+max_parallel = int(os.environ.get("SWEEP_PARALLEL", "4"))  # -j N or env SWEEP_PARALLEL=N
 
-# NUM_OPS to run (command line args: python run_sweep_flopoco_origin.py [num_ops ...])
+# NUM_OPS to run (command line args: python run_sweep_flopoco_origin.py [-j N] [num_ops ...])
+#   -j N: run N jobs in parallel (default: 4 or SWEEP_PARALLEL env)
 # NUM_OPS Mapping:
 #   1: Add only (FP32)
 #   2: Add+Mul (FP32)
@@ -16,7 +19,14 @@ pipeline_stages = list(range(1, 13))  # 1 to 12
 #   5: Add FP32 + BF16
 #   6: All (FP32 + BF16)
 #   7: Mul FP32 + BF16
-num_ops_list = [int(a) for a in sys.argv[1:]] if len(sys.argv) > 1 else [6]
+args = sys.argv[1:]
+if args and args[0] == "-j" and len(args) >= 2:
+    max_parallel = int(args[1])
+    args = args[2:]
+elif args and args[0].startswith("-j"):
+    max_parallel = int(args[0][2:])
+    args = args[1:]
+num_ops_list = [int(a) for a in args] if args else [6]
 
 # Directories
 base_rtl_dir = "../src/rtl"
@@ -130,7 +140,32 @@ def parse_results(run_dir):
     return area, data_arrival, num_registers
 
 
+def run_one_stage(num_ops, pipe, label, tcl_template, abs_origin_dir, clock_period):
+    """Run synthesis for one pipeline stage. Returns (pipe, area, arrival, regs)."""
+    run_dir_name = f"run-{label}-P{pipe}-T{clock_period}"
+    run_dir = os.path.abspath(run_dir_name)
+    tcl_content = tcl_template.format(
+        num_ops=num_ops,
+        pipe=pipe,
+        clock_period=clock_period,
+        run_dir=run_dir,
+        origin_dir=abs_origin_dir,
+    )
+    tcl_file = f"_sweep_{label}_{pipe}.tcl"
+    with open(tcl_file, "w") as f:
+        f.write(tcl_content)
+    log_file = f"logs/sweep_{label}_{pipe}.log"
+    full_cmd = f"source ~/.cshrc; dc_shell-xg-t -f {tcl_file} >& {log_file}"
+    try:
+        subprocess.run(["tcsh", "-c", full_cmd], check=True)
+        area, arrival, regs = parse_results(run_dir)
+        return (pipe, area, arrival, regs)
+    except subprocess.CalledProcessError as e:
+        return (pipe, "Error", "Error", "Error")
+
+
 abs_origin_dir = os.path.abspath(origin_dir)
+os.makedirs("logs", exist_ok=True)
 
 for num_ops in num_ops_list:
     label = f"flopoco_origin_N{num_ops}_ret"
@@ -149,49 +184,32 @@ for num_ops in num_ops_list:
                     if parts[0].isdigit():
                         done_stages.add(int(parts[0]))
 
-    print(f"Starting FloPoCo Origin Retiming Sweep (NUM_OPS={num_ops})...")
+    pipes_to_run = [p for p in pipeline_stages if p not in done_stages]
+    for p in sorted(done_stages):
+        print(f"  Skipping P{p} (already in {csv_file})")
+    print(f"Starting FloPoCo Origin Retiming Sweep (NUM_OPS={num_ops}), {len(pipes_to_run)} stages, max_parallel={max_parallel}...")
 
-    for pipe in pipeline_stages:
-        run_dir_name = f"run-{label}-P{pipe}-T{clock_period}"
-        run_dir = os.path.abspath(run_dir_name)
-
-        # Skip if already in CSV
-        if pipe in done_stages:
-            print(f"  Skipping P{pipe} (already in {csv_file})")
-            continue
-
-        print(f"  Running P{pipe} (NUM_OPS={num_ops})")
-        sys.stdout.flush()
-
-        tcl_content = tcl_template.format(
-            num_ops=num_ops,
-            pipe=pipe,
-            clock_period=clock_period,
-            run_dir=run_dir,
-            origin_dir=abs_origin_dir,
-        )
-
-        tcl_file = f"_sweep_{label}_{pipe}.tcl"
-        with open(tcl_file, "w") as f:
-            f.write(tcl_content)
-
-        log_file = f"logs/sweep_{label}_{pipe}.log"
-        full_cmd = f"source ~/.cshrc; dc_shell-xg-t -f {tcl_file} >& {log_file}"
-
-        try:
-            subprocess.run(["tcsh", "-c", full_cmd], check=True)
-            area, arrival, regs = parse_results(run_dir)
-            results.append((pipe, area, arrival, regs))
-            print(f"    Result: Area={area}, Arrival={arrival}, Registers={regs}")
-        except subprocess.CalledProcessError as e:
-            print(f"    Error: {e}")
-            results.append((pipe, "Error", "Error", "Error"))
-
-        # Incremental CSV save
-        with open(csv_file, "w") as f:
-            f.write("PipelineStages,Area,MaxDataArrival,Registers\n")
-            for r in results:
-                f.write(f"{r[0]},{r[1]},{r[2]},{r[3]}\n")
+    with ThreadPoolExecutor(max_workers=max_parallel) as ex:
+        futures = {
+            ex.submit(run_one_stage, num_ops, pipe, label, tcl_template, abs_origin_dir, clock_period): pipe
+            for pipe in pipes_to_run
+        }
+        for future in as_completed(futures):
+            pipe = futures[future]
+            try:
+                r = future.result()
+                results.append(r)
+                print(f"  P{pipe} done: Area={r[1]}, Arrival={r[2]}, Registers={r[3]}")
+                sys.stdout.flush()
+                # Incremental CSV save
+                results_sorted = sorted(results, key=lambda x: int(x[0]) if str(x[0]).isdigit() else 999)
+                with open(csv_file, "w") as f:
+                    f.write("PipelineStages,Area,MaxDataArrival,Registers\n")
+                    for row in results_sorted:
+                        f.write(f"{row[0]},{row[1]},{row[2]},{row[3]}\n")
+            except Exception as e:
+                print(f"  P{pipe} Error: {e}")
+                results.append((pipe, "Error", "Error", "Error"))
 
     print(f"FloPoCo Origin Retiming Sweep (NUM_OPS={num_ops}) Completed.")
     print(f"Results saved to {csv_file}")
