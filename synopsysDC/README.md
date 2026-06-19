@@ -18,16 +18,15 @@
 
 ### 1. 演算・アーキテクチャ別にバックグラウンド実行 (tmux)
 
-`launch_sweep_[arch].sh` を使用して、各アーキテクチャのスイープを `tmux` 上で開始します。
-実行後、各アーキテクチャごとの **サマリ CSV** が直下に生成されます。
+`sweep/` 以下のランチャーを使用します。詳細は [sweep/README.md](sweep/README.md) を参照。
 
-| 対象 | 実行コマンド | Tmux Session | 生成されるサマリ CSV |
+| 種類 | 例 | Tmux Session | サマリ CSV |
 | :--- | :--- | :--- | :--- |
-| **FloPoCo Baseline** | `./launch_sweep_flopoco.sh` | `sweep_flopoco` | `sweep_summary_flopoco_all.csv` |
-| **V1 (Area Opt All)** | `./launch_sweep_v1.sh` | `sweep_v1` | `sweep_summary_v1_all.csv` |
-| **V1 Subunits** | `./launch_sweep_v1_subunits.sh` | `v1_subunits_sweep` | `sweep_summary_v1_*.csv` |
-| **V2 (BF16 Full All)** | `./launch_sweep_v2.sh` | `sweep_v2` | `sweep_summary_v2_all.csv` |
-| **V2 Subunits** | `./launch_sweep_v2_subunits.sh` | `v2_subunits_sweep` | `sweep_summary_v2_*.csv` |
+| **no_retime（単体調査）** | `./sweep/no_retime/launch_tmux.sh` | `sweep_no_ret` | `ret_no_retime_dat_summary.csv` |
+| **no_retime（F100–F600 comb）** | `./sweep/no_retime/launch_flopoco.sh` | `sweep_flopoco` | `sweep_summary_flopoco_all.csv` |
+| **retime（V1 All）** | `./sweep/retime/launch_sweep_v1.sh` | `sweep_v1` | `sweep_summary_v1_all.csv` |
+| **retime（V2 All）** | `./sweep/retime/launch_sweep_v2.sh` | `sweep_v2` | `sweep_summary_v2_all.csv` |
+| **retime（サブユニット）** | `./sweep/retime/launch_sweep_v2_simd.sh` 等 | 各スクリプト参照 | `sweep_summary_v2_*.csv` |
 | **純粋組み合わせ遅延** | `./launch_baseline_comb.sh` | `comb_baseline` | `comb_baseline_dat_area.csv` |
 
 - **監視方法**: `tmux attach -t [Session Name]` で各セッションに接続して進捗を確認できます。
@@ -46,11 +45,10 @@ watch -n 1 'ls -ltr logs/*.log | tail -n 10'
 
 ## ディレクトリ構成
 
+- `sweep/no_retime/`: retiming なしの単体調査スクリプト
+- `sweep/retime/`: retiming パイプラインスイープスクリプト
+- `sweep_run/no_retime/`, `sweep_run/retime/`: 各スイープの合成結果
 - `logs/`: すべての合成ログ (.log)
 - `src/rtl/`: アーキテクチャ別のソースコード
-- `run-*/`: 合成実行ごとの詳細データ (area.rpt, timing.rpt等)
-- `launch_*.sh`: 実行用シェルスクリプト
-- `run_*.py`: 合成自動化用 Python スクリプト。以下の2種類の構造があります：
-    - **TCL動的生成型** (`run_sweep_flopoco_all.py` 等): ターゲット（周波数や演算）ごとにファイルパスやエンティティ名が変わるため、Python側でテンプレートを埋めてその都度TCLを作成・実行します。
-    - **TCL固定参照型** (`run_sweep_v2_3_addmul.py` 等): 対象ファイルは固定ですが、環境変数（例：`PARAM_PIPE`）を切り替えながら共通の `ret_*.tcl` を呼び出します。
-- `ret_*.tcl`: Synopsys DC 合成スクリプト
+- `run_ppa.tcl`: comb baseline 用（出力は `run-comb-*`）
+- `launch_*.sh`: 実行用シェルスクリプト（sweep 以外）

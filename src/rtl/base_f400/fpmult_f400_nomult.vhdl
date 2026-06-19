@@ -3345,7 +3345,7 @@ entity FPMult_8_23_uid2_Freq400_uid3 is
 end entity;
 
 architecture arch of FPMult_8_23_uid2_Freq400_uid3 is
-   component IntMultiplier_24x24_48_Freq300_uid5 is
+   component IntMultiplier_24x24_48_Freq400_uid5 is
       port ( clk : in std_logic;
              X : in  std_logic_vector(23 downto 0);
              Y : in  std_logic_vector(23 downto 0);
@@ -3426,7 +3426,7 @@ begin
    expSum <= expSumPreSub - bias;
    sigX <= "1" & X(22 downto 0);
    sigY <= "1" & Y(22 downto 0);
-   SignificandMultiplication: IntMultiplier_24x24_48_Freq300_uid5
+   SignificandMultiplication: IntMultiplier_24x24_48_Freq400_uid5
       port map ( clk  => clk,
                  X => sigX,
                  Y => sigY,

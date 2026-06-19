@@ -25,7 +25,7 @@ synopsysDC/WORK/
 synopsysDC/alib-*/
 synopsysDC/output/
 synopsysDC/report/
-synopsysDC/run-*/
+synopsysDC/sweep_run/
 synopsysDC/filenames.log
 synopsysDC/command.log
 synopsysDC/default.svf
@@ -75,4 +75,3 @@ synopsysDC/_sweep_*.tcl
 synopsysDC/csv_archive/
 
 WORK*/
-sweep_run
