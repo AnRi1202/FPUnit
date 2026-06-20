@@ -1,36 +1,42 @@
 # ======================================================================
-# DC script: synthesize abs_comparator standalone (area measurement)
+# DC script: synthesize barrel_shifter standalone (area measurement)
 #
-# Usage (from synopsysDC/):
-#   dc_shell -f sweep/no_retime/run_abs_comparator.tcl
-#   TOP=abs_comparator_origin dc_shell -f sweep/no_retime/run_abs_comparator.tcl
-#   TOP=abs_comparator_only   dc_shell -f sweep/no_retime/run_abs_comparator.tcl
+# Usage (from synopsysDC/, tcsh):
+#   dc_shell -f run_barrel_shifter.tcl
+#   setenv TOP barrel_shifter_gpt; dc_shell -f run_barrel_shifter.tcl
 #
-# TOP variants (default: abs_comparator):
-#   abs_comparator         - segmented subtraction (production)
-#   abs_comparator_origin  - naive comparator
-#   abs_comparator_only    - FP32-only comparator
+# bash:
+#   TOP=barrel_shifter_gpt dc_shell -f run_barrel_shifter.tcl
+#
+# TOP variants (default: BarrelShifter):
+#   BarrelShifter      - FP32 / BF16x2 / FP8x4 (FpuPkg, barrel_shifter_area.sv)
+#   barrel_shifter     - legacy FP32 + FP16x2 (fpall_pkg)
+#   barrel_shifter_gpt - alternate implementation (fpall_pkg)
 # ======================================================================
 set_host_options -max_cores 8
 
 remove_design -all
 
+# Always run relative to synopsysDC/ (script location), not the shell cwd.
+set syn_dir [file dirname [file normalize [info script]]]
+cd $syn_dir
+
 if {[info exists env(TOP)]} {
     set top $env(TOP)
 } else {
-    set top abs_comparator
+    set top BarrelShifter
 }
 
-set valid_tops {abs_comparator abs_comparator_origin abs_comparator_only}
+set fpupkg_tops {BarrelShifter}
+set legacy_tops {barrel_shifter barrel_shifter_gpt}
+set valid_tops [concat $fpupkg_tops $legacy_tops]
 if {[lsearch -exact $valid_tops $top] < 0} {
     puts "ERROR: unknown TOP=$top (valid: $valid_tops)"
     exit 1
 }
 
 set tag [clock format [clock seconds] -format "%m%d-%H%M"]
-set sweep_root "sweep_run/no_retime"
-file mkdir $sweep_root
-set run_dir [file normalize "$sweep_root/run-${top}-${tag}"]
+set run_dir [file normalize "$syn_dir/run-${top}-${tag}"]
 set WORK_DIR [file normalize "${run_dir}/WORK"]
 
 file mkdir $run_dir
@@ -57,15 +63,24 @@ set target_library $link_library
 # ----------------------------------------------------------------------
 # Analyze & Elaborate
 # ----------------------------------------------------------------------
-set rtl_dir "../src/rtl"
-set v2_dir "$rtl_dir/v2_bf16_full"
+set v2_dir "$syn_dir/../src/rtl/v2_bf16_full"
 
-analyze -library WORK -format sverilog "$v2_dir/fpall_pkg.sv"
-analyze -library WORK -format sverilog "$v2_dir/utils/abs_comparator.sv"
+if {[lsearch -exact $fpupkg_tops $top] >= 0} {
+    analyze -library WORK -format sverilog "$v2_dir/FpuPkg.sv"
+    analyze -library WORK -format sverilog "$v2_dir/utils/barrel_shifter_area.sv"
+} else {
+    analyze -library WORK -format sverilog "$v2_dir/fpall_pkg.sv"
+    analyze -library WORK -format sverilog "$v2_dir/utils/barrel_shifter.sv"
+}
 
 elaborate $top -library WORK
-
 link
+
+if {[sizeof_collection [get_designs $top -quiet]] == 0} {
+    puts "ERROR: elaborate failed for $top (check RTL paths and module name)"
+    exit 1
+}
+
 check_design
 set_max_area 0
 

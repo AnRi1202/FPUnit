@@ -1,0 +1,42 @@
+ 
+****************************************
+Report : reference
+Design : AbsComparator
+Version: U-2022.12
+Date   : Fri Jun 19 06:20:04 2026
+****************************************
+
+Attributes:
+    b - black box (unknown)
+   bo - allows boundary optimization
+    d - dont_touch
+   mo - map_only
+    h - hierarchical
+    n - noncombinational
+    r - removable
+    s - synthetic operator
+    u - contains unmapped logic
+
+Reference          Library       Unit Area   Count    Total Area   Attributes
+-----------------------------------------------------------------------------
+AND2_X1            NangateOpenCellLibrary
+                                  1.064000       1      1.064000  
+AOI222_X1          NangateOpenCellLibrary
+                                  2.128000      22     46.816000  
+INV_X1             NangateOpenCellLibrary
+                                  0.532000      31     16.492000  
+NAND2_X1           NangateOpenCellLibrary
+                                  0.798000       8      6.384000  
+NOR2_X1            NangateOpenCellLibrary
+                                  0.798000       4      3.192000  
+NOR3_X1            NangateOpenCellLibrary
+                                  1.064000       2      2.128000  
+OAI21_X1           NangateOpenCellLibrary
+                                  1.064000       6      6.384000  
+OAI22_X1           NangateOpenCellLibrary
+                                  1.330000       4      5.320000  
+OAI211_X1          NangateOpenCellLibrary
+                                  1.330000       1      1.330000  
+-----------------------------------------------------------------------------
+Total 9 references                                     89.110001
+1

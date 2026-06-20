@@ -9,7 +9,6 @@ sweep/
   sweep_paths.py          # 共通パスヘルパー
   no_retime/              # 単体調査（retiming なし）
     run_ret_no_retime_dat.py
-    run_abs_comparator.tcl
     run_flopoco_all.py
     launch_tmux.sh
     launch_flopoco.sh
@@ -30,6 +29,8 @@ sweep/
 
 ログと CSV サマリは従来どおり `synopsysDC/logs/` と `synopsysDC/*.csv` です。
 
+単体ユーティリ合成（abs_comparator / barrel_shifter）は `synopsysDC/` 直下の TCL を使います（出力は `synopsysDC/run-<TOP>-*/`）。
+
 ## 実行例
 
 `synopsysDC/` から:
@@ -38,8 +39,10 @@ sweep/
 # 単体調査（P1, no retime, DAT 取得）
 ./sweep/no_retime/launch_tmux.sh
 
-# abs_comparator 単体面積
-dc_shell -f sweep/no_retime/run_abs_comparator.tcl
+# 単体ユーティリ面積（synopsysDC/ 直下）
+dc_shell -f run_abs_comparator.tcl
+dc_shell -f run_barrel_shifter.tcl
+TOP=barrel_shifter_gpt dc_shell -f run_barrel_shifter.tcl
 
 # V2 retiming スイープ
 ./sweep/retime/launch_sweep_v2.sh

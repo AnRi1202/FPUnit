@@ -1,0 +1,44 @@
+ 
+****************************************
+Report : area
+Design : barrel_shifter
+Version: U-2022.12
+Date   : Fri Jun 19 07:29:19 2026
+****************************************
+
+Information: Updating design information... (UID-85)
+Library(s) Used:
+
+    NangateOpenCellLibrary (File: /autofs/fs1.ece/fs1.eecg.janders/bhilareo/form_files/NanGate_45nm_OCL_v2010_12/pdk_v1.3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12/Front_End/Liberty/NangateOpenCellLibrary_typical_CCS.db)
+
+Number of ports:                           61
+Number of nets:                           228
+Number of cells:                          195
+Number of combinational cells:            194
+Number of sequential cells:                 0
+Number of macros/black boxes:               0
+Number of buf/inv:                         40
+Number of references:                      22
+
+Combinational area:                214.396003
+Buf/Inv area:                       21.280000
+Noncombinational area:               0.000000
+Macro/Black Box area:                0.000000
+Net Interconnect area:      undefined  (Wire load has zero net area)
+
+Total cell area:                   214.396003
+Total area:                 undefined
+
+Hierarchical area distribution
+------------------------------
+
+                                  Global cell area          Local cell area
+                                  ------------------  --------------------------- 
+Hierarchical cell                 Absolute   Percent  Combi-    Noncombi-  Black-
+                                  Total      Total    national  national   boxes   Design
+--------------------------------  ---------  -------  --------  ---------  ------  ---------
+barrel_shifter                     214.3960    100.0  214.3960     0.0000  0.0000  barrel_shifter
+--------------------------------  ---------  -------  --------  ---------  ------  ---------
+Total                                                 214.3960     0.0000  0.0000
+
+1
